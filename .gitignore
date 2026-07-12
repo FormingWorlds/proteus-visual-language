@@ -1,0 +1,15 @@
+# Build artifacts
+node_modules/
+dist/
+*.egg-info/
+__pycache__/
+.venv/
+build/
+
+# OS / editor
+.DS_Store
+*.swp
+
+# Pages build output (generated)
+site/_build/
+brand-guide.pdf.tmp

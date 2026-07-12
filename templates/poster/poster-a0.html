@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTEUS A0 Poster Template — Thermocline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens/tokens.css">
+<style>
+  /* A0 portrait @ 96dpi: 3179 × 4494 px (841 × 1189 mm). Print at 100%. */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #3a3f45; }
+  .poster {
+    width: 3179px; height: 4494px;
+    margin: 0 auto;
+    background: var(--pt-paper);
+    color: var(--pt-ink);
+    font-family: var(--pt-font-body);
+    display: flex; flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+  }
+  @media print { body { background: none; } .poster { margin: 0; } }
+  a { color: var(--pt-ocean); } a:hover { color: var(--pt-abyss); }
+
+  /* ---------- header ---------- */
+  .head {
+    background: var(--pt-void); color: var(--pt-text-d);
+    padding: 130px 140px 110px;
+    position: relative;
+  }
+  .head .conf { font-family: var(--pt-font-mono); font-size: 40px; letter-spacing: 0.2em; color: var(--pt-azure); }
+  .head h1 { font-family: var(--pt-font-display); font-weight: 800; font-size: 168px; letter-spacing: -0.025em; line-height: 1.06; max-width: 2450px; margin-top: 56px; }
+  .head h1 em { font-style: normal; color: var(--pt-magma); }
+  .head .authors { font-size: 62px; font-weight: 600; margin-top: 72px; }
+  .head .affil { font-size: 46px; color: var(--pt-text-d2); margin-top: 22px; }
+  .head .lockup { position: absolute; top: 120px; right: 140px; display: flex; flex-direction: column; }
+  .head .lockup .word { display: flex; align-items: center; font-family: var(--pt-font-display); font-weight: 800; font-size: 120px; letter-spacing: 0.01em; line-height: 1; color: var(--pt-paper); }
+  .head .lockup .word img { height: 1.06em; width: auto; margin: 0 0.015em 0 0.03em; transform: translateY(0.011em); }
+  .head .lockup .tag { font-family: var(--pt-font-mono); font-weight: 500; font-size: 21px; letter-spacing: 0.52em; color: var(--pt-azure); align-self: flex-end; margin-top: 18px; }
+  .head-band { height: 16px; background: var(--pt-grad-phase); }
+
+  /* ---------- content grid ---------- */
+  .grid {
+    flex: 1; min-height: 0;
+    display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto 1fr auto;
+    gap: 90px; padding: 110px 140px;
+  }
+  .block { min-width: 0; }
+  .block h2 {
+    font-family: var(--pt-font-display); font-weight: 700; font-size: 76px; letter-spacing: -0.015em;
+    padding-bottom: 28px; border-bottom: 4px solid var(--pt-ink); margin-bottom: 44px;
+  }
+  .block h2 .n { color: var(--pt-crimson); margin-right: 20px; }
+  .block p, .block li { font-size: 44px; line-height: 1.45; color: var(--pt-ink-2); }
+  .block p + p { margin-top: 30px; }
+  .block b { color: var(--pt-ink); font-weight: 600; }
+  .block ul { padding-left: 0; list-style: none; display: grid; gap: 26px; }
+  .block li { display: grid; grid-template-columns: 64px 1fr; align-items: baseline; }
+  .block li::before { content: ""; width: 40px; height: 8px; background: var(--pt-crimson); border-radius: 3px; transform: translateY(-12px); }
+
+  .fig { background: var(--pt-paper-2); border: 2px solid var(--pt-line-l); border-radius: 6px; padding: 30px; margin-top: 44px; }
+  .fig .slot { height: 900px; width: 100%; position: relative; }
+  .fig .slot image-slot { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .fig .cap { font-family: var(--pt-font-mono); font-size: 30px; letter-spacing: 0.1em; color: var(--pt-ink-3); margin-top: 26px; }
+
+  .mods { display: grid; gap: 22px; margin-top: 44px; }
+  .mod { display: grid; grid-template-columns: 56px 1fr; gap: 28px; align-items: center; }
+  .mod i { width: 56px; height: 14px; border-radius: 4px; font-style: normal; }
+  .mod span { font-size: 40px; color: var(--pt-ink-2); }
+  .mod span b { color: var(--pt-ink); }
+
+  .takeaway {
+    grid-column: 1 / -1;
+    background: var(--pt-void); color: var(--pt-text-d);
+    border-radius: 8px; padding: 90px 110px;
+    display: grid; grid-template-columns: auto 1fr; gap: 90px; align-items: center;
+  }
+  .takeaway img { width: 260px; }
+  .takeaway .kicker { font-family: var(--pt-font-mono); font-size: 36px; letter-spacing: 0.2em; color: var(--pt-azure); }
+  .takeaway h3 { font-family: var(--pt-font-display); font-weight: 800; font-size: 104px; letter-spacing: -0.02em; line-height: 1.1; margin-top: 30px; }
+  .takeaway h3 em { font-style: normal; color: var(--pt-magma); }
+
+  /* ---------- footer ---------- */
+  .foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 70px 140px 90px; border-top: 2px solid var(--pt-line-l);
+  }
+  .foot .refs { font-size: 34px; line-height: 1.6; color: var(--pt-ink-2); max-width: 1900px; }
+  .foot .contact { display: flex; align-items: center; gap: 70px; }
+  .foot .contact .qr { width: 300px; height: 300px; }
+  .foot .contact .links { font-family: var(--pt-font-mono); font-size: 34px; line-height: 2; color: var(--pt-ink-2); text-align: right; }
+  .foot-band { height: 16px; background: var(--pt-grad-phase); }
+
+  /* ---------- light/dark toggle (screen only) ---------- */
+  .poster-toggle { position: fixed; top: 20px; right: 20px; z-index: 100; display: inline-flex; align-items: center; gap: 8px; font-family: var(--pt-font-mono); font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase; padding: 10px 16px; border: 1px solid var(--pt-line-l); border-radius: 6px; background: #fff; color: var(--pt-ink-2); cursor: pointer; box-shadow: 0 4px 16px -6px rgba(0,0,0,0.4); }
+  .poster-toggle:hover { border-color: var(--pt-ocean); color: var(--pt-ocean); }
+  @media print { .poster-toggle { display: none; } }
+
+  /* ---------- DARK poster variant ---------- */
+  .ta-glyph.ta-dark { display: none; }
+  html[data-poster-theme="dark"] .poster { background: var(--pt-void); color: var(--pt-paper); }
+  html[data-poster-theme="dark"] .head { background: var(--pt-basalt); }
+  html[data-poster-theme="dark"] .block h2 { border-bottom-color: var(--pt-line-d); color: var(--pt-paper); }
+  html[data-poster-theme="dark"] .block p, html[data-poster-theme="dark"] .block li, html[data-poster-theme="dark"] .mod span { color: var(--pt-text-d2); }
+  html[data-poster-theme="dark"] .block b, html[data-poster-theme="dark"] .mod span b { color: var(--pt-paper); }
+  html[data-poster-theme="dark"] .fig { background: var(--pt-basalt); border-color: var(--pt-line-d); }
+  html[data-poster-theme="dark"] .fig .cap { color: var(--pt-text-d3); }
+  html[data-poster-theme="dark"] .takeaway { background: var(--pt-basalt); }
+  html[data-poster-theme="dark"] .foot { border-top-color: var(--pt-line-d); }
+  html[data-poster-theme="dark"] .foot .refs, html[data-poster-theme="dark"] .foot .contact .links { color: var(--pt-text-d2); }
+  html[data-poster-theme="dark"] .ta-glyph.ta-light { display: none; }
+  html[data-poster-theme="dark"] .ta-glyph.ta-dark { display: block; }
+</style>
+</head>
+<body>
+
+<div class="poster">
+  <div class="head">
+    <div class="conf">EXOPLANETS V · CAMBRIDGE · JULY 2026 · POSTER 142</div>
+    <h1>Tides keep the <em>magma oceans</em> of super-Earths alive for billions of years</h1>
+    <div class="authors">Harrison Nicholls¹, Claire Marie Guimond², Tim Lichtenberg³</div>
+    <div class="affil">¹ University of Oxford · ² University of Cambridge · ³ Kapteyn Astronomical Institute, University of Groningen</div>
+    <div class="lockup">
+      <div class="word">PR<img src="../../logo/glyph/glyph_phase_dark.png" alt="O">TEUS</div>
+      <div class="tag">framework</div>
+    </div>
+  </div>
+  <div class="head-band"></div>
+
+  <div class="grid">
+    <div class="block">
+      <h2><span class="n">01</span>Why it matters</h2>
+      <p>Rocky exoplanets accessible to JWST often lie on close-in orbits where <b>tidal heating is significant</b>. As a long-term energy source for mantle melting and outgassing, tides can replenish lost atmospheres on planets around active M-dwarfs.</p>
+      <p>The L 98-59 system is the prime testbed: three rocky planets, strong mutual forcing, and fresh JWST spectra.</p>
+      <div class="fig">
+        <div class="slot"><image-slot id="poster-fig-context" fit="contain" shape="rounded" radius="4" placeholder="Drop context figure (system architecture)"></image-slot></div>
+        <div class="cap">FIG 1 · THE L 98-59 SYSTEM · ORBITS TO SCALE</div>
+      </div>
+    </div>
+
+    <div class="block">
+      <h2><span class="n">02</span>Model</h2>
+      <p>We simulate coupled evolution with <b>PROTEUS</b>, one module per physical domain, boundary conditions exchanged every timestep:</p>
+      <div class="mods">
+        <div class="mod"><i style="background: var(--pt-dom-interior);"></i><span><b>SPIDER</b> — magma ocean energy transport</span></div>
+        <div class="mod"><i style="background: var(--pt-dom-atmos);"></i><span><b>AGNI</b> — radiative-convective atmosphere</span></div>
+        <div class="mod"><i style="background: var(--pt-dom-outgassing);"></i><span><b>CALLIOPE</b> — redox-controlled outgassing</span></div>
+        <div class="mod"><i style="background: var(--pt-dom-tidal);"></i><span><b>LovePy</b> — tidal dissipation</span></div>
+        <div class="mod"><i style="background: var(--pt-dom-stellar);"></i><span><b>MORS</b> — stellar XUV evolution</span></div>
+      </div>
+      <div class="fig">
+        <div class="slot"><image-slot id="poster-fig-method" fit="contain" shape="rounded" radius="4" placeholder="Drop schematic (architecture diagram)"></image-slot></div>
+        <div class="cap">FIG 2 · COUPLING ARCHITECTURE · ONE TIMESTEP</div>
+      </div>
+    </div>
+
+    <div class="block">
+      <h2><span class="n">03</span>Results</h2>
+      <ul>
+        <li><p>A novel <b>radiation–tide–rheology feedback</b> self-limits tidal heating to ~100× below previous estimates.</p></li>
+        <li><p>Self-limited heating still <b>extends primordial magma oceans to Gyr timescales</b>.</p></li>
+        <li><p>L 98-59 b is likely molten <b>today</b>, even without an atmosphere.</p></li>
+      </ul>
+      <div class="fig">
+        <div class="slot"><image-slot id="poster-fig-results" fit="contain" shape="rounded" radius="4" placeholder="Drop results figure (proteus-mpl light)"></image-slot></div>
+        <div class="cap">FIG 3 · MELT FRACTION VS TIME · TIDAL POWER SWEEP</div>
+      </div>
+    </div>
+
+    <div class="takeaway">
+      <img class="ta-glyph ta-light" src="../../logo/glyph/glyph_phase_light.png" alt="" style="filter: none;">
+      <img class="ta-glyph ta-dark" src="../../logo/glyph/glyph_phase_dark.png" alt="" style="filter: none;">
+      <div>
+        <div class="kicker">TAKEAWAY</div>
+        <h3>Tidal heating regulates itself — but still keeps close-in rocky planets <em>molten</em> for billions of years.</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="refs">
+      <b>References</b> — Nicholls et al. 2025, MNRAS 541, 2566 · Nicholls et al. 2026, Nat. Astron. 10, 809 · Lichtenberg et al. 2021, JGR Planets 126 · Code: github.com/FormingWorlds/PROTEUS
+    </div>
+    <div class="contact">
+      <div class="links">
+        proteus-framework.org<br>
+        proteus_dev@formingworlds.space
+      </div>
+      <div class="qr"><image-slot id="poster-qr" fit="contain" shape="rounded" radius="4" placeholder="QR"></image-slot></div>
+    </div>
+  </div>
+  <div class="foot-band"></div>
+</div>
+
+<button class="poster-toggle" type="button" aria-label="Toggle poster light or dark theme">Dark / Light</button>
+
+<script>
+(function () {
+  var r = document.documentElement, K = 'pt-poster-theme';
+  try { if (localStorage.getItem(K) === 'dark') r.setAttribute('data-poster-theme', 'dark'); } catch (e) {}
+  document.addEventListener('DOMContentLoaded', function () {
+    var b = document.querySelector('.poster-toggle');
+    if (!b) return;
+    b.addEventListener('click', function () {
+      var dark = r.getAttribute('data-poster-theme') === 'dark';
+      if (dark) r.removeAttribute('data-poster-theme'); else r.setAttribute('data-poster-theme', 'dark');
+      try { localStorage.setItem(K, dark ? 'light' : 'dark'); } catch (e) {}
+    });
+  });
+})();
+</script>
+<script src="../deck/image-slot.js"></script>
+</body>
+</html>

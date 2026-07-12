@@ -1,0 +1,51 @@
+# Contributing to the PROTEUS Visual Language
+
+Thanks for helping keep the PROTEUS identity coherent. A few ground rules keep
+the system from drifting.
+
+## Golden rule: tokens are the source of truth
+
+Every colour, font, size, radius, and shadow lives in
+[`tokens/tokens.css`](tokens/tokens.css). If you need a value, use a token. If
+the value doesn't exist yet, **add it to the tokens first**, then regenerate the
+derived formats (see below) — never hard-code a raw hex or px in a stylesheet or
+template.
+
+### Regenerate derived token formats
+
+`tokens.json` and `tokens.scss` are generated from `tokens.css`. After editing
+`tokens.css`, regenerate them (a small script, or by hand for a one-off) and
+commit all three together. CI checks they are in sync.
+
+## What must not change without a design review
+
+- **Glyph geometry.** The phase glyph's concentric-ring construction is fixed.
+  Recolour it (colorways live in `logo/glyph/`); never redraw it.
+- **The three typefaces.** Sora, Instrument Sans, Spline Sans Mono. Never
+  Space Grotesk or JetBrains Mono (Interra's fonts) — distinctness from the
+  sibling project is a requirement.
+- **The module domain colours.** They are stable and colour-blind-checked as a
+  set (see [`docs/module-colors.md`](docs/module-colors.md)). Don't remap or
+  extend them without re-running the CVD ΔE check.
+- **The phase gradient direction.** Always hot-left → cold-right.
+
+## Proposing a change
+
+1. Open an issue describing the change and why the current system doesn't cover
+   it. Attach a screenshot or mock.
+2. For anything touching the four items above, wait for a maintainer's ✅ before
+   a PR — these are deliberate constraints, not oversights.
+3. Keep PRs scoped: a token change, a new template, or a doc fix — not all
+   three at once.
+
+## Releasing
+
+Tag the release date as `YY.MM.DD` (CalVer, matching the wider PROTEUS
+ecosystem, e.g. `26.07.12`). The release workflow publishes
+`@formingworlds/proteus-tokens` to npm and `proteus-mpl` to PyPI, and
+redeploys the brand guide to GitHub Pages. Before tagging, set the same
+date (without leading zeros, e.g. `26.7.12`, as npm and PyPI require) in
+`tokens/package.json` and `figures/proteus-mpl/pyproject.toml`, and bump
+`CHANGELOG.md` in the same PR.
+
+Questions: proteus_dev@formingworlds.space

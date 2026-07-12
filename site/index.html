@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTEUS Visual Language v1.0 — Thermocline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../tokens/tokens.css">
+<style>
+  deck-stage:not(:defined) { visibility: hidden; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  section {
+    font-family: var(--pt-font-body);
+    background: var(--pt-void);
+    color: var(--pt-text-d);
+    -webkit-font-smoothing: antialiased;
+  }
+  section.light { background: var(--pt-paper); color: var(--pt-ink); }
+
+  a { color: var(--pt-azure); } a:hover { color: var(--pt-ice); }
+
+  .plate { position: absolute; inset: 0; padding: 90px 110px; display: flex; flex-direction: column; }
+  .plate-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 56px; }
+  .plate-eyebrow { font-family: var(--pt-font-mono); font-size: 22px; letter-spacing: 0.22em; color: var(--pt-azure); }
+  .light .plate-eyebrow { color: var(--pt-ocean); }
+  .plate-num { font-family: var(--pt-font-mono); font-size: 22px; color: var(--pt-text-d3); }
+  .light .plate-num { color: var(--pt-ink-3); }
+  h2.plate-title { font-family: var(--pt-font-display); font-weight: 800; font-size: 64px; letter-spacing: -0.025em; line-height: 1.05; margin-bottom: 40px; }
+  .body { font-size: 27px; line-height: 1.55; color: var(--pt-text-d2); max-width: 1100px; }
+  .light .body { color: var(--pt-ink-2); }
+  .mono-cap { font-family: var(--pt-font-mono); font-size: 20px; letter-spacing: 0.14em; color: var(--pt-text-d3); }
+  .light .mono-cap { color: var(--pt-ink-3); }
+
+  .lockup { display: inline-flex; flex-direction: column; }
+  .lockup .word { display: flex; align-items: center; font-family: var(--pt-font-display); font-weight: 800; letter-spacing: 0.01em; line-height: 1; }
+  .lockup .word img { height: 1.06em; width: auto; margin: 0 0.015em 0 0.03em; transform: translateY(0.011em); }
+  .lockup .tag { font-family: var(--pt-font-mono); font-weight: 500; letter-spacing: 0.52em; align-self: flex-end; line-height: 1; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; flex: 1; min-height: 0; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; flex: 1; min-height: 0; }
+
+  .card { background: var(--pt-basalt); border: var(--pt-border-d); border-radius: var(--pt-r-2); padding: 36px 40px; }
+  .light .card { background: var(--pt-paper-2); border: var(--pt-border-l); }
+
+  .kv { display: grid; grid-template-columns: 260px 1fr; gap: 18px 28px; font-size: 24px; }
+  .kv .k { font-family: var(--pt-font-mono); font-size: 19px; letter-spacing: 0.1em; color: var(--pt-azure); padding-top: 4px; }
+  .kv .v { color: var(--pt-text-d2); line-height: 1.5; }
+  .kv .v b { color: var(--pt-text-d); font-weight: 600; }
+</style>
+</head>
+<body>
+<deck-stage width="1920" height="1080">
+
+  <!-- 01 · COVER -->
+  <section data-label="Cover">
+    <div class="plate" style="justify-content: center; align-items: flex-start;">
+      <div class="lockup" style="font-size: 190px;">
+        <div class="word" style="color: var(--pt-paper);">PR<img src="../logo/glyph/glyph_phase_dark.png" alt="O">TEUS</div>
+        <div class="tag" style="font-size: 33px; color: var(--pt-azure); margin-top: 24px; margin-right: 8px;">framework</div>
+      </div>
+      <div style="margin-top: 110px; display: flex; align-items: baseline; gap: 48px;">
+        <div style="font-family: var(--pt-font-display); font-weight: 700; font-size: 44px; letter-spacing: -0.02em;">Visual Language</div>
+        <div class="mono-cap">V1.0 · THERMOCLINE · JULY 2026</div>
+      </div>
+      <div style="position: absolute; left: 110px; right: 110px; bottom: 90px; height: 10px; background: var(--pt-grad-phase); border-radius: 2px;"></div>
+    </div>
+  </section>
+
+  <!-- 02 · THE STORY -->
+  <section data-label="Story">
+    <div class="plate">
+      <div class="plate-head"><div class="plate-eyebrow">FOUNDATION</div><div class="plate-num">02</div></div>
+      <h2 class="plate-title">One story: magma ocean → water world.</h2>
+      <div class="grid2">
+        <div class="body">
+          <p>PROTEUS simulates how rocky planets cool from fully molten beginnings into potentially habitable, water-bearing worlds. The identity encodes that single transition everywhere:</p>
+          <p style="margin-top: 32px;"><b style="color:var(--pt-magma);">Magma red</b> is the hot state — rare, high-energy, used for signals and hot data.<br>
+          <b style="color:var(--pt-text-d);">Void black</b> is deep time and space — the default surface.<br>
+          <b style="color:var(--pt-azure);">Ocean blue</b> is the cool state — interactive, living, the destination.</p>
+          <p style="margin-top: 32px;">Every artifact — a slide, a figure, the docs, a sticker — reads hot → cold, inside → out, past → future.</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 28px; justify-content: center;">
+          <div style="height: 120px; border-radius: 4px; background: var(--pt-grad-phase);"></div>
+          <div class="mono-cap" style="display: flex; justify-content: space-between;"><span>MAGMA · 4.5 GYR AGO</span><span>VOID</span><span>OCEAN · TODAY</span></div>
+          <div style="display: flex; gap: 40px; align-items: center; margin-top: 24px;">
+            <img src="../logo/glyph/glyph_phase_dark.png" alt="" style="width: 200px;">
+            <div class="body" style="font-size: 24px;">The glyph is the story in miniature: a molten core cooling outward through concentric rings into ice-blue. Hot inside, cool outside — never reversed.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 · LOGO CONSTRUCTION -->
+  <section data-label="Logo · Construction">
+    <div class="plate">
+      <div class="plate-head"><div class="plate-eyebrow">LOGO</div><div class="plate-num">03</div></div>
+      <h2 class="plate-title">Construction</h2>
+      <div class="grid2">
+        <div style="display:flex; flex-direction:column; gap:40px;">
+          <div style="background: var(--pt-basalt); border: var(--pt-border-d); border-radius: 4px; padding: 60px 50px; display:flex; justify-content:center;">
+            <div class="lockup" style="font-size: 108px;">
+              <div class="word" style="color: var(--pt-paper);">PR<img src="../logo/glyph/glyph_phase_dark.png" alt="O">TEUS</div>
+              <div class="tag" style="font-size: 19px; color: var(--pt-azure); margin-top: 14px; margin-right: 4px;">framework</div>
+            </div>
+          </div>
+          <div class="mono-cap">PRIMARY LOCKUP · DARK SURFACE</div>
+        </div>
+        <div class="kv">
+          <div class="k">GLYPH</div><div class="v"><b>Invariant geometry.</b> Never redrawn, rotated, mirrored, or reproportioned. Reproduce only from master assets. Color is the only variable.</div>
+          <div class="k">WORDMARK</div><div class="v"><b>Sora ExtraBold (800), all caps</b>, letter-spacing +1%. The glyph replaces the O at 1.06× type size — outer arcs overshoot the cap height.</div>
+          <div class="k">LETTERS</div><div class="v">Paper <b>#F2F5F7</b> on dark · Ink <b>#10151B</b> on light. Letters never carry color; the glyph does.</div>
+          <div class="k">TAG</div><div class="v">"framework" — Spline Sans Mono Medium, lowercase, tracked +52%, right-aligned under TEUS. Drop below 200px lockup width.</div>
+          <div class="k">CLEARSPACE</div><div class="v">1× cap height on all sides, minimum.</div>
+          <div class="k">MINIMUM</div><div class="v">Lockup ≥ 90px wide on screen · ≥ 30mm in print. Below: glyph + side-set name, or glyph alone.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 · LOGO COLORWAYS -->
+  <section data-label="Logo · Colorways">
+    <div class="plate">
+      <div class="plate-head"><div class="plate-eyebrow">LOGO</div><div class="plate-num">04</div></div>
+      <h2 class="plate-title">Colorways</h2>
+      <div class="grid3" style="grid-template-rows: 1fr 1fr; gap: 24px;">
+        <div style="background: var(--pt-basalt); border: var(--pt-border-d); border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px;">
+          <div class="lockup" style="font-size: 58px;"><div class="word" style="color:var(--pt-paper);">PR<img src="../logo/glyph/glyph_phase_dark.png" alt="O">TEUS</div></div>
+          <div class="mono-cap">PHASE · PRIMARY ON DARK</div>
+        </div>
+        <div style="background: var(--pt-paper); border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px;">
+          <div class="lockup" style="font-size: 58px;"><div class="word" style="color:var(--pt-ink);">PR<img src="../logo/glyph/glyph_phase_light.png" alt="O">TEUS</div></div>
+          <div class="mono-cap" style="color:var(--pt-ink-3);">PHASE · PRIMARY ON LIGHT</div>
+        </div>
+        <div style="background: var(--pt-basalt); border: var(--pt-border-d); border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px;">
+          <div class="lockup" style="font-size: 58px;"><div class="word" style="color:var(--pt-paper);">PR<img src="../logo/glyph/glyph_paper.png" alt="O">TEUS</div></div>
+          <div class="mono-cap">MONO LIGHT · SINGLE COLOR</div>
+        </div>
+        <div style="background: var(--pt-paper); border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px;">
+          <div class="lockup" style="font-size: 58px;"><div class="word" style="color:var(--pt-ink);">PR<img src="../logo/glyph/glyph_ink.png" alt="O">TEUS</div></div>
+          <div class="mono-cap" style="color:var(--pt-ink-3);">MONO INK · SINGLE COLOR</div>
+        </div>
+        <div style="background: var(--pt-basalt); border: var(--pt-border-d); border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px;">
+          <div class="lockup" style="font-size: 58px;"><div class="word" style="color:var(--pt-paper);">PR<img src="../logo/glyph/glyph_magma.png" alt="O">TEUS</div></div>
+          <div class="mono-cap">MAGMA · HOT CONTEXTS</div>
+        </div>
+        <div style="background: var(--pt-basalt); border: var(--pt-border-d); border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px;">
+          <div class="lockup" style="font-size: 58px;"><div class="word" style="color:var(--pt-paper);">PR<img src="../logo/glyph/glyph_ice.png" alt="O">TEUS</div></div>
+          <div class="mono-cap">ICE · COOL CONTEXTS</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 · LOGO RULES -->
+  <section data-label="Logo · Rules">
+    <div class="plate">
+      <div class="plate-head"><div class="plate-eyebrow">LOGO</div><div class="plate-num">05</div></div>
+      <h2 class="plate-title">Rules</h2>
+      <div class="grid2">
+        <div class="card">
+          <div class="mono-cap" style="color: var(--pt-positive); margin-bottom: 28px;">DO</div>
+          <ul class="body" style="font-size: 25px; padding-left: 36px; display: grid; gap: 20px;">
+            <li>Reproduce the glyph only from master assets (<span class="pt-mono" style="font-size:21px;">assets/logo/</span>).</li>
+            <li>Match the colorway to the surface: phase on Void/Paper, mono elsewhere.</li>
+            <li>Use glyph-only below 90px, and for avatars, favicons, stickers.</li>
+            <li>Keep 1× cap-height clearspace on all sides.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="mono-cap" style="color: var(--pt-magma); margin-bottom: 28px;">DON'T</div>
+          <ul class="body" style="font-size: 25px; padding-left: 36px; display: grid; gap: 20px;">
+            <li>Don't set the wordmark in any face but Sora, or in mixed case.</li>
+            <li>Don't reverse the gradient — cool core / hot rim is wrong physics.</li>
+            <li>Don't add glows, shadows, or outlines to the mark.</li>
+            <li>Don't place the phase glyph on mid-tone or busy surfaces.</li>
+            <li>Don't rebuild the glyph from circles, arcs, or AI generations.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 · COLOR CORE -->
+  <section data-label="Color · Core">
+    <div class="plate">
+      <div class="plate-head"><div class="plate-eyebrow">COLOR</div><div class="plate-num">06</div></div>
+      <h2 class="plate-title">Core palette</h2>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; flex: 1;">
+        <div>
+          <div style="height: 190px; border-radius: 4px; background: #05070B; border: 1px solid #1A2230;"></div>
+          <div style="margin-top: 18px; font-family: var(--pt-font-display); font-weight: 700; font-size: 30px;">Void</div>
+          <div class="mono-cap" style="margin-top: 6px;">#05070B · SURFACE (DARK)</div>
+          <div class="body" style="font-size: 22px; margin-top: 10px;">Default background. Basalt #0E131B for cards.</div>
+        </div>
+        <div>
+          <div style="height: 190px; border-radius: 4px; background: #E23D28;"></div>
+          <div style="margin-top: 18px; font-family: var(--pt-font-display); font-weight: 700; font-size: 30px;">Magma</div>
+          <div class="mono-cap" style="margin-top: 6px;">#E23D28 · HOT SIGNAL</div>
+          <div class="body" style="font-size: 22px; margin-top: 10px;">One hot moment per surface. Mantle #8E1F12 for fills; Crimson #C2362B on light.</div>
+        </div>
+        <div>
+          <div style="height: 190px; border-radius: 4px; background: #1B6FA8;"></div>
+          <div style="margin-top: 18px; font-family: var(--pt-font-display); font-weight: 700; font-size: 30px;">Ocean</div>
+          <div class="mono-cap" style="margin-top: 6px;">#1B6FA8 · INTERACTIVE</div>
+          <div class="body" style="font-size: 22px; margin-top: 10px;">Links, actions. Azure #4FA3D9 on dark; Abyss #14406B deep accents; Ice #A8D4E8 highlights.</div>
+        </div>
+        <div>
+          <div style="height: 190px; border-radius: 4px; background: #F2F5F7;"></div>
+          <div style="margin-top: 18px; font-family: var(--pt-font-display); font-weight: 700; font-size: 30px;">Paper</div>
+          <div class="mono-cap" style="margin-top: 6px;">#F2F5F7 · SURFACE (LIGHT)</div>
+          <div class="body" style="font-size: 22px; margin-top: 10px;">Cool white for documents and light mode. Ink #10151B for text. Never pure white or pure black.</div>
+        </div>
+      </div>
+      <div class="mono-cap" style="margin-top: 30px;">DARK-FIRST · LIGHT MODE IS THE MIRROR, NOT THE DEFAULT · NO WARM CREAMS, NO AMBER (INTERRA TERRITORY)</div>
+    </div>
+  </section>
+
+  <!-- 07 · COLOR DATA -->
+  <section data-label="Color · Data">
+    <div class="plate">
+      <div class="plate-head"><div class="plate-eyebrow">COLOR</div><div class="plate-num">07</div></div>
+      <h2 class="plate-title">Data &amp; module colors</h2>
+      <div class="grid2">
+        <div>
+          <div class="mono-cap" style="margin-bottom: 20px;">PHASE RAMP · DIVERGING · HOT ↔ COLD THROUGH VOID</div>
+          <div style="height: 90px; border-radius: 4px; background: var(--pt-grad-phase);"></div>
+          <div style="display:flex; justify-content:space-between; margin-top: 12px;" class="mono-cap"><span>#E23D28</span><span>#05070B</span><span>#A8D4E8</span></div>
+          <div class="body" style="font-size: 23px; margin-top: 36px;">Use for anomalies, residuals, temperature fields. A sequential ramp (Void → Ice) and both reversals ship in <span class="pt-mono" style="font-size:20px;">proteus-mpl</span>. Every figure quietly repeats the logo.</div>
+        </div>
+        <div>
+          <div class="mono-cap" style="margin-bottom: 20px;">MODULE DOMAINS · STABLE ACROSS ALL PAPERS &amp; TALKS · CVD-CHECKED (MACHADO 2009, MIN ΔE 16.4)</div>
+          <div style="display: grid; gap: 14px;">
+            <div style="display:flex; align-items:center; gap:20px;"><div style="width:52px; height:36px; border-radius:3px; background:#E23D28;"></div><div style="font-size:24px;"><b>Interior</b> <span style="color:var(--pt-text-d3);">— SPIDER · Aragog · Zalmoxis</span></div></div>
+            <div style="display:flex; align-items:center; gap:20px;"><div style="width:52px; height:36px; border-radius:3px; background:#A03123;"></div><div style="font-size:24px;"><b>Outgassing</b> <span style="color:var(--pt-text-d3);">— CALLIOPE · Atmodeller</span></div></div>
+            <div style="display:flex; align-items:center; gap:20px;"><div style="width:52px; height:36px; border-radius:3px; background:#593E74;"></div><div style="font-size:24px;"><b>Tidal</b> <span style="color:var(--pt-text-d3);">— LovePy · Obliqua</span></div></div>
+            <div style="display:flex; align-items:center; gap:20px;"><div style="width:52px; height:36px; border-radius:3px; background:#1B6FA8;"></div><div style="font-size:24px;"><b>Chemistry &amp; escape</b> <span style="color:var(--pt-text-d3);">— VULCAN · ZEPHYRUS</span></div></div>
+            <div style="display:flex; align-items:center; gap:20px;"><div style="width:52px; height:36px; border-radius:3px; background:#4FA3D9;"></div><div style="font-size:24px;"><b>Atmosphere</b> <span style="color:var(--pt-text-d3);">— AGNI · JANUS</span></div></div>
+            <div style="display:flex; align-items:center; gap:20px;"><div style="width:52px; height:36px; border-radius:3px; background:#A8D4E8;"></div><div style="font-size:24px;"><b>Stellar</b> <span style="color:var(--pt-text-d3);">— MORS</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 · TYPOGRAPHY -->
+  <section data-label="Type · Faces">
+    <div class="plate">
+      <div class="plate-head"><div class="plate-eyebrow">TYPOGRAPHY</div><div class="plate-num">08</div></div>
+      <h2 class="plate-title">Three faces, strict roles</h2>
+      <div class="grid3">
+        <div class="card">
+          <div style="font-family: var(--pt-font-display); font-weight: 800; font-size: 96px; letter-spacing:-0.03em; line-height:1;">Aa</div>
+          <div style="font-family: var(--pt-font-display); font-weight:700; font-size: 32px; margin-top: 28px;">Sora</div>
+          <div class="mono-cap" style="margin-top: 8px; color: var(--pt-azure);">DISPLAY · 600–800</div>
+          <div class="body" style="font-size: 23px; margin-top: 20px;">Titles, headings, the wordmark. Tracking −2.5% at display sizes. Never italic; never below 20px.</div>
+        </div>
+        <div class="card">
+          <div style="font-weight: 500; font-size: 96px; line-height:1;">Aa</div>
+          <div style="font-family: var(--pt-font-display); font-weight:700; font-size: 32px; margin-top: 28px;">Instrument Sans</div>
+          <div class="mono-cap" style="margin-top: 8px; color: var(--pt-azure);">BODY · UI · 400–600</div>
+          <div class="body" style="font-size: 23px; margin-top: 20px;">Prose, documentation, interface text. Comfortable at density; 1.55 line-height for long-form.</div>
+        </div>
+        <div class="card">
+          <div style="font-family: var(--pt-font-mono); font-weight: 500; font-size: 96px; line-height:1;">Aa</div>
+          <div style="font-family: var(--pt-font-display); font-weight:700; font-size: 32px; margin-top: 28px;">Spline Sans Mono</div>
+          <div class="mono-cap" style="margin-top: 8px; color: var(--pt-azure);">CODE · LABELS · DATA</div>
+          <div class="body" style="font-size: 23px; margin-top: 20px;">Code, axis labels, eyebrows, captions, versions, timestamps. A PROTEUS signature — use it generously for metadata.</div>
+        </div>
+      </div>
+      <div class="mono-cap" style="margin-top: 30px;">SCALE · 12 / 13 / 14 / 16 / 18 / 20 / 24 / 32 / 44 / 60 / 84 / 120 PX · NOT SPACE GROTESK, NOT JETBRAINS MONO (INTERRA)</div>
+    </div>
+  </section>
+
+  <!-- 09 · TYPE IN USE -->
+  <section data-label="Type · In use">
+    <div class="plate">
+      <div class="plate-head"><div class="plate-eyebrow">TYPOGRAPHY</div><div class="plate-num">09</div></div>
+      <h2 class="plate-title">In use</h2>
+      <div class="grid2">
+        <div>
+          <div class="mono-cap" style="color: var(--pt-azure); letter-spacing: 0.22em;">RESULTS · GENERATION 3 · L 98-59 D</div>
+          <div style="font-family: var(--pt-font-display); font-weight: 800; font-size: 58px; letter-spacing: -0.025em; line-height: 1.06; margin-top: 20px;">Volatile-rich evolution of a molten <span style="color: var(--pt-magma);">super-Earth</span></div>
+          <div class="body" style="font-size: 24px; margin-top: 26px;">Observations are explained by a chemically-reducing mantle and early substantial sulfur and hydrogen content — inconsistent with both the gas-dwarf and water-world origin scenarios.</div>
+          <div class="mono-cap" style="margin-top: 26px;">NICHOLLS ET AL. 2026 · NATURE ASTRONOMY 10, 809</div>
+        </div>
+        <div class="card" style="background: #05070B; font-family: var(--pt-font-mono); font-size: 22px; line-height: 1.75; color: var(--pt-ice); align-self: start;">
+          <div style="color: var(--pt-text-d3);"># configure the atmosphere module</div>
+          <div><span style="color: var(--pt-magma);">[atmos]</span></div>
+          <div>module &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = <span style="color: var(--pt-azure);">"agni"</span></div>
+          <div>surface_pressure = 260e5 &nbsp;<span style="color: var(--pt-text-d3);"># Pa</span></div>
+          <div>spectral_bands &nbsp;&nbsp;= <span style="color: var(--pt-azure);">48</span></div>
+          <div style="margin-top: 24px; color: var(--pt-text-d3);"># eyebrow / label conventions</div>
+          <div style="letter-spacing: 0.18em; color: var(--pt-text-d2);">EYEBROWS · TRACKED +18% · UPPERCASE</div>
+          <div style="letter-spacing: 0.52em; color: var(--pt-text-d2);">tags · +52%</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · MOTIFS -->
+  <section data-label="Motifs">
+    <div class="plate">
+      <div class="plate-head"><div class="plate-eyebrow">MOTIFS</div><div class="plate-num">10</div></div>
+      <h2 class="plate-title">Rings, ramp, hairlines</h2>
+      <div class="grid3">
+        <div class="card" style="display:flex; flex-direction:column; gap: 24px;">
+          <img src="../logo/glyph/glyph_phase_dark.png" alt="" style="width: 180px; align-self:center; margin-top: 12px;">
+          <div><div style="font-family:var(--pt-font-display); font-weight:700; font-size:28px;">Concentric rings</div>
+          <div class="body" style="font-size: 22px; margin-top: 10px;">The glyph, oversized and cropped at edges, is the only decorative element. Use one per surface, at low prominence, never rotated.</div></div>
+        </div>
+        <div class="card" style="display:flex; flex-direction:column; gap: 24px;">
+          <div style="height: 148px; margin-top:12px; border-radius: 3px; background: var(--pt-grad-phase);"></div>
+          <div><div style="font-family:var(--pt-font-display); font-weight:700; font-size:28px;">Phase band</div>
+          <div class="body" style="font-size: 22px; margin-top: 10px;">A thin (4–10px) horizontal ramp marks openings and closings: slide footers, page ends, section breaks. Always hot-left, cold-right.</div></div>
+        </div>
+        <div class="card" style="display:flex; flex-direction:column; gap: 24px;">
+          <div style="height: 148px; margin-top:12px; display:flex; flex-direction:column; justify-content:space-evenly;">
+            <div style="height:1px; background: var(--pt-line-d);"></div>
+            <div style="height:1px; background: var(--pt-line-d);"></div>
+            <div style="height:2px; background: var(--pt-magma); width: 20%;"></div>
+            <div style="height:1px; background: var(--pt-line-d);"></div>
+          </div>
+          <div><div style="font-family:var(--pt-font-display); font-weight:700; font-size:28px;">Hairlines</div>
+          <div class="body" style="font-size: 22px; margin-top: 10px;">Structure comes from 1px rules, not shadows or containers. A short Magma tick marks the active or highlighted item.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 · APPLICATIONS INDEX -->
+  <section data-label="Applications">
+    <div class="plate">
+      <div class="plate-head"><div class="plate-eyebrow">APPLICATIONS</div><div class="plate-num">11</div></div>
+      <h2 class="plate-title">One system, every surface</h2>
+      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 24px; flex:1;">
+        <div class="card"><div class="mono-cap" style="color:var(--pt-azure);">TALKS</div><div class="body" style="font-size:23px; margin-top:14px;">HTML deck templates (dark + light) · beamer theme for LaTeX talks · A0 poster template.</div></div>
+        <div class="card"><div class="mono-cap" style="color:var(--pt-azure);">WEB</div><div class="body" style="font-size:23px; margin-top:14px;">proteus-framework.org redesign · zensical/mkdocs docs theme for PROTEUS + all module docs.</div></div>
+        <div class="card"><div class="mono-cap" style="color:var(--pt-azure);">SCIENCE</div><div class="body" style="font-size:23px; margin-top:14px;">proteus-mpl matplotlib theme: brand cycles, phase colormaps, light + dark, publication settings.</div></div>
+        <div class="card"><div class="mono-cap" style="color:var(--pt-azure);">COMMUNITY</div><div class="body" style="font-size:23px; margin-top:14px;">GitHub banners + social previews · module mini-identities · architecture diagram language · stickers.</div></div>
+      </div>
+      <div class="mono-cap" style="margin-top: 30px;">EACH APPLICATION SHIPS AS ITS OWN TEMPLATE · THIS DOCUMENT IS THE AUTHORITY WHEN THEY DISAGREE</div>
+    </div>
+  </section>
+
+  <!-- 12 · GOVERNANCE -->
+  <section data-label="Governance" class="light">
+    <div class="plate">
+      <div class="plate-head"><div class="plate-eyebrow">GOVERNANCE</div><div class="plate-num">12</div></div>
+      <h2 class="plate-title">Files &amp; versioning</h2>
+      <div class="grid2">
+        <div class="kv" style="align-self:start;">
+          <div class="k" style="color:var(--pt-ocean);">TOKENS</div><div class="v" style="color:var(--pt-ink-2);"><b style="color:var(--pt-ink);">thermocline/tokens.css</b> — single source of truth for color, type, spacing. Nothing hard-codes a hex.</div>
+          <div class="k" style="color:var(--pt-ocean);">LOGO KIT</div><div class="v" style="color:var(--pt-ink-2);"><b style="color:var(--pt-ink);">assets/logo/</b> — glyph colorways in SVG (vector), PNG (transparent) + JPG (on background). Vector masters: glyph_phase.svg (multi-colour), glyph_mono.svg (currentColor).</div>
+          <div class="k" style="color:var(--pt-ocean);">THIS DOCUMENT</div><div class="v" style="color:var(--pt-ink-2);">Versioned v1.x; bump on any palette, type, or logo change. The version on the cover is authoritative.</div>
+          <div class="k" style="color:var(--pt-ocean);">TEMPLATES</div><div class="v" style="color:var(--pt-ink-2);">Deck, docs theme, mpl theme, beamer, poster, banners — each self-contained, each carries the version it implements.</div>
+        </div>
+        <div style="display:flex; flex-direction:column; justify-content:flex-end; align-items:flex-end; gap: 36px;">
+          <div class="lockup" style="font-size: 84px;">
+            <div class="word" style="color: var(--pt-ink);">PR<img src="../logo/glyph/glyph_phase_light.png" alt="O">TEUS</div>
+            <div class="tag" style="font-size: 15px; color: var(--pt-abyss); margin-top: 12px; margin-right: 3px;">framework</div>
+          </div>
+          <div class="mono-cap" style="color:var(--pt-ink-3);">© 2023–2026 FORMING WORLDS LAB · PROTEUS-FRAMEWORK.ORG</div>
+        </div>
+      </div>
+      <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: var(--pt-grad-phase);"></div>
+    </div>
+  </section>
+
+</deck-stage>
+<script src="../templates/deck/deck-stage.js"></script>
+</body>
+</html>

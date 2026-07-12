@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTEUS Deck Templates — Thermocline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens/tokens.css">
+<style>
+  deck-stage:not(:defined) { visibility: hidden; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* ---------- theme surface variables (dark default, light mirror) ---------- */
+  html[data-th="dark"] {
+    --s-bg: var(--pt-void);
+    --s-text: var(--pt-text-d);
+    --s-text2: var(--pt-text-d2);
+    --s-text3: var(--pt-text-d3);
+    --s-line: var(--pt-line-d);
+    --s-card: var(--pt-basalt);
+    --s-accent: var(--pt-magma);
+    --s-eyebrow: var(--pt-azure);
+    --s-scrim: rgba(5,7,11,0.88);
+    --s-hot-row: rgba(226,61,40,0.07);
+  }
+  html[data-th="light"] {
+    --s-bg: var(--pt-paper);
+    --s-text: var(--pt-ink);
+    --s-text2: var(--pt-ink-2);
+    --s-text3: var(--pt-ink-3);
+    --s-line: var(--pt-line-l);
+    --s-card: var(--pt-paper-2);
+    --s-accent: var(--pt-crimson);
+    --s-eyebrow: var(--pt-ocean);
+    --s-scrim: rgba(242,245,247,0.92);
+    --s-hot-row: rgba(194,54,43,0.07);
+  }
+
+  section {
+    font-family: var(--pt-font-body);
+    background: var(--s-bg);
+    color: var(--s-text);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--s-eyebrow); } a:hover { color: var(--pt-ice); }
+
+  .slide { position: absolute; inset: 0; padding: 110px 120px; display: flex; flex-direction: column; }
+
+  .eyebrow { font-family: var(--pt-font-mono); font-size: 24px; letter-spacing: 0.2em; color: var(--s-eyebrow); text-transform: uppercase; }
+
+  h1 { font-family: var(--pt-font-display); font-weight: 800; font-size: 96px; letter-spacing: -0.025em; line-height: 1.05; }
+  h2 { font-family: var(--pt-font-display); font-weight: 800; font-size: 64px; letter-spacing: -0.025em; line-height: 1.08; }
+  h1 em, h2 em { font-style: normal; color: var(--s-accent); }
+
+  .body { font-size: 30px; line-height: 1.5; color: var(--s-text2); }
+
+  .foot {
+    position: absolute; left: 120px; right: 120px; bottom: 48px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--pt-font-mono); font-size: 20px; letter-spacing: 0.12em;
+    color: var(--s-text3);
+  }
+  .foot .band { width: 220px; height: 5px; border-radius: 2px; background: var(--pt-grad-phase); display: none; }
+  /* footer running title and slide number sit closer to the slide edges than the body margin */
+  .foot > span:first-child { margin-left: -56px; }
+  .foot > span:last-child { margin-right: -56px; }
+  /* CONFIG: footer phase band. Off by default — enable per deck by setting
+     data-band="on" on the <html> element (or uncomment the line in the
+     config script at the bottom of this file). */
+  html[data-band="on"] .foot .band { display: block; }
+
+  .bullets { display: grid; gap: 34px; margin-top: 24px; }
+  .bullet { display: grid; grid-template-columns: 44px 1fr; gap: 24px; align-items: baseline; }
+  .bullet .tick { width: 26px; height: 5px; background: var(--s-accent); border-radius: 2px; transform: translateY(-9px); }
+  .bullet b { color: var(--s-text); font-weight: 600; }
+
+  .figure-card { background: var(--s-card); border: 1px solid var(--s-line); border-radius: var(--pt-r-2); padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .fig-cap { font-family: var(--pt-font-mono); font-size: 19px; letter-spacing: 0.1em; color: var(--s-text3); }
+
+  table.data { border-collapse: collapse; width: 100%; font-size: 27px; }
+  table.data th { font-family: var(--pt-font-mono); font-size: 20px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--s-text3); text-align: left; padding: 18px 28px; border-bottom: 2px solid var(--s-line); }
+  table.data td { padding: 22px 28px; border-bottom: 1px solid var(--s-line); color: var(--s-text2); }
+  table.data td:first-child { color: var(--s-text); font-weight: 500; }
+  table.data tr.hot td { color: var(--s-text); background: var(--s-hot-row); }
+  table.data td.num { font-family: var(--pt-font-mono); }
+
+  .glyph-crop { position: absolute; right: -320px; top: 50%; transform: translateY(-50%); width: 980px; opacity: 0.5; pointer-events: none; }
+
+  /* ---------- theme toggle (outside the scaled stage) ---------- */
+  .theme-toggle {
+    position: fixed; top: 14px; right: 14px; z-index: 2000;
+    font-family: var(--pt-font-mono); font-size: 11px; letter-spacing: 0.14em;
+    color: var(--s-text2); background: var(--s-card);
+    border: 1px solid var(--s-line); border-radius: 999px;
+    padding: 8px 16px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  }
+  .theme-toggle:hover { color: var(--s-text); border-color: var(--s-text3); }
+  .theme-toggle .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--pt-grad-phase); }
+  @media print { .theme-toggle { display: none; } }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" title="Cycle theme: auto (OS) → dark → light">
+  <span class="dot"></span><span id="themeLabel">THEME · AUTO</span>
+</button>
+
+<deck-stage width="1920" height="1080">
+
+  <!-- T1 · TITLE -->
+  <section data-label="Title">
+    <div class="slide">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div class="eyebrow">Exoplanets · Cambridge 2026</div>
+        <img class="glyph-img" src="../../logo/glyph/glyph_phase_dark.png" alt="" style="width: 110px;">
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width: 1440px;">
+        <h1>Volatile delivery across the <em>magma-ocean</em> epoch</h1>
+        <div class="body" style="margin-top: 44px; font-size: 32px;">How coupled interior–atmosphere feedbacks set the volatile budget of young rocky worlds</div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+        <div>
+          <div style="font-size: 30px; font-weight: 600;">Tim Lichtenberg</div>
+          <div class="body" style="font-size: 25px; margin-top: 8px;">on behalf of the PROTEUS collaboration · University of Groningen</div>
+        </div>
+        <div class="eyebrow" style="color: var(--s-text3);">12 JULY 2026</div>
+      </div>
+      <div style="position:absolute; left:0; right:0; bottom:0; height:8px; background: var(--pt-grad-phase);"></div>
+    </div>
+  </section>
+
+  <!-- T2 · SECTION DIVIDER -->
+  <section data-label="Section">
+    <div class="slide" style="overflow: hidden; justify-content: center;">
+      <img class="glyph-crop glyph-img" src="../../logo/glyph/glyph_phase_dark.png" alt="">
+      <div class="eyebrow">Section 02</div>
+      <h1 style="font-size: 110px; margin-top: 36px; max-width: 1150px;">Results</h1>
+      <div class="body" style="margin-top: 36px; max-width: 900px;">Solidification timescales across the observed super-Earth census</div>
+      <div class="foot"><span>PROTEUS · VOLATILE DELIVERY</span><span class="band"></span><span>07 / 32</span></div>
+    </div>
+  </section>
+
+  <!-- T3 · CONTENT · BULLETS -->
+  <section data-label="Bullets">
+    <div class="slide">
+      <div class="eyebrow">Model setup</div>
+      <h2 style="margin-top: 24px;">Three coupled reservoirs, one timestep</h2>
+      <div class="bullets" style="margin-top: 64px; max-width: 1500px;">
+        <div class="bullet"><div class="tick"></div><div class="body"><b>Interior (SPIDER)</b> — mixed-phase magma ocean evolution in S–P space; melt fraction, heat flux, and solidification fronts on a staggered grid.</div></div>
+        <div class="bullet"><div class="tick"></div><div class="body"><b>Atmosphere (AGNI)</b> — radiative-convective equilibrium at every timestep, producing OLR and synthetic spectra JWST can test.</div></div>
+        <div class="bullet"><div class="tick"></div><div class="body"><b>Volatiles (CALLIOPE)</b> — thermochemical partitioning of H₂O, CO₂, N₂, and S-species between melt and gas, tracking redox state.</div></div>
+      </div>
+      <div class="foot"><span>PROTEUS · VOLATILE DELIVERY</span><span class="band"></span><span>09 / 32</span></div>
+    </div>
+  </section>
+
+  <!-- T4 · TWO-COLUMN · TEXT + FIGURE -->
+  <section data-label="Text+figure">
+    <div class="slide">
+      <div class="eyebrow">Results · Thermal evolution</div>
+      <h2 style="margin-top: 24px;">Tides extend the magma ocean by two orders of magnitude</h2>
+      <div style="display: grid; grid-template-columns: 1fr 1.15fr; gap: 72px; flex: 1; min-height: 0; margin-top: 56px;">
+        <div class="body" style="display:flex; flex-direction:column; gap: 30px;">
+          <p>Feedback between tidal heating and greenhouse forcing varies the magma-ocean lifetime from <b style="color:var(--s-accent);">~30 Myr to ~500 Myr</b>, sensitive to interior redox state.</p>
+          <p>Global radiative-equilibrium epochs commonly arise across this range, lasting up to ~320 Myr.</p>
+          <p style="font-family: var(--pt-font-mono); font-size: 22px; letter-spacing: 0.08em; color: var(--s-text3);">VAN DIJK, NICHOLLS &amp; LICHTENBERG 2026 · PSJ 7, 94</p>
+        </div>
+        <div class="figure-card">
+          <div style="flex: 1; min-height: 0;"><image-slot id="deck-fig-thermal" shape="rounded" radius="4" fit="contain" placeholder="Drop figure (proteus-mpl, match the theme)"></image-slot></div>
+          <div class="fig-cap">FIG · MANTLE MELT FRACTION VS TIME · PROTEUS-MPL</div>
+        </div>
+      </div>
+      <div class="foot"><span>PROTEUS · VOLATILE DELIVERY</span><span class="band"></span><span>14 / 32</span></div>
+    </div>
+  </section>
+
+  <!-- T5 · FIGURE HERO -->
+  <section data-label="Figure hero">
+    <div style="position:absolute; inset:0;">
+      <image-slot id="deck-fig-hero" shape="rect" placeholder="Drop full-bleed figure or render"></image-slot>
+    </div>
+    <div style="position:absolute; left:0; right:0; bottom:0; padding: 36px 120px; background: linear-gradient(transparent, var(--s-scrim) 45%); pointer-events: none; display:flex; justify-content:space-between; align-items:baseline;">
+      <div style="font-family: var(--pt-font-display); font-weight: 700; font-size: 40px; letter-spacing: -0.01em;">Synthetic emission spectra, every timestep</div>
+      <div class="eyebrow" style="color: var(--s-text3);">AGNI · 48 BANDS</div>
+    </div>
+  </section>
+
+  <!-- T6 · DATA TABLE -->
+  <section data-label="Table">
+    <div class="slide">
+      <div class="eyebrow">At a glance</div>
+      <h2 style="margin-top: 24px;">Early Earth reference case</h2>
+      <table class="data" style="margin-top: 60px; max-width: 1500px;">
+        <tr><th>Parameter</th><th>Value</th><th>Module</th></tr>
+        <tr><td>Mass</td><td class="num">1 M⊕</td><td>—</td></tr>
+        <tr><td>Orbit</td><td class="num">1 AU (Sun)</td><td>MORS</td></tr>
+        <tr><td>Volatiles</td><td class="num">1 Earth ocean H₂O</td><td>CALLIOPE</td></tr>
+        <tr><td>Redox</td><td class="num">IW+4</td><td>CALLIOPE</td></tr>
+        <tr class="hot"><td>Outcome</td><td class="num">Full solidification &lt; 2 Myr</td><td>SPIDER + AGNI</td></tr>
+      </table>
+      <div class="foot"><span>PROTEUS · VOLATILE DELIVERY</span><span class="band"></span><span>11 / 32</span></div>
+    </div>
+  </section>
+
+  <!-- T7 · STATEMENT -->
+  <section data-label="Statement">
+    <div class="slide" style="justify-content: center; align-items: center; text-align: center;">
+      <div class="eyebrow">Key takeaway</div>
+      <h1 style="max-width: 1500px; margin-top: 48px; font-size: 84px;">Most rocky sub-Neptunes are <em>molten</em>.</h1>
+      <div class="body" style="margin-top: 44px;">98% of detected sub-Neptunes, if gas dwarfs, host permanent magma oceans today.</div>
+      <div class="foot"><span>PROTEUS · VOLATILE DELIVERY</span><span class="band"></span><span>21 / 32</span></div>
+    </div>
+  </section>
+
+  <!-- T8 · CLOSING -->
+  <section data-label="Closing">
+    <div class="slide" style="justify-content: center; align-items: center; text-align: center;">
+      <div style="display: inline-flex; flex-direction: column;">
+        <div style="display:flex; align-items:center; font-family: var(--pt-font-display); font-weight:800; font-size: 110px; letter-spacing: 0.01em; line-height:1; color: var(--s-text);">PR<img class="glyph-img" src="../../logo/glyph/glyph_phase_dark.png" alt="O" style="height: 1.06em; width:auto; margin: 0 0.015em 0 0.03em; transform: translateY(0.011em);">TEUS</div>
+        <div style="font-family: var(--pt-font-mono); font-weight:500; font-size: 19px; letter-spacing: 0.52em; color: var(--s-eyebrow); align-self: flex-end; margin-top: 16px;">framework</div>
+      </div>
+      <div class="body" style="margin-top: 72px; font-size: 32px;">Thank you.</div>
+      <div style="margin-top: 40px; display: flex; gap: 56px; font-family: var(--pt-font-mono); font-size: 22px; letter-spacing: 0.08em; color: var(--s-text2);">
+        <span>proteus-framework.org</span>
+        <span>github.com/FormingWorlds/PROTEUS</span>
+        <span>proteus_dev@formingworlds.space</span>
+      </div>
+      <div style="position:absolute; left:0; right:0; bottom:0; height:8px; background: var(--pt-grad-phase);"></div>
+    </div>
+  </section>
+
+</deck-stage>
+
+<script src="deck-stage.js"></script>
+<script src="image-slot.js"></script>
+<script>
+(function () {
+  // ---- deck config ----
+  // Footer phase band (the small gradient strip in slide footers).
+  // Default off; flip to true to show it on every footer.
+  var FOOTER_BAND = false;
+  if (FOOTER_BAND) document.documentElement.setAttribute('data-band', 'on');
+
+  var KEY = 'pt-deck-theme'; // 'auto' | 'dark' | 'light'
+  var mq = window.matchMedia('(prefers-color-scheme: light)');
+  var btnLabel = document.getElementById('themeLabel');
+
+  function pref() { return localStorage.getItem(KEY) || 'auto'; }
+
+  function apply() {
+    var p = pref();
+    var mode = p === 'auto' ? (mq.matches ? 'light' : 'dark') : p;
+    document.documentElement.setAttribute('data-th', mode);
+    document.querySelectorAll('img.glyph-img').forEach(function (img) {
+      img.src = '../assets/logo/glyph_phase_' + mode + '.png';
+    });
+    btnLabel.textContent = 'THEME · ' + p.toUpperCase() + (p === 'auto' ? ' (' + mode.toUpperCase() + ')' : '');
+  }
+
+  document.getElementById('themeToggle').addEventListener('click', function () {
+    var order = ['auto', 'dark', 'light'];
+    var next = order[(order.indexOf(pref()) + 1) % order.length];
+    localStorage.setItem(KEY, next);
+    apply();
+  });
+
+  mq.addEventListener('change', function () { if (pref() === 'auto') apply(); });
+  apply();
+})();
+</script>
+</body>
+</html>

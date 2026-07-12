@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "proteus-mpl"
+version = "26.7.12"
+description = "PROTEUS Thermocline matplotlib theme: brand color cycles, phase colormaps, light + dark variants."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "Apache-2.0" }
+authors = [{ name = "PROTEUS collaboration", email = "proteus_dev@formingworlds.space" }]
+dependencies = ["matplotlib>=3.5"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+proteus_mpl = ["*.mplstyle", "fonts/*"]

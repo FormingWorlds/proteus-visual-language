@@ -1,0 +1,63 @@
+name: Deploy brand guide to Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Export the interactive guide to a PDF (one page per plate) so the
+      # Pages artifact — and the repo's brand-guide.pdf link — stay in sync.
+      - name: Export brand-guide.pdf
+        continue-on-error: true
+        run: |
+          npm i -g puppeteer
+          node -e "
+            const puppeteer = require('puppeteer');
+            (async () => {
+              const b = await puppeteer.launch({ args: ['--no-sandbox'] });
+              const p = await b.newPage();
+              await p.goto('file://' + process.cwd() + '/site/index.html', { waitUntil: 'networkidle0' });
+              await p.pdf({ path: 'brand-guide.pdf', printBackground: true, preferCSSPageSize: true });
+              await b.close();
+            })();
+          "
+
+      - name: Root redirect → site/
+        run: |
+          cat > index.html <<'HTML'
+          <!doctype html><meta charset=utf-8>
+          <title>PROTEUS Visual Language</title>
+          <meta http-equiv="refresh" content="0; url=./site/">
+          <link rel="canonical" href="./site/">
+          <a href="./site/">PROTEUS Visual Language →</a>
+          HTML
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

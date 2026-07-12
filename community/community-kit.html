@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="design_doc_mode" content="canvas">
+<title>PROTEUS Community Kit — Stage 4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../tokens/tokens.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--pt-font-body); }
+  a { color: var(--pt-azure); } a:hover { color: var(--pt-ice); }
+  .frame { position: absolute; box-shadow: 0 2px 8px rgba(0,0,0,0.10), 0 12px 40px -12px rgba(0,0,0,0.2); }
+  .frame-label { position: absolute; top: -30px; left: 0; font-family: var(--pt-font-mono); font-size: 13px; letter-spacing: 0.08em; color: #666; white-space: nowrap; }
+  .cap { font-family: var(--pt-font-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--pt-text-d3); }
+
+  .lockup { display: inline-flex; flex-direction: column; }
+  .lockup .word { display: flex; align-items: center; font-family: var(--pt-font-display); font-weight: 800; letter-spacing: 0.01em; line-height: 1; color: var(--pt-paper); }
+  .lockup .word img { height: 1.06em; width: auto; margin: 0 0.015em 0 0.03em; transform: translateY(0.011em); }
+  .lockup .tag { font-family: var(--pt-font-mono); font-weight: 500; letter-spacing: 0.52em; color: var(--pt-azure); align-self: flex-end; line-height: 1; }
+
+  /* ---------- 01 social preview 1280×640 ---------- */
+  .social { width: 1280px; height: 640px; background: var(--pt-void); color: var(--pt-text-d); overflow: hidden; position: relative; }
+  .social .glyph-bleed { position: absolute; right: -230px; top: 50%; transform: translateY(-50%); width: 700px; opacity: 0.9; }
+  .social .inner { position: absolute; inset: 0; padding: 70px 80px; display: flex; flex-direction: column; justify-content: space-between; }
+  .social .repo { font-family: var(--pt-font-mono); font-size: 20px; letter-spacing: 0.16em; color: var(--pt-azure); }
+  .social h1 { font-family: var(--pt-font-display); font-weight: 800; font-size: 64px; letter-spacing: -0.02em; line-height: 1.1; max-width: 760px; }
+  .social .sub { font-size: 24px; line-height: 1.5; color: var(--pt-text-d2); max-width: 680px; }
+  .social .band { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: var(--pt-grad-phase); }
+
+  /* ---------- 02 README banner 1920×420 ---------- */
+  .readme { width: 1920px; height: 420px; background: var(--pt-void); position: relative; overflow: hidden; display: flex; align-items: center; padding: 0 110px; }
+  .readme .glyph-bleed { position: absolute; right: -180px; top: 50%; transform: translateY(-50%); width: 560px; opacity: 0.55; }
+  .readme .tagline { position: absolute; right: 110px; bottom: 54px; font-family: var(--pt-font-mono); font-size: 19px; letter-spacing: 0.18em; color: var(--pt-text-d2); }
+  .readme .band { position: absolute; left: 0; right: 0; bottom: 0; height: 7px; background: var(--pt-grad-phase); }
+
+  /* ---------- 03 module identities ---------- */
+  .mods-frame { width: 1180px; background: var(--pt-basalt); padding: 48px 52px 44px; color: var(--pt-text-d); }
+  .mods-frame h2 { font-family: var(--pt-font-display); font-weight: 800; font-size: 30px; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .mods-frame .sub { font-size: 14.5px; line-height: 1.55; color: var(--pt-text-d2); max-width: 780px; margin-bottom: 32px; }
+  .mod-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .mod-badge { background: var(--pt-void); border: 1px solid var(--pt-line-d); border-radius: 4px; padding: 22px 20px 18px; display: flex; flex-direction: column; gap: 14px; }
+  .mod-badge .row { display: flex; align-items: center; gap: 12px; }
+  .mod-badge img { width: 30px; }
+  .mod-badge b { font-family: var(--pt-font-display); font-weight: 700; font-size: 19px; letter-spacing: 0.01em; }
+  .mod-badge .dom { font-family: var(--pt-font-mono); font-size: 10px; letter-spacing: 0.14em; }
+  .mod-spec { margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--pt-line-d); font-size: 13.5px; line-height: 1.6; color: var(--pt-text-d2); }
+  .mod-spec b { color: var(--pt-text-d); }
+
+  /* ---------- 04 diagram language ---------- */
+  .diagram-frame { width: 1480px; background: var(--pt-void); padding: 48px 56px 52px; color: var(--pt-text-d); }
+  .diagram-frame h2 { font-family: var(--pt-font-display); font-weight: 800; font-size: 30px; letter-spacing: -0.02em; margin-bottom: 28px; }
+  .arch { display: grid; grid-template-columns: 1fr 90px 260px 90px 1fr; align-items: center; margin: 12px 0 36px; }
+  .arch-col { display: grid; gap: 14px; }
+  .node { background: var(--pt-basalt); border: 1px solid var(--pt-line-d); border-radius: 4px; padding: 14px 18px; display: grid; grid-template-columns: 8px 1fr; gap: 14px; align-items: center; }
+  .node i { width: 8px; height: 100%; min-height: 34px; border-radius: 2px; font-style: normal; }
+  .node b { font-family: var(--pt-font-display); font-weight: 700; font-size: 16px; display: block; }
+  .node span { font-family: var(--pt-font-mono); font-size: 10px; letter-spacing: 0.12em; color: var(--pt-text-d3); }
+  .coupler { background: var(--pt-basalt); border: 1px solid var(--pt-azure); border-radius: 6px; padding: 28px 22px; text-align: center; }
+  .coupler img { width: 64px; }
+  .coupler b { font-family: var(--pt-font-display); font-weight: 800; font-size: 20px; display: block; margin-top: 14px; }
+  .coupler span { font-family: var(--pt-font-mono); font-size: 10px; letter-spacing: 0.16em; color: var(--pt-azure); display: block; margin-top: 6px; }
+  .link-l, .link-r { height: 2px; background: var(--pt-text-d3); position: relative; }
+  .link-l::before, .link-r::after { content: ""; position: absolute; top: -4px; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+  .link-l::before { left: -1px; border-right: 8px solid var(--pt-text-d3); }
+  .link-r::after { right: -1px; border-left: 8px solid var(--pt-text-d3); }
+  .diagram-rules { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; padding-top: 28px; border-top: 1px solid var(--pt-line-d); font-size: 13.5px; line-height: 1.6; color: var(--pt-text-d2); }
+  .diagram-rules b { color: var(--pt-text-d); }
+  .diagram-rules .h { font-family: var(--pt-font-mono); font-size: 11px; letter-spacing: 0.16em; color: var(--pt-azure); margin-bottom: 10px; }
+
+  /* ---------- 05 stickers ---------- */
+  .stickers { width: 1180px; background: #C8CDD2; padding: 48px 52px 44px; color: var(--pt-ink); }
+  .stickers h2 { font-family: var(--pt-font-display); font-weight: 800; font-size: 30px; letter-spacing: -0.02em; margin-bottom: 28px; }
+  .sticker-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; align-items: end; }
+  .sticker-cell { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .sticker-cell .cap { color: #5A626A; }
+  .st-circle { width: 200px; height: 200px; border-radius: 50%; background: var(--pt-void); display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,0.25); }
+  .st-circle img { width: 62%; }
+  .st-hex { width: 200px; height: 226px; background: var(--pt-void); clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+  .st-hex img { width: 82px; }
+  .st-hex b { font-family: var(--pt-font-display); font-weight: 800; font-size: 21px; color: var(--pt-paper); letter-spacing: 0.02em; }
+  .st-die img { width: 190px; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.3)); }
+  .st-wordmark { background: var(--pt-void); border-radius: 14px; padding: 26px 30px; box-shadow: 0 3px 10px rgba(0,0,0,0.25); }
+</style>
+</head>
+<body>
+
+<!-- ============ 01 · GITHUB SOCIAL PREVIEW ============ -->
+<div class="frame social" style="left: 40px; top: 60px;" data-screen-label="01 Social preview">
+  <div class="frame-label">01 · GITHUB SOCIAL PREVIEW · 1280×640 · FormingWorlds/PROTEUS</div>
+  <img class="glyph-bleed" src="../logo/glyph/glyph_phase_dark.png" alt="">
+  <div class="inner">
+    <div class="repo">FORMINGWORLDS / PROTEUS</div>
+    <div>
+      <div class="lockup" style="font-size: 64px;"><div class="word">PR<img src="../logo/glyph/glyph_phase_dark.png" alt="O">TEUS</div></div>
+      <div class="sub" style="margin-top: 18px;">Coupled interior-atmosphere evolution of rocky planets — from magma oceans to habitable worlds.</div>
+    </div>
+    <div class="cap">PYTHON · APACHE 2.0 · PROTEUS-FRAMEWORK.ORG</div>
+  </div>
+  <div class="band"></div>
+</div>
+
+<!-- ============ 02 · README BANNER ============ -->
+<div class="frame readme" style="left: 40px; top: 810px;" data-screen-label="02 README banner">
+  <div class="frame-label">02 · README HEADER BANNER · 1920×420 · drop into README.md</div>
+  <div class="lockup" style="font-size: 130px;">
+    <div class="word">PR<img src="../logo/glyph/glyph_phase_dark.png" alt="O">TEUS</div>
+    <div class="tag" style="font-size: 23px; margin-top: 16px;">framework</div>
+  </div>
+  <img class="glyph-bleed" src="../logo/glyph/glyph_phase_dark.png" alt="">
+  <div class="tagline">MAGMA OCEANS → HABITABLE WORLDS</div>
+  <div class="band"></div>
+</div>
+
+<!-- ============ 03 · MODULE IDENTITIES ============ -->
+<div class="frame mods-frame" style="left: 1420px; top: 60px;" data-screen-label="03 Module identities">
+  <div class="frame-label">03 · MODULE MINI-IDENTITIES · one glyph, domain-tinted</div>
+  <h2>Module identities</h2>
+  <div class="sub">Every module shares the PROTEUS glyph, tinted in its domain color — siblings at a glance, never competing marks. Use in module READMEs, docs headers, and diagram nodes.</div>
+  <div class="mod-grid">
+    <div class="mod-badge"><div class="row"><img src="../logo/glyph/glyph_azure.png" alt=""><b>AGNI</b></div><span class="dom" style="color: var(--pt-dom-atmos);">ATMOSPHERE</span></div>
+    <div class="mod-badge"><div class="row"><img src="../logo/glyph/glyph_azure.png" alt=""><b>JANUS</b></div><span class="dom" style="color: var(--pt-dom-atmos);">ATMOSPHERE</span></div>
+    <div class="mod-badge"><div class="row"><img src="../logo/glyph/glyph_ocean.png" alt=""><b>VULCAN</b></div><span class="dom" style="color: var(--pt-dom-chem);">CHEMISTRY</span></div>
+    <div class="mod-badge"><div class="row"><img src="../logo/glyph/glyph_ocean.png" alt=""><b>ZEPHYRUS</b></div><span class="dom" style="color: var(--pt-dom-chem);">ESCAPE</span></div>
+    <div class="mod-badge"><div class="row"><img src="../logo/glyph/glyph_outgassing.png" alt=""><b>CALLIOPE</b></div><span class="dom" style="color: var(--pt-dom-outgassing);">OUTGASSING</span></div>
+    <div class="mod-badge"><div class="row"><img src="../logo/glyph/glyph_outgassing.png" alt=""><b>Atmodeller</b></div><span class="dom" style="color: var(--pt-dom-outgassing);">OUTGASSING</span></div>
+    <div class="mod-badge"><div class="row"><img src="../logo/glyph/glyph_magma.png" alt=""><b>SPIDER</b></div><span class="dom" style="color: var(--pt-dom-interior);">INTERIOR DYNAMICS</span></div>
+    <div class="mod-badge"><div class="row"><img src="../logo/glyph/glyph_magma.png" alt=""><b>Aragog</b></div><span class="dom" style="color: var(--pt-dom-interior);">INTERIOR DYNAMICS</span></div>
+    <div class="mod-badge"><div class="row"><img src="../logo/glyph/glyph_magma.png" alt=""><b>Zalmoxis</b></div><span class="dom" style="color: var(--pt-dom-interior);">INTERIOR STRUCTURE</span></div>
+    <div class="mod-badge"><div class="row"><img src="../logo/glyph/glyph_ice.png" alt=""><b>MORS</b></div><span class="dom" style="color: var(--pt-dom-stellar);">STELLAR</span></div>
+    <div class="mod-badge"><div class="row"><img src="../logo/glyph/glyph_tidal.png" alt=""><b>LovePy</b></div><span class="dom" style="color: var(--pt-dom-tidal);">TIDAL</span></div>
+    <div class="mod-badge"><div class="row"><img src="../logo/glyph/glyph_tidal.png" alt=""><b>Obliqua</b></div><span class="dom" style="color: var(--pt-dom-tidal);">TIDAL</span></div>
+  </div>
+  <div class="mod-spec"><b>Rules.</b> Module names set in Sora Bold, natural casing (SPIDER stays caps, Atmodeller stays mixed). Domain label in tracked mono, tinted to the domain color. The glyph is never re-drawn per module — tint only. New domain → new color must extend the CVD-checked set; check ΔE before adopting.</div>
+</div>
+
+<!-- ============ 04 · DIAGRAM LANGUAGE ============ -->
+<div class="frame diagram-frame" style="left: 40px; top: 1420px;" data-screen-label="04 Diagram language">
+  <div class="frame-label">04 · ARCHITECTURE DIAGRAM LANGUAGE · the coupling figure every talk needs</div>
+  <h2>Diagram language</h2>
+  <div class="arch">
+    <div class="arch-col">
+      <div class="node"><i style="background: var(--pt-dom-interior);"></i><div><b>SPIDER / Aragog</b><span>INTERIOR</span></div></div>
+      <div class="node"><i style="background: var(--pt-dom-outgassing);"></i><div><b>CALLIOPE</b><span>OUTGASSING</span></div></div>
+      <div class="node"><i style="background: var(--pt-dom-tidal);"></i><div><b>LovePy / Obliqua</b><span>TIDAL</span></div></div>
+    </div>
+    <div class="link-l"></div>
+    <div class="coupler">
+      <img src="../logo/glyph/glyph_phase_dark.png" alt="">
+      <b>PROTEUS</b>
+      <span>COUPLER · Δt</span>
+    </div>
+    <div class="link-r"></div>
+    <div class="arch-col">
+      <div class="node"><i style="background: var(--pt-dom-atmos);"></i><div><b>AGNI / JANUS</b><span>ATMOSPHERE</span></div></div>
+      <div class="node"><i style="background: var(--pt-dom-chem);"></i><div><b>VULCAN / ZEPHYRUS</b><span>CHEMISTRY &amp; ESCAPE</span></div></div>
+      <div class="node"><i style="background: var(--pt-dom-stellar);"></i><div><b>MORS</b><span>STELLAR</span></div></div>
+    </div>
+  </div>
+  <div class="diagram-rules">
+    <div>
+      <div class="h">NODES</div>
+      <b>Module node:</b> Basalt surface, 1px hairline, 4px radius, domain-color spine on the left edge. Name in Sora Bold 16px, domain in tracked mono caps below. <b>Coupler node:</b> same surface, azure outline, the phase glyph — the only node carrying the mark.
+    </div>
+    <div>
+      <div class="h">CONNECTIONS</div>
+      2px lines in muted gray — connections are plumbing, not the story. Arrowheads only where direction matters. To highlight one exchange, recolor that line Magma (hot flux) or Azure (cool flux) — one highlight per diagram. Labels in mono 10-11px, tracked, above the line.
+    </div>
+  </div>
+</div>
+
+<!-- ============ 05 · STICKERS ============ -->
+<div class="frame stickers" style="left: 1600px; top: 1420px;" data-screen-label="05 Sticker sheet">
+  <div class="frame-label">05 · STICKER SHEET · print-ready shapes</div>
+  <h2>Stickers</h2>
+  <div class="sticker-row">
+    <div class="sticker-cell">
+      <div class="st-circle"><img src="../logo/glyph/glyph_phase_dark.png" alt=""></div>
+      <div class="cap">CIRCLE · ⌀ 50 MM · VOID</div>
+    </div>
+    <div class="sticker-cell">
+      <div class="st-hex">
+        <img src="../logo/glyph/glyph_phase_dark.png" alt="">
+        <b>PROTEUS</b>
+      </div>
+      <div class="cap">HEX · 50 MM EDGE-TO-EDGE</div>
+    </div>
+    <div class="sticker-cell">
+      <div class="st-die"><img src="../logo/glyph/glyph_phase_dark.png" alt=""></div>
+      <div class="cap">DIE-CUT GLYPH · 45 MM</div>
+    </div>
+    <div class="sticker-cell">
+      <div class="st-wordmark">
+        <div class="lockup" style="font-size: 34px;">
+          <div class="word">PR<img src="../logo/glyph/glyph_phase_dark.png" alt="O">TEUS</div>
+        </div>
+      </div>
+      <div class="cap">WORDMARK · 90 × 32 MM</div>
+    </div>
+  </div>
+  <div style="margin-top: 30px; padding-top: 22px; border-top: 1px solid #AEB4BA; font-size: 13.5px; line-height: 1.6; color: #4A525A;">
+    <b style="color: var(--pt-ink);">Print spec.</b> Vinyl, matte laminate. Void background prints as rich black (C60 M40 Y40 K100). Die-cut follows the glyph's outer arc contour with 2mm white bleed. Minimum ⌀ 32mm — below that the inner arcs fill in.
+  </div>
+</div>
+
+</body>
+</html>

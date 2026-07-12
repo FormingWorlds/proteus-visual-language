@@ -1,0 +1,304 @@
+% ==========================================================================
+% beamerthemeproteus.sty — PROTEUS Thermocline beamer theme v1.1
+% Requires XeLaTeX or LuaLaTeX (fontspec). Compile: latexmk -xelatex talk.tex
+%
+% Setup: put this file, fonts/ (Sora, Instrument Sans, Spline Sans Mono OFL
+% TTFs) and assets/ (glyph_phase_dark.png, glyph_phase_light.png) next to
+% your .tex, or set \ProteusFontPath / \ProteusAssetPath before \usetheme.
+%
+%   \documentclass[11pt, aspectratio=169]{beamer}
+%   \usetheme{proteus}                 % LIGHT deck (default)
+%   \usetheme[mode=dark]{proteus}      % DARK deck — every frame dark
+%   \usetheme[mode=light]{proteus}     % LIGHT deck — every frame light
+%   % optional: force the title surface independent of mode
+%   \usetheme[mode=light, titlesurface=dark]{proteus}
+%
+%   \title[Short footer]{Volatile delivery across the \magma{magma-ocean} epoch}
+%   \subtitle{Results · Generation 3}  % azure eyebrow above title
+%   \conference{Exoplanets · Cambridge 2026}
+%
+% Per-frame override of the global mode:
+%   \begin{darkframes} ... frames ... \end{darkframes}
+%   \begin{lightframes} ... frames ... \end{lightframes}
+% ==========================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{beamerthemeproteus}[2026/07/12 v1.1 PROTEUS Thermocline]
+
+\RequirePackage{ifxetex,ifluatex}
+\ifxetex\else\ifluatex\else
+  \PackageError{beamerthemeproteus}{XeLaTeX or LuaLaTeX required (fontspec)}{}
+\fi\fi
+\RequirePackage{fontspec}
+\RequirePackage{tikz}
+
+% ---------------- options ----------------
+\def\proteus@darkname{dark}
+\def\proteus@lightname{light}
+% global surface mode (light default)
+\newif\ifproteus@dark
+\DeclareOptionBeamer{mode}[light]{%
+  \def\proteus@mode{#1}%
+  \ifx\proteus@mode\proteus@darkname\proteus@darktrue\fi}
+% optional explicit title-surface override
+\newif\ifproteus@tsset
+\newif\ifproteus@tsdark
+\DeclareOptionBeamer{titlesurface}[dark]{%
+  \proteus@tssettrue
+  \def\proteus@ts{#1}%
+  \ifx\proteus@ts\proteus@darkname\proteus@tsdarktrue\fi}
+\ProcessOptionsBeamer
+
+% resolve which surface the title page uses:
+% explicit titlesurface wins; otherwise follow the global mode.
+\newif\ifproteus@titledark
+\ifproteus@tsset
+  \ifproteus@tsdark\proteus@titledarktrue\fi
+\else
+  \ifproteus@dark\proteus@titledarktrue\fi
+\fi
+
+% ---------------- paths ----------------
+\providecommand{\ProteusFontPath}{fonts/}
+\providecommand{\ProteusAssetPath}{assets/}
+
+% ---------------- colors (tokens.css) ----------------
+\definecolor{ProteusVoid}{HTML}{05070B}
+\definecolor{ProteusBasalt}{HTML}{0E131B}
+\definecolor{ProteusBasaltTwo}{HTML}{12202E}
+\definecolor{ProteusMagma}{HTML}{E23D28}
+\definecolor{ProteusMantle}{HTML}{8E1F12}
+\definecolor{ProteusCrimson}{HTML}{C2362B}
+\definecolor{ProteusOcean}{HTML}{1B6FA8}
+\definecolor{ProteusAbyss}{HTML}{14406B}
+\definecolor{ProteusAzure}{HTML}{4FA3D9}
+\definecolor{ProteusIce}{HTML}{A8D4E8}
+\definecolor{ProteusPaper}{HTML}{F2F5F7}
+\definecolor{ProteusInk}{HTML}{10151B}
+\definecolor{ProteusInkSoft}{HTML}{3E4A55}
+\definecolor{ProteusTextDim}{HTML}{9FB0BE}
+\definecolor{ProteusLineD}{HTML}{1A2230}
+\definecolor{ProteusLineL}{HTML}{D2DAE1}
+% module domains (CVD-checked)
+\definecolor{ProteusDomInterior}{HTML}{E23D28}
+\definecolor{ProteusDomOutgas}{HTML}{A03123}
+\definecolor{ProteusDomTidal}{HTML}{593E74}
+\definecolor{ProteusDomChem}{HTML}{1B6FA8}
+\definecolor{ProteusDomAtmos}{HTML}{4FA3D9}
+\definecolor{ProteusDomStellar}{HTML}{A8D4E8}
+
+% inline helpers
+\newcommand{\magma}[1]{{\color{ProteusMagma}#1}}
+\newcommand{\ocean}[1]{{\color{ProteusOcean}#1}}
+\newcommand{\azure}[1]{{\color{ProteusAzure}#1}}
+\newcommand{\ice}[1]{{\color{ProteusIce}#1}}
+
+% ---------------- fonts ----------------
+\setsansfont[Path=\ProteusFontPath,
+  UprightFont=*-Regular, BoldFont=*-SemiBold,
+  ItalicFont=*-Regular, BoldItalicFont=*-SemiBold]{InstrumentSans}
+\newfontfamily\proteusdisplay[Path=\ProteusFontPath,
+  UprightFont=*-Bold, BoldFont=*-ExtraBold]{Sora}
+\newfontfamily\proteusmono[Path=\ProteusFontPath,
+  UprightFont=*-Regular, BoldFont=*-Medium]{SplineSansMono}
+% Sora carries no italics by design: emphasis maps to bold accent
+\renewcommand{\emph}[1]{{\color{ProteusMagma}\bfseries #1}}
+
+% type scale (11pt base, modular)
+\setbeamerfont{title}{family=\proteusdisplay, series=\bfseries, size=\fontsize{24}{27}}
+\setbeamerfont{subtitle}{family=\proteusmono, size=\fontsize{9}{12}}
+\setbeamerfont{frametitle}{family=\proteusdisplay, series=\bfseries, size=\fontsize{17}{20}}
+\setbeamerfont{framesubtitle}{family=\proteusmono, size=\fontsize{8}{10}}
+\setbeamerfont{author}{size=\fontsize{11}{15}}
+\setbeamerfont{institute}{size=\fontsize{9}{13}}
+\setbeamerfont{date}{family=\proteusmono, size=\fontsize{8}{11}}
+\setbeamerfont{footline}{family=\proteusmono, size=\fontsize{6.5}{8}}
+\setbeamerfont{caption}{family=\proteusmono, size=\fontsize{7.5}{10}}
+
+% ==========================================================================
+%  SURFACE PALETTES — one macro per surface; mode/env choose which applies
+% ==========================================================================
+% LIGHT content surface (Paper / Ink)
+\newcommand{\proteusApplyLight}{%
+  \setbeamercolor{background canvas}{bg=ProteusPaper}%
+  \setbeamercolor{normal text}{fg=ProteusInk, bg=ProteusPaper}%
+  \setbeamercolor{structure}{fg=ProteusOcean}%
+  \setbeamercolor{alerted text}{fg=ProteusCrimson}%
+  \setbeamercolor{frametitle}{fg=ProteusInk, bg=ProteusPaper}%
+  \setbeamercolor{framesubtitle}{fg=ProteusOcean}%
+  \setbeamercolor{footline}{fg=ProteusInkSoft}%
+  \setbeamercolor{caption name}{fg=ProteusOcean}%
+  \setbeamercolor{itemize item}{fg=ProteusCrimson}%
+  \setbeamercolor{itemize subitem}{fg=ProteusOcean}%
+  \setbeamercolor{block title}{fg=ProteusPaper, bg=ProteusAbyss}%
+  \setbeamercolor{block body}{fg=ProteusInk, bg=ProteusLineL!40!ProteusPaper}%
+  \setbeamercolor{block title alerted}{fg=ProteusPaper, bg=ProteusCrimson}%
+  \setbeamercolor{block body alerted}{fg=ProteusInk, bg=ProteusCrimson!8!ProteusPaper}%
+  \setbeamercolor{block title example}{fg=ProteusPaper, bg=ProteusOcean}%
+  \setbeamercolor{block body example}{fg=ProteusInk, bg=ProteusOcean!8!ProteusPaper}%
+  \usebeamercolor[fg]{normal text}%
+}
+% DARK content surface (Void / Paper)
+\newcommand{\proteusApplyDark}{%
+  \setbeamercolor{background canvas}{bg=ProteusVoid}%
+  \setbeamercolor{normal text}{fg=ProteusPaper, bg=ProteusVoid}%
+  \setbeamercolor{structure}{fg=ProteusAzure}%
+  \setbeamercolor{alerted text}{fg=ProteusMagma}%
+  \setbeamercolor{frametitle}{fg=ProteusPaper, bg=ProteusVoid}%
+  \setbeamercolor{framesubtitle}{fg=ProteusAzure}%
+  \setbeamercolor{footline}{fg=ProteusTextDim}%
+  \setbeamercolor{caption name}{fg=ProteusAzure}%
+  \setbeamercolor{itemize item}{fg=ProteusMagma}%
+  \setbeamercolor{itemize subitem}{fg=ProteusAzure}%
+  \setbeamercolor{block title}{fg=ProteusVoid, bg=ProteusAzure}%
+  \setbeamercolor{block body}{fg=ProteusPaper, bg=ProteusBasalt}%
+  \setbeamercolor{block title alerted}{fg=ProteusPaper, bg=ProteusMagma}%
+  \setbeamercolor{block body alerted}{fg=ProteusPaper, bg=ProteusMantle!35!ProteusVoid}%
+  \setbeamercolor{block title example}{fg=ProteusVoid, bg=ProteusAzure}%
+  \setbeamercolor{block body example}{fg=ProteusPaper, bg=ProteusBasaltTwo}%
+  \usebeamercolor[fg]{normal text}%
+}
+
+% apply the global mode as the deck-wide default
+\ifproteus@dark \proteusApplyDark \else \proteusApplyLight \fi
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{blocks}[default]  % square corners
+\setbeamersize{text margin left=10mm, text margin right=10mm}
+
+% itemize: magma tick (colour comes from itemize item beamercolor)
+\setbeamertemplate{itemize item}{\usebeamercolor[fg]{itemize item}\tikz{\fill (0,0) rectangle (2.6mm,0.55mm);}}
+\setbeamertemplate{itemize subitem}{\usebeamercolor[fg]{itemize subitem}\tikz{\fill (0,0) rectangle (1.8mm,0.45mm);}}
+
+% ---------------- phase band macro ----------------
+% \proteusPhaseBand{<width>}{<height>} — magma -> void -> ocean, never reversed
+\newcommand{\proteusPhaseBand}[2]{%
+  \begin{tikzpicture}
+    \shade[left color=ProteusMagma, right color=ProteusVoid] (0,0) rectangle (#1*0.5,#2);
+    \shade[left color=ProteusVoid, right color=ProteusIce] (#1*0.5,0) rectangle (#1,#2);
+  \end{tikzpicture}}
+
+% ---------------- frame title with mono eyebrow ----------------
+\setbeamertemplate{frametitle}{%
+  \vspace*{7mm}%
+  \ifx\insertframesubtitle\@empty\else
+    {\usebeamerfont{framesubtitle}\usebeamercolor[fg]{framesubtitle}%
+     \MakeUppercase{\insertframesubtitle}\\[1.2mm]}%
+  \fi
+  {\usebeamerfont{frametitle}\insertframetitle}%
+  \vspace*{2mm}%
+}
+
+% ---------------- footline ----------------
+\setbeamertemplate{footline}{%
+  \hspace*{10mm}%
+  \raisebox{4mm}{\usebeamerfont{footline}\usebeamercolor[fg]{footline}%
+    PROTEUS\ \textperiodcentered\ \insertshorttitle}%
+  \hfill
+  \raisebox{4mm}{\usebeamerfont{footline}\usebeamercolor[fg]{footline}%
+    \insertframenumber\ /\ \inserttotalframenumber}%
+  \hspace*{10mm}\vspace*{2mm}%
+}
+
+% ---------------- title page ----------------
+\newcommand{\conference}[1]{\def\proteus@conf{#1}}
+\conference{}
+
+\defbeamertemplate*{title page}{proteus}{%
+  \ifproteus@titledark
+    \setbeamercolor{titlepagecolor}{bg=ProteusVoid, fg=ProteusPaper}%
+    \def\proteus@glyph{glyph_phase_dark.png}%
+    \def\proteus@eyebrowcol{ProteusAzure}%
+    \def\proteus@dimcol{ProteusTextDim}%
+  \else
+    \setbeamercolor{titlepagecolor}{bg=ProteusPaper, fg=ProteusInk}%
+    \def\proteus@glyph{glyph_phase_light.png}%
+    \def\proteus@eyebrowcol{ProteusOcean}%
+    \def\proteus@dimcol{ProteusInkSoft}%
+  \fi
+  \begin{beamercolorbox}[wd=\paperwidth, ht=\paperheight, sep=0pt]{titlepagecolor}
+    \begin{tikzpicture}[remember picture, overlay]
+      \node[anchor=north west, xshift=10mm, yshift=-9mm] at (current page.north west)
+        {\proteusmono\fontsize{7}{9}\selectfont\color{\proteus@eyebrowcol}%
+         \MakeUppercase{\proteus@conf}};
+      \node[anchor=north east, xshift=-10mm, yshift=-7mm] at (current page.north east)
+        {\includegraphics[width=13mm]{\ProteusAssetPath\proteus@glyph}};
+      \node[anchor=west, xshift=10mm, text width=118mm] at ($(current page.west)+(0,4mm)$) {%
+        {\usebeamerfont{subtitle}\color{\proteus@eyebrowcol}\MakeUppercase{\insertsubtitle}}\\[3.5mm]
+        {\usebeamerfont{title}\usebeamercolor[fg]{titlepagecolor}\inserttitle}%
+      };
+      \node[anchor=south west, xshift=10mm, yshift=9mm, text width=118mm]
+        at (current page.south west) {%
+        {\usebeamerfont{author}\usebeamercolor[fg]{titlepagecolor}\insertauthor}\\[1.5mm]
+        {\usebeamerfont{institute}\color{\proteus@dimcol}\insertinstitute}\\[2.5mm]
+        {\usebeamerfont{date}\color{\proteus@dimcol}\MakeUppercase{\insertdate}}%
+      };
+      \node[anchor=south west, inner sep=0pt] at (current page.south west)
+        {\proteusPhaseBand{\paperwidth}{1.6mm}};
+    \end{tikzpicture}%
+  \end{beamercolorbox}%
+}
+
+% ---------------- section pages (follow global mode) ----------------
+\AtBeginSection[]{%
+  \begingroup
+  \ifproteus@dark
+    \setbeamercolor{background canvas}{bg=ProteusVoid}%
+    \def\proteus@secglyph{glyph_phase_dark.png}%
+    \def\proteus@sectitlecol{ProteusPaper}%
+  \else
+    \setbeamercolor{background canvas}{bg=ProteusPaper}%
+    \def\proteus@secglyph{glyph_phase_light.png}%
+    \def\proteus@sectitlecol{ProteusInk}%
+  \fi
+  \begin{frame}[plain]
+    \begin{tikzpicture}[remember picture, overlay]
+      \node[anchor=east, xshift=32mm, opacity=0.92] at (current page.east)
+        {\includegraphics[width=95mm]{\ProteusAssetPath\proteus@secglyph}};
+      \node[anchor=west, xshift=10mm, text width=100mm] at (current page.west) {%
+        {\proteusmono\fontsize{8}{10}\selectfont\color{ProteusAzure}%
+          SECTION~\ifnum\thesection<10 0\fi\thesection}\\[4mm]
+        {\proteusdisplay\bfseries\fontsize{26}{29}\selectfont\color{\proteus@sectitlecol}%
+          \insertsectionhead}%
+      };
+    \end{tikzpicture}
+  \end{frame}
+  \endgroup
+}
+
+% ---------------- per-frame surface overrides ----------------
+% Force DARK frames inside a LIGHT deck (or anywhere).
+\newenvironment{darkframes}{\begingroup\proteusApplyDark}{\endgroup}
+% Force LIGHT frames inside a DARK deck (or anywhere).
+\newenvironment{lightframes}{\begingroup\proteusApplyLight}{\endgroup}
+
+% ---------------- closing frame (follows global mode) ----------------
+% \proteusClosingFrame{Thank you.}{proteus-framework.org · @FormingWorlds}
+\newcommand{\proteusClosingFrame}[2]{%
+  \begingroup
+  \ifproteus@dark
+    \setbeamercolor{background canvas}{bg=ProteusVoid}%
+    \def\proteus@clglyph{glyph_phase_dark.png}%
+    \def\proteus@cltitle{ProteusPaper}%
+    \def\proteus@cldim{ProteusTextDim}%
+  \else
+    \setbeamercolor{background canvas}{bg=ProteusPaper}%
+    \def\proteus@clglyph{glyph_phase_light.png}%
+    \def\proteus@cltitle{ProteusInk}%
+    \def\proteus@cldim{ProteusInkSoft}%
+  \fi
+  \begin{frame}[plain]
+    \begin{tikzpicture}[remember picture, overlay]
+      \node[yshift=8mm] at (current page.center)
+        {\includegraphics[width=30mm]{\ProteusAssetPath\proteus@clglyph}};
+      \node[yshift=-14mm] at (current page.center)
+        {\proteusdisplay\bfseries\fontsize{20}{24}\selectfont\color{\proteus@cltitle}#1};
+      \node[yshift=-26mm] at (current page.center)
+        {\proteusmono\fontsize{8}{10}\selectfont\color{\proteus@cldim}#2};
+      \node[anchor=south west, inner sep=0pt] at (current page.south west)
+        {\proteusPhaseBand{\paperwidth}{1.6mm}};
+    \end{tikzpicture}
+  \end{frame}
+  \endgroup
+}
+
+\mode<all>

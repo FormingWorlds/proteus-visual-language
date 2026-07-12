@@ -1,0 +1,13 @@
+# PROTEUS Thermocline — dark overrides (Void background)
+# Apply on top of proteus.mplstyle; matches dark slides and dark docs.
+
+figure.facecolor:      05070B
+savefig.facecolor:     05070B
+axes.facecolor:        05070B
+axes.edgecolor:        E9EEF2
+axes.labelcolor:       E9EEF2
+axes.titlecolor:       E9EEF2
+grid.color:            1A2230
+xtick.color:           9FB0BE
+ytick.color:           9FB0BE
+text.color:            E9EEF2

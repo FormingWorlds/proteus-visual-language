@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="design_doc_mode" content="canvas">
+<title>PROTEUS — Thermocline Logo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Instrument Sans", sans-serif; }
+  a { color: #4FA3D9; } a:hover { color: #A8D4E8; }
+
+  .frame {
+    position: absolute;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10), 0 12px 40px -12px rgba(0,0,0,0.20);
+  }
+  .frame-label {
+    position: absolute;
+    top: -30px; left: 0;
+    font-family: "Spline Sans Mono", monospace;
+    font-size: 13px; letter-spacing: 0.08em;
+    color: #666; white-space: nowrap;
+  }
+
+  /* ---------- glyph (geometry invariant — masked from the real PNG) ---------- */
+  .glyph { display: block; flex: none; width: auto; }
+
+  /* ---------- lockup ---------- */
+  .lockup { display: inline-flex; flex-direction: column; }
+  .lockup .word {
+    display: flex; align-items: center;
+    font-family: "Sora", sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    line-height: 1;
+  }
+  /* glyph sized against the type: cap-height of Sora ≈ 0.70em; original mark's
+     rings overshoot the caps above and below by ~28% */
+  .lockup .word .glyph {
+    height: 1.06em;
+    width: auto;
+    margin: 0 0.015em 0 0.03em;
+    transform: translateY(0.011em);
+  }
+  .lockup .tag {
+    font-family: "Spline Sans Mono", monospace;
+    font-weight: 500;
+    letter-spacing: 0.52em;
+    align-self: flex-end;
+    line-height: 1;
+  }
+
+  /* ---------- frames ---------- */
+  .f-dark  { background: #05070B; color: #E9EEF2; }
+  .f-light { background: #F2F5F7; color: #10151B; }
+  .cap { font-family: "Spline Sans Mono", monospace; font-size: 11px; letter-spacing: 0.14em; }
+  .cap-d { color: #5A6B7A; }
+  .cap-l { color: #7A8894; }
+
+  .cell { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; border-radius: 4px; }
+
+  .spec-note { font-size: 13.5px; line-height: 1.6; color: #9FB0BE; }
+  .spec-note b { color: #E9EEF2; font-weight: 600; }
+  .spec-kv { display: grid; grid-template-columns: 150px 1fr; gap: 8px 16px; font-size: 13px; }
+  .spec-kv .k { font-family: "Spline Sans Mono", monospace; font-size: 11px; letter-spacing: 0.1em; color: #4FA3D9; padding-top: 2px; }
+  .spec-kv .v { color: #9FB0BE; line-height: 1.5; }
+  .spec-kv .v b { color: #E9EEF2; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- ============ 01 · PRIMARY LOCKUP — DARK ============ -->
+<div class="frame f-dark" style="left: 40px; top: 60px; width: 1120px; padding: 90px 80px 70px;" data-screen-label="01 Primary lockup — dark">
+  <div class="frame-label">01 · PRIMARY LOCKUP — on Void</div>
+  <div class="lockup" style="font-size: 150px;">
+    <div class="word" style="color: #F2F5F7;">PR<img class="glyph" src="../logo/glyph/glyph_phase_dark.png" alt="O">TEUS</div>
+    <div class="tag" style="font-size: 26px; color: #4FA3D9; margin-top: 18px; margin-right: 6px;">framework</div>
+  </div>
+  <div class="cap cap-d" style="margin-top: 56px;">WORDMARK · SORA EXTRABOLD CAPS &nbsp;·&nbsp; GLYPH · PHASE GRADIENT (INVARIANT GEOMETRY) &nbsp;·&nbsp; TAG · SPLINE SANS MONO</div>
+</div>
+
+<!-- ============ 02 · PRIMARY LOCKUP — LIGHT ============ -->
+<div class="frame f-light" style="left: 40px; top: 640px; width: 1120px; padding: 90px 80px 70px;" data-screen-label="02 Primary lockup — light">
+  <div class="frame-label">02 · PRIMARY LOCKUP — on Paper</div>
+  <div class="lockup" style="font-size: 150px;">
+    <div class="word" style="color: #10151B;">PR<img class="glyph" src="../logo/glyph/glyph_phase_light.png" alt="O">TEUS</div>
+    <div class="tag" style="font-size: 26px; color: #14406B; margin-top: 18px; margin-right: 6px;">framework</div>
+  </div>
+  <div class="cap cap-l" style="margin-top: 56px;">LIGHT SURFACE · INK LETTERS · DEEPENED PHASE GRADIENT FOR CONTRAST</div>
+</div>
+
+<!-- ============ 03 · COLORWAYS ============ -->
+<div class="frame" style="left: 1240px; top: 60px; width: 980px; background: #0E131B; padding: 48px 48px 40px;" data-screen-label="03 Colorways">
+  <div class="frame-label">03 · COLORWAYS — one geometry, four inks</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+    <div class="cell f-dark" style="padding: 44px 20px 28px; border: 1px solid #1A2230;">
+      <div class="lockup" style="font-size: 56px;">
+        <div class="word" style="color:#F2F5F7;">PR<img class="glyph" src="../logo/glyph/glyph_phase_dark.png" alt="O">TEUS</div>
+        <div class="tag" style="font-size: 10px; color: #4FA3D9; margin-top: 8px; margin-right: 2px;">framework</div>
+      </div>
+      <div class="cap cap-d">PHASE · PRIMARY ON DARK</div>
+    </div>
+    <div class="cell f-light" style="padding: 44px 20px 28px;">
+      <div class="lockup" style="font-size: 56px;">
+        <div class="word" style="color:#10151B;">PR<img class="glyph" src="../logo/glyph/glyph_phase_light.png" alt="O">TEUS</div>
+        <div class="tag" style="font-size: 10px; color: #14406B; margin-top: 8px; margin-right: 2px;">framework</div>
+      </div>
+      <div class="cap cap-l">PHASE · PRIMARY ON LIGHT</div>
+    </div>
+    <div class="cell f-dark" style="padding: 44px 20px 28px; border: 1px solid #1A2230;">
+      <div class="lockup" style="font-size: 56px;">
+        <div class="word" style="color:#F2F5F7;">PR<img class="glyph" src="../logo/glyph/glyph_paper.png" alt="O">TEUS</div>
+        <div class="tag" style="font-size: 10px; color: #8FA0AE; margin-top: 8px; margin-right: 2px;">framework</div>
+      </div>
+      <div class="cap cap-d">MONO LIGHT · SINGLE-COLOR USES</div>
+    </div>
+    <div class="cell f-light" style="padding: 44px 20px 28px;">
+      <div class="lockup" style="font-size: 56px;">
+        <div class="word" style="color:#10151B;">PR<img class="glyph" src="../logo/glyph/glyph_ink.png" alt="O">TEUS</div>
+        <div class="tag" style="font-size: 10px; color: #4A555F; margin-top: 8px; margin-right: 2px;">framework</div>
+      </div>
+      <div class="cap cap-l">MONO INK · SINGLE-COLOR USES</div>
+    </div>
+    <div class="cell f-dark" style="padding: 44px 20px 28px; border: 1px solid #1A2230;">
+      <div class="lockup" style="font-size: 56px;">
+        <div class="word" style="color:#F2F5F7;">PR<img class="glyph" src="../logo/glyph/glyph_magma.png" alt="O">TEUS</div>
+        <div class="tag" style="font-size: 10px; color: #E23D28; margin-top: 8px; margin-right: 2px;">framework</div>
+      </div>
+      <div class="cap cap-d">MAGMA · HOT-STATE CONTEXTS</div>
+    </div>
+    <div class="cell f-dark" style="padding: 44px 20px 28px; border: 1px solid #1A2230;">
+      <div class="lockup" style="font-size: 56px;">
+        <div class="word" style="color:#F2F5F7;">PR<img class="glyph" src="../logo/glyph/glyph_ice.png" alt="O">TEUS</div>
+        <div class="tag" style="font-size: 10px; color: #A8D4E8; margin-top: 8px; margin-right: 2px;">framework</div>
+      </div>
+      <div class="cap cap-d">ICE · COOL-STATE CONTEXTS</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 04 · GLYPH ALONE + SCALE ============ -->
+<div class="frame" style="left: 1240px; top: 1000px; width: 980px; background: #0E131B; padding: 48px 48px 40px;" data-screen-label="04 Glyph + scale">
+  <div class="frame-label">04 · GLYPH ALONE · SCALE FLOOR</div>
+  <div style="display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 16px;">
+    <div class="cell f-dark" style="padding: 36px 20px 26px; border: 1px solid #1A2230;">
+      <img src="../logo/glyph/glyph_phase_dark.png" alt="PROTEUS glyph" style="width: 120px;">
+      <div class="cap cap-d">AVATAR / APP ICON</div>
+    </div>
+    <div class="cell" style="padding: 36px 20px 26px; background: linear-gradient(160deg, #8E1F12, #05070B 60%, #14406B); border: 1px solid #1A2230;">
+      <img src="../logo/glyph/glyph_paper.png" alt="PROTEUS glyph" style="width: 120px;">
+      <div class="cap" style="color:#C7D3DC;">MONO ON BRAND GRADIENT</div>
+    </div>
+    <div class="cell f-light" style="padding: 36px 20px 26px;">
+      <img src="../logo/glyph/glyph_phase_light.png" alt="PROTEUS glyph" style="width: 120px;">
+      <div class="cap cap-l">FAVICON SOURCE</div>
+    </div>
+  </div>
+  <div style="display: flex; align-items: flex-end; gap: 40px; margin-top: 28px; padding: 30px 32px; background: #05070B; border: 1px solid #1A2230; border-radius: 4px;">
+    <div class="lockup" style="font-size: 64px;"><div class="word" style="color:#F2F5F7;">PR<img class="glyph" src="../logo/glyph/glyph_phase_dark.png" alt="O">TEUS</div></div>
+    <div class="lockup" style="font-size: 40px;"><div class="word" style="color:#F2F5F7;">PR<img class="glyph" src="../logo/glyph/glyph_phase_dark.png" alt="O">TEUS</div></div>
+    <div class="lockup" style="font-size: 24px;"><div class="word" style="color:#F2F5F7;">PR<img class="glyph" src="../logo/glyph/glyph_phase_dark.png" alt="O">TEUS</div></div>
+    <div class="lockup" style="font-size: 16px;"><div class="word" style="color:#F2F5F7;">PR<img class="glyph" src="../logo/glyph/glyph_phase_dark.png" alt="O">TEUS</div></div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <img src="../logo/glyph/glyph_phase_dark.png" alt="" style="width: 18px;">
+      <span style="font-family:'Sora',sans-serif; font-weight:800; font-size:14px; color:#F2F5F7; letter-spacing:0.01em;">PROTEUS</span>
+    </div>
+  </div>
+  <div class="cap cap-d" style="margin-top: 14px;">SCALE FLOOR · BELOW ~90PX LOCKUP WIDTH, SWITCH TO GLYPH + SIDE-SET NAME (NAV / FOOTER USE)</div>
+</div>
+
+<!-- ============ 05 · CONSTRUCTION SPEC ============ -->
+<div class="frame f-dark" style="left: 40px; top: 1220px; width: 1120px; padding: 48px 56px 52px;" data-screen-label="05 Construction spec">
+  <div class="frame-label">05 · CONSTRUCTION — rules for every reproduction</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 48px;">
+    <div>
+      <div class="cap cap-d" style="margin-bottom: 18px;">SPEC</div>
+      <div class="spec-kv">
+        <div class="k">GLYPH</div><div class="v"><b>Invariant.</b> The ring geometry is never redrawn, rotated, mirrored, or reproportioned. Color is the only variable.</div>
+        <div class="k">GRADIENT</div><div class="v">Radial, centered on the core: <b>Magma #E23D28</b> core → <b>Mantle #8E1F12</b> → <b>Ocean #1B6FA8</b> → <b>Ice #A8D4E8</b> at the outer arcs. Hot inside, cool outside — the planet cooling, read outward.</div>
+        <div class="k">WORDMARK</div><div class="v"><b>Sora ExtraBold (800), all caps</b>, letter-spacing +1%. The glyph replaces the O, set at 1.06× the type size so the outer arcs overshoot the cap height — as in the original mark.</div>
+        <div class="k">TAG</div><div class="v"><b>"framework"</b> in Spline Sans Mono Medium, lowercase, tracked +52%, right-aligned under TEUS. Drop it below 200px lockup width.</div>
+        <div class="k">CLEARSPACE</div><div class="v">1× cap height on all sides, minimum.</div>
+        <div class="k">MINIMUM SIZE</div><div class="v">Lockup ≥ 90px wide on screen. Below that: glyph + side-set name, or glyph alone.</div>
+      </div>
+    </div>
+    <div>
+      <div class="cap cap-d" style="margin-bottom: 18px;">DON'T</div>
+      <div class="spec-note">
+        <ul style="padding-left: 18px; display: grid; gap: 10px;">
+          <li>Don't set the wordmark in any face but Sora, or in mixed case.</li>
+          <li>Don't recolor letters — they are Paper <b>#F2F5F7</b> on dark, Ink <b>#10151B</b> on light. The glyph carries all color.</li>
+          <li>Don't reverse the gradient (cool core / hot rim reads as the wrong physics).</li>
+          <li>Don't apply glows, shadows, or outlines to the mark.</li>
+          <li>Don't place the phase glyph on mid-tone or busy surfaces — use a mono colorway there.</li>
+          <li>Don't rebuild the glyph from CSS circles or SVG arcs — always reproduce from the master asset.</li>
+        </ul>
+      </div>
+      <div style="margin-top: 28px; padding: 22px 24px; background: #05070B; border: 1px solid #1A2230; border-radius: 4px;">
+        <div class="cap cap-d" style="margin-bottom: 12px;">THE STORY IN ONE MARK</div>
+        <div class="spec-note">A molten core cooling through deep time into an ocean world — PROTEUS's entire scientific narrative, read from the center of the glyph outward. Red → black → blue is also the data-viz scale, so every figure quietly repeats the logo.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

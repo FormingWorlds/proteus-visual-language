@@ -1,0 +1,27 @@
+{
+  "name": "@formingworlds/proteus-tokens",
+  "version": "26.7.12",
+  "description": "PROTEUS Framework design tokens (Thermocline) — colours, type, spacing, radii as CSS, JSON, and SCSS.",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/FormingWorlds/proteus-visual-language/tree/main/tokens",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FormingWorlds/proteus-visual-language.git",
+    "directory": "tokens"
+  },
+  "author": "Forming Worlds Lab",
+  "keywords": ["proteus", "design-tokens", "thermocline", "css-variables"],
+  "files": ["tokens.css", "tokens.json", "tokens.scss", "README.md"],
+  "main": "tokens.json",
+  "style": "tokens.css",
+  "sass": "tokens.scss",
+  "exports": {
+    ".": "./tokens.json",
+    "./tokens.css": "./tokens.css",
+    "./tokens.scss": "./tokens.scss",
+    "./tokens.json": "./tokens.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

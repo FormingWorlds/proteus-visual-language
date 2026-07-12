@@ -1,0 +1,55 @@
+# PROTEUS Thermocline — light variant (Paper background)
+# Publication-grade sizes on the default 8x5 in canvas.
+
+figure.figsize:        8, 5
+figure.dpi:            110
+figure.facecolor:      F2F5F7
+savefig.dpi:           300
+savefig.bbox:          tight
+savefig.facecolor:     F2F5F7
+
+# vector output: embed fonts / text as text
+pdf.fonttype:          42
+ps.fonttype:           42
+svg.fonttype:          path
+
+font.family:           sans-serif
+font.sans-serif:       Instrument Sans, Sora, DejaVu Sans
+font.size:             14.5
+
+# mono for the technical voice
+font.monospace:        Spline Sans Mono, DejaVu Sans Mono
+
+axes.facecolor:        F2F5F7
+axes.edgecolor:        10151B
+axes.linewidth:        1.1
+axes.labelcolor:       10151B
+axes.labelsize:        18
+axes.titlesize:        18
+axes.titleweight:      bold
+axes.titlelocation:    left
+axes.titlecolor:       10151B
+axes.grid:             True
+axes.axisbelow:        True
+axes.spines.top:       False
+axes.spines.right:     False
+
+grid.color:            D2DAE1
+grid.linewidth:        0.8
+
+lines.linewidth:       2.2
+lines.markersize:      7
+
+xtick.color:           3E4A55
+ytick.color:           3E4A55
+xtick.labelsize:       14.5
+ytick.labelsize:       14.5
+xtick.direction:       out
+ytick.direction:       out
+
+legend.fontsize:       14.5
+legend.frameon:        False
+
+text.color:            10151B
+
+mathtext.fontset:      dejavusans

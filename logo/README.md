@@ -1,0 +1,45 @@
+# Logo
+
+The PROTEUS mark: an all-caps **Sora ExtraBold** wordmark with the phase glyph
+standing in for the **O**. The glyph is a molten core cooling outward through
+concentric rings — the magma→ocean story in miniature.
+
+**The geometry is invariant.** Recolour the glyph; never redraw it.
+
+## Files
+
+```
+logo/
+├── glyph/     the phase glyph, every colorway × three formats:
+│   ── SVG (vector):  glyph_phase.svg (multi-colour), glyph_magma/ocean/
+│                  ice/ink/paper.svg (single), glyph_mono.svg (currentColor)
+│   ── PNG (pixel, transparent, 950×998): glyph_phase_dark/light.png,
+│                  glyph_magma/ice/ink/paper/ocean.png, domain tints
+│                  (glyph_azure/outgassing/tidal.png)
+│   ── JPG (pixel, on background): glyph_phase_dark.jpg (on Void),
+│                  glyph_phase_light.jpg (on Paper), glyph_magma/ice/ocean.jpg
+├── lockup/    Thermocline wordmark (Sora ExtraBold + phase glyph):
+│            proteus-lockup-dark.png (on Void) / proteus-lockup-light.png (on Paper)
+└── favicon/   favicon.svg (phase glyph) + favicon.png / favicon-light.png
+```
+
+**Formats:** SVG for anything that scales (web, docs, print) — `glyph_mono.svg`
+inherits `currentColor` for inline embedding; PNG where transparency is needed
+(slides, matplotlib, favicons); JPG where transparency isn't available, composited
+on Void or Paper.
+
+**Themes:** `phase_dark` / single-colour `paper` / `ice` / `magma` sit on dark
+surfaces; `phase_light` / `ink` / `ocean` sit on light. The multi-colour
+`glyph_phase.svg` works on either.
+
+## Rules
+
+- **Clear space:** keep at least the glyph's radius clear on all sides.
+- **Minimum lockup width:** 90 px. Below that, use the glyph alone with the
+  wordmark set beside it, not under it.
+- **Colour:** the letters are Paper (on dark) or Ink (on light); the glyph
+  carries the colour. Use one hot moment (magma) per surface at most.
+- **Never:** rotate, add glow/shadow, outline, stretch, or place the glyph on a
+  busy background without a scrim.
+
+Full guidance: [`../docs/logo.md`](../docs/logo.md).
