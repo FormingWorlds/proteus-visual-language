@@ -21,7 +21,8 @@ logo/
 │                  glyph_phase_light.jpg (on Paper), plus every single
 │                  colorway composited on its natural surface
 ├── lockup/    PROTEUS wordmark (Sora ExtraBold + phase glyph):
-│            proteus-lockup-dark.png (on Void) / proteus-lockup-light.png (on Paper)
+│            proteus-lockup-dark.png (on Void) / proteus-lockup-light.png (on Paper);
+│            *-transparent.png variants (paper or ink letters, no background)
 └── favicon/   favicon.svg (phase glyph) + favicon.png / favicon-light.png
 ```
 

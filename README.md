@@ -1,8 +1,8 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="logo/lockup/proteus-lockup-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="logo/lockup/proteus-lockup-light.png">
-    <img alt="PROTEUS framework lockup: the wordmark with the phase glyph as the O" src="logo/lockup/proteus-lockup-dark.png" width="460">
+    <source media="(prefers-color-scheme: dark)" srcset="logo/lockup/proteus-lockup-dark-transparent.png">
+    <source media="(prefers-color-scheme: light)" srcset="logo/lockup/proteus-lockup-light-transparent.png">
+    <img alt="PROTEUS framework lockup: the wordmark with the phase glyph as the O" src="logo/lockup/proteus-lockup-light-transparent.png" width="640">
   </picture>
 </p>
 
