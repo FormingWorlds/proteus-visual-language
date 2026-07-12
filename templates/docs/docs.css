@@ -90,7 +90,7 @@ pre.codeblock .lang { position: absolute; top: 10px; right: 14px; font-size: 10p
 .adm-note .adm-title { background: rgba(27,111,168,0.12); color: var(--pt-azure); }
 .adm-warn .adm-title { background: rgba(226,61,40,0.12); color: var(--pt-magma); }
 .adm-tip .adm-title { background: rgba(62,156,107,0.14); color: var(--pt-positive); }
-.adm-abstract .adm-title { background: rgba(79,163,217,0.12); color: var(--pt-atmos, #4FA3D9); }
+.adm-abstract .adm-title { background: rgba(79,163,217,0.12); color: var(--pt-dom-atmos, #4FA3D9); }
 .adm-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 
 table.params { border-collapse: collapse; width: 100%; max-width: 820px; font-size: 14.5px; margin: 20px 0; }
