@@ -43,7 +43,9 @@ Every colorway ships in three formats, in [`../logo/glyph/`](../logo/glyph/)
   transparency (some social/email).
 
 Wordmark lockups live in [`../logo/lockup/`](../logo/lockup/) as
-`proteus-lockup-dark.png` (on Void) and `proteus-lockup-light.png` (on Paper) —
+`proteus-lockup-dark.png` (on Void) and `proteus-lockup-light.png` (on Paper),
+plus `*-transparent.png` variants of both (no background, for READMEs and
+composited layouts) —
 the wordmark is **Sora ExtraBold**, so it also reproduces live in HTML (see
 `../site/logo-lockups.html`) and the glyph itself is vector (`glyph_phase.svg`).
 Favicon in [`../logo/favicon/`](../logo/favicon/): `favicon.svg` (phase glyph)
