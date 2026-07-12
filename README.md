@@ -9,7 +9,8 @@ transition of a rocky planet from a **magma ocean** to a **water world**.
 Red = hot state, black = deep time, blue = cool state.
 
 > **Brand guide:** https://formingworlds.github.io/proteus-visual-language
-> (rendered from `site/`) · PDF in [`brand-guide.pdf`](brand-guide.pdf)
+> (rendered from `site/`) · PDF at
+> [brand-guide.pdf](https://formingworlds.github.io/proteus-visual-language/brand-guide.pdf)
 
 ---
 
