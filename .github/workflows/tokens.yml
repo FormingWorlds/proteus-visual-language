@@ -5,10 +5,28 @@ on:
     branches: [main]
     paths:
       - "tokens/**"
+      - "templates/docs/extra.css"
+      - "templates/docs/docs.css"
+      - "templates/web/site.css"
+      - "figures/proteus-mpl/src/**"
+      - "talks/beamer/beamerthemeproteus.sty"
+      - "docs/*.md"
+      - "site/index.html"
+      - "site/logo-lockups.html"
+      - "logo/**"
       - ".github/workflows/tokens.yml"
   pull_request:
     paths:
       - "tokens/**"
+      - "templates/docs/extra.css"
+      - "templates/docs/docs.css"
+      - "templates/web/site.css"
+      - "figures/proteus-mpl/src/**"
+      - "talks/beamer/beamerthemeproteus.sty"
+      - "docs/*.md"
+      - "site/index.html"
+      - "site/logo-lockups.html"
+      - "logo/**"
       - ".github/workflows/tokens.yml"
   workflow_dispatch:
 
@@ -22,3 +40,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Verify tokens.json and tokens.scss match tokens.css
         run: python3 tokens/check_sync.py
+      - name: Verify hand-maintained token copies match tokens.css
+        run: python3 tokens/check_copies.py

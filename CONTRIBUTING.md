@@ -19,6 +19,15 @@ and commit all three together. CI runs the same script in check mode
 (`python3 tokens/check_sync.py`, no arguments) to verify the three files
 agree; run it locally before pushing.
 
+Some artifacts duplicate token values by hand because they cannot read CSS:
+the docs stylesheets (`templates/docs/`), the matplotlib theme
+(`figures/proteus-mpl`, including its style sheets and colour cycles), the
+Beamer theme (`talks/beamer`), the hex values quoted in the docs pages and
+brand-guide plates, the logo SVGs, and the light-theme blocks inside
+`tokens.css` itself. After a token value change, update those copies too;
+CI runs `python3 tokens/check_copies.py` to verify them against
+`tokens.css`.
+
 ## What must not change without a design review
 
 - **Glyph geometry.** The phase glyph's concentric-ring construction is fixed.
