@@ -1,7 +1,7 @@
 # Typography
 
-Three families, no others. Loaded from Google Fonts by default; bundle the OFL
-files for offline builds (see [`../fonts/README.md`](../fonts/README.md)).
+Three families, no others. All artifacts load them self-hosted from
+[`../fonts/`](../fonts/README.md); no third-party font requests.
 
 | Role | Family | Weights | Notes |
 |---|---|---|---|

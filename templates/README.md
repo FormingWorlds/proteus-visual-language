@@ -22,7 +22,10 @@ assets from [`../logo/`](../logo/).
 
 - **Docs:** `extra.css` is the homogeneity mechanism — the same file dropped
   into every module's zensical build makes every docs site one product. Add the
-  logo + favicon from `logo/` and you're done. Dark (default, OS-aware) and
+  logo + favicon from `logo/`, and copy the font files from
+  [`../fonts/`](../fonts/) into `docs/stylesheets/fonts/` (`fonts.css`,
+  `OFL.txt`, and the three family folders; `extra.css` loads them, so the
+  site makes no third-party font requests). Dark (default, OS-aware) and
   light schemes are both included.
 - **Web:** the full site (home, modules, demos, validation, publications,
   license, people) is demonstrated in the design project; here we ship the
