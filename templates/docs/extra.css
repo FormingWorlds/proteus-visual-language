@@ -15,10 +15,14 @@
        favicon: assets/favicon.svg
      extra_css:
        - stylesheets/extra.css
-   Copy assets/logo/glyph_phase_dark.png (+ _light) into docs/assets/.
+   Copy assets/logo/glyph_phase_dark.png (+ _light) into docs/assets/,
+   and from this repo's fonts/ folder copy fonts.css, OFL.txt, and the
+   three family folders into docs/stylesheets/fonts/ (the import below
+   loads them; no third-party font requests). Leave fonts/README.md
+   behind so mkdocs does not render it as a page.
    ============================================================ */
 
-@import url("https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap");
+@import url("fonts/fonts.css");
 
 :root {
   /* brand */

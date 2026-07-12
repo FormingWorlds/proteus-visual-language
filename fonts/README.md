@@ -8,23 +8,25 @@ The PROTEUS visual language uses three open-source typefaces:
 | Body / UI | **Instrument Sans** | 400 / 500 / 600 | SIL Open Font License 1.1 |
 | Mono (code, labels, metadata) | **Spline Sans Mono** | 400 / 500 | SIL Open Font License 1.1 |
 
-All three are on Google Fonts, so the templates load them from there by default.
-For an **offline / self-contained** build (matplotlib, Beamer, print, air-gapped
-docs) the static TTFs ship in this folder:
+Every artifact loads them **self-hosted from this folder**; nothing requests
+fonts from a third party. The web pages and the docs drop-in load
+[`fonts.css`](fonts.css) (woff2 first, TTF fallback); matplotlib, Beamer, and
+print workflows use the TTFs directly:
 
 ```
 fonts/
-├── sora/                 Sora-{SemiBold,Bold,ExtraBold}.ttf
-├── instrument-sans/      InstrumentSans-{Regular,Medium,SemiBold}.ttf
-├── spline-sans-mono/     SplineSansMono-{Regular,Medium}.ttf
+├── sora/                 Sora-{SemiBold,Bold,ExtraBold}.{woff2,ttf}
+├── instrument-sans/      InstrumentSans-{Regular,Medium,SemiBold}.{woff2,ttf}
+├── spline-sans-mono/     SplineSansMono-{Regular,Medium}.{woff2,ttf}
 ├── OFL.txt               the SIL Open Font License (covers all three families)
 └── fonts.css             @font-face rules pointing at the files above
 ```
 
-To self-host on the web, include [`fonts.css`](fonts.css) before any stylesheet
-that uses the token font stacks; the declared family names match
-[`../tokens/tokens.css`](../tokens/tokens.css) exactly. Keep exactly the weights
-listed above; the rest of the system assumes them.
+To use the fonts in another web project, copy this folder and include
+[`fonts.css`](fonts.css) before any stylesheet that uses the token font
+stacks; the declared family names match
+[`../tokens/tokens.css`](../tokens/tokens.css) exactly. Keep exactly the
+weights listed above; the rest of the system assumes them.
 
 Specimen pages:
 - Sora — https://fonts.google.com/specimen/Sora
