@@ -50,11 +50,11 @@ CI runs `python3 tokens/check_copies.py` to verify them against
 
 ## Releasing
 
-Tag the release date as `YY.MM.DD` (CalVer, matching the wider PROTEUS
-ecosystem, e.g. `26.07.12`). The release workflow publishes
-`@formingworlds/proteus-tokens` to npm and `proteus-mpl` to PyPI, and
-redeploys the brand guide to GitHub Pages. Before tagging, set the same
-date (without leading zeros, e.g. `26.7.12`, as npm and PyPI require) in
+Tag releases as `vX.Y.Z` (semantic versioning; Thermocline launches the v1
+series, and the major version bumps on a new design generation or a breaking
+change). The tag triggers the release workflow, which publishes
+`@formingworlds/proteus-tokens` to npm and `proteus-mpl` to PyPI. Before
+tagging, set the same version without the `v` prefix (e.g. `1.0.0`) in
 `tokens/package.json` and `figures/proteus-mpl/pyproject.toml`, and bump
 `CHANGELOG.md` in the same PR.
 

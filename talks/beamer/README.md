@@ -1,4 +1,4 @@
-# PROTEUS beamer theme (Thermocline v1.1)
+# PROTEUS beamer theme (Thermocline v1.0)
 
 LaTeX talk theme matching the HTML deck templates. Runs as a **fully light**
 or **fully dark** deck (`mode=light|dark`), with phase band, module domain
