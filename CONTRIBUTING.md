@@ -14,8 +14,10 @@ template.
 ### Regenerate derived token formats
 
 `tokens.json` and `tokens.scss` are generated from `tokens.css`. After editing
-`tokens.css`, regenerate them (a small script, or by hand for a one-off) and
-commit all three together. CI checks they are in sync.
+`tokens.css`, run `python3 tokens/check_sync.py --write` to regenerate them,
+and commit all three together. CI runs the same script in check mode
+(`python3 tokens/check_sync.py`, no arguments) to verify the three files
+agree; run it locally before pushing.
 
 ## What must not change without a design review
 
