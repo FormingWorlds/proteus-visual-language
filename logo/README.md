@@ -11,13 +11,15 @@ concentric rings — the magma→ocean story in miniature.
 ```
 logo/
 ├── glyph/     the phase glyph, every colorway × three formats:
-│   ── SVG (vector):  glyph_phase.svg (multi-colour), glyph_magma/ocean/
-│                  ice/ink/paper.svg (single), glyph_mono.svg (currentColor)
-│   ── PNG (pixel, transparent, 950×998): glyph_phase_dark/light.png,
-│                  glyph_magma/ice/ink/paper/ocean.png, domain tints
-│                  (glyph_azure/outgassing/tidal.png)
+│   ── SVG (vector):  glyph_phase.svg (multi-colour), glyph_magma/ocean/ice/
+│                  ink/paper/azure/outgassing/tidal.svg (single),
+│                  glyph_mono.svg (currentColor, SVG-only by design)
+│   ── PNG (pixel, transparent, 950×998): glyph_phase_dark/light.png plus
+│                  every single colorway (glyph_magma/ocean/ice/ink/paper/
+│                  azure/outgassing/tidal.png)
 │   ── JPG (pixel, on background): glyph_phase_dark.jpg (on Void),
-│                  glyph_phase_light.jpg (on Paper), glyph_magma/ice/ocean.jpg
+│                  glyph_phase_light.jpg (on Paper), plus every single
+│                  colorway composited on its natural surface
 ├── lockup/    PROTEUS wordmark (Sora ExtraBold + phase glyph):
 │            proteus-lockup-dark.png (on Void) / proteus-lockup-light.png (on Paper)
 └── favicon/   favicon.svg (phase glyph) + favicon.png / favicon-light.png
@@ -28,8 +30,10 @@ inherits `currentColor` for inline embedding; PNG where transparency is needed
 (slides, matplotlib, favicons); JPG where transparency isn't available, composited
 on Void or Paper.
 
-**Themes:** `phase_dark` / single-colour `paper` / `ice` / `magma` sit on dark
-surfaces; `phase_light` / `ink` / `ocean` sit on light. The multi-colour
+**Themes:** `phase_dark` / single-colour `paper` / `ice` / `magma` / `azure`
+sit on dark surfaces; `phase_light` / `ink` / `ocean` / `outgassing` / `tidal`
+sit on light. The JPGs are composited accordingly (Void behind the dark-surface
+colorways, Paper behind the light-surface ones). The multi-colour
 `glyph_phase.svg` works on either.
 
 ## Rules

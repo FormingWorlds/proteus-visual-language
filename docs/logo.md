@@ -29,14 +29,18 @@ Plus module domain tints (`azure`, `outgassing`, `tidal`, …) — see
 
 ## File matrix
 
-Every colorway ships in three formats, in [`../logo/glyph/`](../logo/glyph/):
+Every colorway ships in three formats, in [`../logo/glyph/`](../logo/glyph/)
+(`glyph_mono.svg` is the one deliberate exception: SVG-only, inheriting
+`currentColor` for inline embedding):
 
 - **SVG** (vector) — `glyph_<name>.svg`. Scales to any size; preferred for web,
-  docs, print. `glyph_mono.svg` uses `currentColor`.
-- **PNG** (pixel, transparent) — `glyph_<name>.png` (950×998). For raster
-  contexts needing transparency (slides, matplotlib, favicons).
-- **JPG** (pixel, on background) — `glyph_<name>.jpg` on Void or Paper. For
-  contexts that can't do transparency (some social/email).
+  docs, print.
+- **PNG** (pixel, transparent) — `glyph_<name>.png` (950×998); the phase
+  colorway ships as `glyph_phase_dark.png` / `glyph_phase_light.png`. For
+  raster contexts needing transparency (slides, matplotlib, favicons).
+- **JPG** (pixel, on background) — `glyph_<name>.jpg` on Void or Paper, with
+  the same `_dark` / `_light` naming for phase. For contexts that can't do
+  transparency (some social/email).
 
 Wordmark lockups live in [`../logo/lockup/`](../logo/lockup/) as
 `proteus-lockup-dark.png` (on Void) and `proteus-lockup-light.png` (on Paper) —
