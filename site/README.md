@@ -15,13 +15,14 @@ so Pages deploys the **whole repo** and a root redirect sends visitors here.
 
 ## PDF
 
-The same guide is exported to [`../brand-guide.pdf`](../brand-guide.pdf) — one
-page per plate — by the Pages workflow (headless Chrome `page.pdf()`, using the
-deck's per-slide print CSS). To regenerate locally:
-
-```bash
-npx puppeteer print   # or: open index.html and File → Print → Save as PDF
-```
+The Pages workflow exports the same guide to `brand-guide.pdf` (headless
+Chrome `page.pdf()`, one page per plate via the deck's print CSS) and serves
+it at
+[brand-guide.pdf](https://formingworlds.github.io/proteus-visual-language/brand-guide.pdf).
+To regenerate locally, run the export step from
+[`../.github/workflows/pages.yml`](../.github/workflows/pages.yml) in the repo
+root (`npm i puppeteer`, then the `node -e` snippet, which writes
+`brand-guide.pdf`), or open `index.html` and print to PDF.
 
 Both formats are intentionally kept: the HTML for interactive browsing, the PDF
 for circulation and offline reference.

@@ -3,7 +3,7 @@
 The written brand guide. For the interactive version see the
 [Pages site](https://formingworlds.github.io/proteus-visual-language)
 (source in [`../site/`](../site/)); a PDF is at
-[`../brand-guide.pdf`](../brand-guide.pdf).
+[brand-guide.pdf](https://formingworlds.github.io/proteus-visual-language/brand-guide.pdf).
 
 Thermocline encodes one story: a rocky planet's transition from a **magma
 ocean** to a **water world**. Red = hot state, black = deep time, blue = cool

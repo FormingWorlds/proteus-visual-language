@@ -21,11 +21,12 @@ jobs:
       - uses: actions/checkout@v4
 
       # Export the interactive guide to a PDF (one page per plate) so the
-      # Pages artifact — and the repo's brand-guide.pdf link — stay in sync.
+      # deployed site serves the brand-guide.pdf that the repo docs link to.
+      # The npm artifacts are removed afterwards so they stay out of the
+      # uploaded Pages artifact.
       - name: Export brand-guide.pdf
-        continue-on-error: true
         run: |
-          npm i -g puppeteer
+          npm i puppeteer
           node -e "
             const puppeteer = require('puppeteer');
             (async () => {
@@ -36,6 +37,8 @@ jobs:
               await b.close();
             })();
           "
+          test -s brand-guide.pdf
+          rm -rf node_modules package.json package-lock.json
 
       - name: Root redirect → site/
         run: |
