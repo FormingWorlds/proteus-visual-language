@@ -10,6 +10,12 @@ it.
 
 ## [Unreleased]
 
+### Added
+- Background-free lockup exports in `logo/lockup/`: transparent PNG and PDF
+  (vector wordmark text) in both letter colours, and plain on-black / on-white
+  JPG compositions for contexts without transparency. The README uses the
+  transparent pair.
+
 ## [1.0.0] - 2026-07-12
 
 First public release of the **Thermocline** visual language.

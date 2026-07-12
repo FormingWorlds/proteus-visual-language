@@ -22,7 +22,11 @@ logo/
 │                  colorway composited on its natural surface
 ├── lockup/    PROTEUS wordmark (Sora ExtraBold + phase glyph):
 │            proteus-lockup-dark.png (on Void) / proteus-lockup-light.png (on Paper);
-│            *-transparent.png variants (paper or ink letters, no background)
+│            *-transparent.{png,pdf} (paper or ink letters, no background; the
+│            PDF carries the wordmark as vector text);
+│            *-on-black.jpg / *-on-white.jpg (plain compositions for contexts
+│            without transparency; these plain surfaces are the one sanctioned
+│            exception to the no-pure-black-or-white rule)
 └── favicon/   favicon.svg (phase glyph) + favicon.png / favicon-light.png
 ```
 
