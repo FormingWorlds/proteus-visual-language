@@ -20,7 +20,7 @@ hard-code a colour that exists as a token.
 **Dark (default):** Void `#05070B` (page) · Basalt `#0E131B` (cards) · Basalt-2
 `#12202E` (hover) · lines `#1A2230` · text `#E9EEF2` / `#9FB0BE` / `#5A6B7A`.
 
-**Light (mirror):** Paper `#F2F5F7` (page) · Paper-2 `#FFFFFF` (cards) · Paper-3
+**Light (mirror):** Paper `#F2F5F7` (page) · Paper-2 `#FDFDFE` (cards) · Paper-3
 `#E3E9EE` (inset) · lines `#D2DAE1` · ink `#10151B` / `#3E4A55` / `#7A8894`.
 
 Never pure black or white. No warm creams, no amber/gold.
