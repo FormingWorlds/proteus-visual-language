@@ -27,7 +27,7 @@ labels; never encode meaning in color alone.
 - `proteus_div` (diverging, light midpoint): anomalies/residuals in papers.
 - `proteus_phase` (magma→void→ocean, dark midpoint): the brand ramp — hero
   figures, dark slides, outreach. Hot is ALWAYS left/low, cool right/high.
-- Never rainbow/jet; never Interra's warm strata ramps.
+- Never rainbow/jet; never warm strata ramps.
 
 ## 3. Temperature/phase semantics
 
