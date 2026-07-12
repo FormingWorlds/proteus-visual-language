@@ -72,8 +72,7 @@ hard-code a colour, font, or size that already exists as a token. The full
 rationale is in [`docs/`](docs/) and the interactive guide.
 
 Fonts are **Sora** (display) · **Instrument Sans** (body/UI) · **Spline Sans
-Mono** (code, labels, metadata) — and deliberately *not* Space Grotesk or
-JetBrains Mono, which belong to the sibling Interra project.
+Mono** (code, labels, metadata); never Space Grotesk or JetBrains Mono.
 
 ---
 

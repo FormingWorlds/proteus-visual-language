@@ -23,8 +23,7 @@ hard-code a colour that exists as a token.
 **Light (mirror):** Paper `#F2F5F7` (page) · Paper-2 `#FFFFFF` (cards) · Paper-3
 `#E3E9EE` (inset) · lines `#D2DAE1` · ink `#10151B` / `#3E4A55` / `#7A8894`.
 
-Never pure black or white. No warm creams, no amber/gold — those belong to the
-sibling Interra project.
+Never pure black or white. No warm creams, no amber/gold.
 
 ## The phase ramp
 

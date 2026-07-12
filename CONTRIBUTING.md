@@ -24,8 +24,7 @@ agree; run it locally before pushing.
 - **Glyph geometry.** The phase glyph's concentric-ring construction is fixed.
   Recolour it (colorways live in `logo/glyph/`); never redraw it.
 - **The three typefaces.** Sora, Instrument Sans, Spline Sans Mono. Never
-  Space Grotesk or JetBrains Mono (Interra's fonts) — distinctness from the
-  sibling project is a requirement.
+  Space Grotesk or JetBrains Mono; the stack is a deliberate identity choice.
 - **The module domain colours.** They are stable and colour-blind-checked as a
   set (see [`docs/module-colors.md`](docs/module-colors.md)). Don't remap or
   extend them without re-running the CVD ΔE check.
