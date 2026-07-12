@@ -50,19 +50,7 @@ https://formingworlds.github.io/proteus-visual-language.
 
 ## 4. Cut a release
 
-Versioning is SemVer, `vX.Y.Z`; Thermocline launches the v1 series, and the
-major version bumps on a new design generation or a breaking change.
-
-1. Set the version without the `v` prefix (e.g. `1.0.0`) in
-   [`tokens/package.json`](tokens/package.json) and
-   [`figures/proteus-mpl/pyproject.toml`](figures/proteus-mpl/pyproject.toml).
-2. Update [`CHANGELOG.md`](CHANGELOG.md).
-3. Tag and push:
-
-```bash
-git tag v1.0.0
-git push origin main --tags
-```
-
-The tag triggers [`release.yml`](.github/workflows/release.yml), which
-publishes both packages.
+The release procedure (SemVer tags, version bumps, changelog) lives in
+[CONTRIBUTING.md](CONTRIBUTING.md) under "Releasing". The tag triggers
+[`release.yml`](.github/workflows/release.yml), which publishes both
+packages.

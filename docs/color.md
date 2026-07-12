@@ -43,7 +43,9 @@ hot-left → cold-right. Never reversed.**
 dark surface/text tokens to their light values — everything that references them
 flips at once. Regions meant to stay dark in both themes (code blocks, hero
 bands) restore the dark tokens locally. This mechanism drives the toggle on the
-website, docs, and poster; the Beamer theme mirrors it with `mode=light|dark`.
+website and the standalone docs shell; the poster and the mkdocs drop-in
+implement the same light/dark pairing with their own switches, and the Beamer
+theme mirrors it with `mode=light|dark`.
 
 ## Rules
 

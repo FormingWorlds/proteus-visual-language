@@ -18,7 +18,7 @@ logo/
 │                  (glyph_azure/outgassing/tidal.png)
 │   ── JPG (pixel, on background): glyph_phase_dark.jpg (on Void),
 │                  glyph_phase_light.jpg (on Paper), glyph_magma/ice/ocean.jpg
-├── lockup/    Thermocline wordmark (Sora ExtraBold + phase glyph):
+├── lockup/    PROTEUS wordmark (Sora ExtraBold + phase glyph):
 │            proteus-lockup-dark.png (on Void) / proteus-lockup-light.png (on Paper)
 └── favicon/   favicon.svg (phase glyph) + favicon.png / favicon-light.png
 ```
@@ -34,7 +34,7 @@ surfaces; `phase_light` / `ink` / `ocean` sit on light. The multi-colour
 
 ## Rules
 
-- **Clear space:** keep at least the glyph's radius clear on all sides.
+- **Clear space:** keep at least 1× cap height clear on all sides.
 - **Minimum lockup width:** 90 px. Below that, use the glyph alone with the
   wordmark set beside it, not under it.
 - **Colour:** the letters are Paper (on dark) or Ink (on light); the glyph

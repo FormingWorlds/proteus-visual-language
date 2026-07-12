@@ -28,7 +28,7 @@ assets from [`../logo/`](../logo/).
   site makes no third-party font requests). Dark (default, OS-aware) and
   light schemes are both included.
 - **Web:** the full site (home, modules, demos, validation, publications,
-  license, people) is demonstrated in the design project; here we ship the
+  license, people) lives with the production website; here we ship the
   shared chrome those pages are built from.
 - **Decks:** open `deck/deck-templates.html`, arrow-key through the slides; the
   set covers title, section, bullets, figure, table, statement, and closing in

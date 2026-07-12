@@ -13,3 +13,5 @@ build/
 # Pages build output (generated)
 site/_build/
 brand-guide.pdf.tmp
+/brand-guide.pdf
+.ruff_cache/

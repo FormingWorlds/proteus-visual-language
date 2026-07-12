@@ -1,12 +1,12 @@
-# PROTEUS Figure Conventions (Thermocline v1.0)
+# Figure conventions
 
 The rules that make every PROTEUS figure recognizably PROTEUS — across
 papers, talks, posters, docs, and the website.
 
-## 1. Module domain colors — the core convention
+## Module domain colours — the core convention
 
 When a plotted series *is* a module's output, it uses that module's domain
-color. Identical in every artifact, no exceptions:
+colour. Identical in every artifact, no exceptions:
 
 | Domain | Modules | Hex |
 |---|---|---|
@@ -19,9 +19,9 @@ color. Identical in every artifact, no exceptions:
 
 CVD-checked (Machado 2009, protan/deutan/tritan @ full severity): min
 pairwise ΔE = 16.4 (target ≥ 12). Still: always keep a legend or direct
-labels; never encode meaning in color alone.
+labels; never encode meaning in colour alone.
 
-## 2. Colormaps
+## Colormaps
 
 - `proteus` (sequential, Void→Paper): 2D fields, colorbars. Default.
 - `proteus_div` (diverging, light midpoint): anomalies/residuals in papers.
@@ -29,13 +29,13 @@ labels; never encode meaning in color alone.
   figures, dark slides, outreach. Hot is ALWAYS left/low, cool right/high.
 - Never rainbow/jet; never warm strata ramps.
 
-## 3. Temperature/phase semantics
+## Temperature/phase semantics
 
 Red = hot/molten, blue = cool/solidified/volatile — matching the physics and
 the logo. Do not use red/blue for arbitrary category pairs where a reader
 could mistake them for hot/cold.
 
-## 4. Typography in figures
+## Typography in figures
 
 - Labels/ticks: Instrument Sans (via proteus-mpl defaults).
 - Axis units and run identifiers: Spline Sans Mono
@@ -43,7 +43,7 @@ could mistake them for hot/cold.
   annotations.
 - Titles: bold, left-aligned (never centered).
 
-## 5. Sizing
+## Sizing
 
 - Author at final printed size: A&A single column ≈ 3.5 in wide (use
   `figsize=(5, 3.75)` and let reduction land at ~3.5), full width ≈ 7.1 in.
@@ -51,14 +51,14 @@ could mistake them for hot/cold.
 - Keep default proteus-mpl font sizes; if labels look too big, the figure
   is too large.
 
-## 6. Surfaces
+## Surfaces
 
 - `use()` (Paper) for papers and light slides; `use("dark")` (Void) for
   darkframes and hero surfaces. The figure background must match the slide —
   no visible card edge.
 - Journal white pages: `fig.savefig(..., transparent=True)`.
 
-## 7. The one-hot rule
+## The one-hot rule
 
 Magma `#E23D28` is the highest-energy mark on any figure. If everything is
 red, nothing is. One hot series, one hot annotation, or one hot region per

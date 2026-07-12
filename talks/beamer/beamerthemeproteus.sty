@@ -30,6 +30,7 @@
 \fi\fi
 \RequirePackage{fontspec}
 \RequirePackage{tikz}
+\usetikzlibrary{calc}
 
 % ---------------- options ----------------
 \def\proteus@darkname{dark}
@@ -100,17 +101,21 @@
   UprightFont=*-Bold, BoldFont=*-ExtraBold]{Sora}
 \newfontfamily\proteusmono[Path=\ProteusFontPath,
   UprightFont=*-Regular, BoldFont=*-Medium]{SplineSansMono}
+% eyebrow variant: tracked +18% to match the HTML artifacts
+\newfontfamily\proteusmonotrack[Path=\ProteusFontPath,
+  UprightFont=*-Regular, BoldFont=*-Medium,
+  LetterSpace=18]{SplineSansMono}
 % Sora carries no italics by design: emphasis maps to bold accent
 \renewcommand{\emph}[1]{{\color{ProteusMagma}\bfseries #1}}
 
 % type scale (11pt base, modular)
 \setbeamerfont{title}{family=\proteusdisplay, series=\bfseries, size=\fontsize{24}{27}}
-\setbeamerfont{subtitle}{family=\proteusmono, size=\fontsize{9}{12}}
+\setbeamerfont{subtitle}{family=\proteusmonotrack, size=\fontsize{9}{12}}
 \setbeamerfont{frametitle}{family=\proteusdisplay, series=\bfseries, size=\fontsize{17}{20}}
-\setbeamerfont{framesubtitle}{family=\proteusmono, size=\fontsize{8}{10}}
+\setbeamerfont{framesubtitle}{family=\proteusmonotrack, size=\fontsize{8}{10}}
 \setbeamerfont{author}{size=\fontsize{11}{15}}
 \setbeamerfont{institute}{size=\fontsize{9}{13}}
-\setbeamerfont{date}{family=\proteusmono, size=\fontsize{8}{11}}
+\setbeamerfont{date}{family=\proteusmonotrack, size=\fontsize{8}{11}}
 \setbeamerfont{footline}{family=\proteusmono, size=\fontsize{6.5}{8}}
 \setbeamerfont{caption}{family=\proteusmono, size=\fontsize{7.5}{10}}
 
@@ -170,11 +175,15 @@
 \setbeamertemplate{itemize subitem}{\usebeamercolor[fg]{itemize subitem}\tikz{\fill (0,0) rectangle (1.8mm,0.45mm);}}
 
 % ---------------- phase band macro ----------------
-% \proteusPhaseBand{<width>}{<height>} — magma -> void -> ocean, never reversed
+% \proteusPhaseBand{<width>}{<height>} — magma -> void -> ocean, never
+% reversed; the stops mirror the --pt-grad-phase token (0/25/50/75/92/100).
 \newcommand{\proteusPhaseBand}[2]{%
   \begin{tikzpicture}
-    \shade[left color=ProteusMagma, right color=ProteusVoid] (0,0) rectangle (#1*0.5,#2);
-    \shade[left color=ProteusVoid, right color=ProteusIce] (#1*0.5,0) rectangle (#1,#2);
+    \shade[left color=ProteusMagma, right color=ProteusMantle] (0,0) rectangle (#1*0.25,#2);
+    \shade[left color=ProteusMantle, right color=ProteusVoid] (#1*0.25,0) rectangle (#1*0.5,#2);
+    \shade[left color=ProteusVoid, right color=ProteusAbyss] (#1*0.5,0) rectangle (#1*0.75,#2);
+    \shade[left color=ProteusAbyss, right color=ProteusAzure] (#1*0.75,0) rectangle (#1*0.92,#2);
+    \shade[left color=ProteusAzure, right color=ProteusIce] (#1*0.92,0) rectangle (#1,#2);
   \end{tikzpicture}}
 
 % ---------------- frame title with mono eyebrow ----------------
@@ -218,7 +227,7 @@
   \begin{beamercolorbox}[wd=\paperwidth, ht=\paperheight, sep=0pt]{titlepagecolor}
     \begin{tikzpicture}[remember picture, overlay]
       \node[anchor=north west, xshift=10mm, yshift=-9mm] at (current page.north west)
-        {\proteusmono\fontsize{7}{9}\selectfont\color{\proteus@eyebrowcol}%
+        {\proteusmonotrack\fontsize{7}{9}\selectfont\color{\proteus@eyebrowcol}%
          \MakeUppercase{\proteus@conf}};
       \node[anchor=north east, xshift=-10mm, yshift=-7mm] at (current page.north east)
         {\includegraphics[width=13mm]{\ProteusAssetPath\proteus@glyph}};
@@ -245,17 +254,19 @@
     \setbeamercolor{background canvas}{bg=ProteusVoid}%
     \def\proteus@secglyph{glyph_phase_dark.png}%
     \def\proteus@sectitlecol{ProteusPaper}%
+    \def\proteus@seceyebrowcol{ProteusAzure}%
   \else
     \setbeamercolor{background canvas}{bg=ProteusPaper}%
     \def\proteus@secglyph{glyph_phase_light.png}%
     \def\proteus@sectitlecol{ProteusInk}%
+    \def\proteus@seceyebrowcol{ProteusOcean}%
   \fi
   \begin{frame}[plain]
     \begin{tikzpicture}[remember picture, overlay]
       \node[anchor=east, xshift=32mm, opacity=0.92] at (current page.east)
         {\includegraphics[width=95mm]{\ProteusAssetPath\proteus@secglyph}};
       \node[anchor=west, xshift=10mm, text width=100mm] at (current page.west) {%
-        {\proteusmono\fontsize{8}{10}\selectfont\color{ProteusAzure}%
+        {\proteusmonotrack\fontsize{8}{10}\selectfont\color{\proteus@seceyebrowcol}%
           SECTION~\ifnum\thesection<10 0\fi\thesection}\\[4mm]
         {\proteusdisplay\bfseries\fontsize{26}{29}\selectfont\color{\proteus@sectitlecol}%
           \insertsectionhead}%

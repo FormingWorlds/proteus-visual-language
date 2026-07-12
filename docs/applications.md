@@ -7,8 +7,8 @@ this repo.
 Shared chrome in `site.css`: sticky header with a magma active-tick, dropdown
 nav, hairline tables, phase-rule footer. Light/dark via `theme.js` (OS-aware,
 persisted). The full site (home, modules, demos, validation, publications,
-license, people) is built in the design project; the stylesheet here is what it
-is built from.
+license, people) lives with the production website; the stylesheet here is the
+shared chrome it is built from.
 
 ## Docs (zensical / mkdocs) — `templates/docs/`
 Drop `extra.css` into any module's docs build, add the logo + favicon, done.
@@ -28,13 +28,15 @@ statement, closing — in **both light and dark**. Driven by `deck-stage.js`;
 
 ## Figures — `figures/proteus-mpl/`
 `pip install proteus-mpl`; `proteus_mpl.use()` / `use("dark")`. Brand colour
-cycles (CVD-checked), the phase diverging colormap, a sequential map, and the
-fonts — every figure in every paper carries the identity. Match the figure
+cycles (domain set and light cycle CVD-checked), the phase diverging colormap, a sequential map, and the
+font configuration (copy the TTFs from `fonts/` into the package to bundle
+them) — every figure in every paper carries the identity. Match the figure
 variant to its surface (light figure ↔ light slide/frame, dark ↔ dark).
 
 ## Talks (LaTeX) — `talks/beamer/`
 `\usetheme[mode=dark]{proteus}` or `mode=light` — a fully light or dark deck,
-matching the HTML deck templates. Per-frame override with `darkframes` /
+matching the HTML deck templates. The default is the light deck: projection
+washes out dark surfaces, so the Beamer theme deliberately defaults light. Per-frame override with `darkframes` /
 `lightframes`.
 
 ## Community — `community/`

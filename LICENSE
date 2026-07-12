@@ -4,13 +4,13 @@ PROTEUS Visual Language — Licensing
 This repository is dual-licensed to match how the PROTEUS Framework itself is
 released (see https://proteus-framework.org/ → License).
 
-SPDX: Apache-2.0 AND CC-BY-4.0
+SPDX: Apache-2.0 AND CC-BY-4.0 AND OFL-1.1
 
 1. CODE  — Apache License 2.0  (see LICENSE-CODE)
    Applies to all machine-consumed source: design tokens (tokens.css,
-   tokens.json, tokens.scss), stylesheets (site.css, docs.css, extra.css,
-   theme.js, docs.js), the proteus-mpl package, the Beamer theme, and any
-   build or CI scripts.
+   tokens.json, tokens.scss), stylesheets and scripts (site.css, docs.css,
+   extra.css, theme.js, docs.js, the deck templates' JS), the proteus-mpl
+   package, the Beamer theme, and any build or CI scripts.
 
 2. CREATIVE ASSETS — Creative Commons Attribution 4.0 International
    (see LICENSE-ASSETS.md)
@@ -18,7 +18,11 @@ SPDX: Apache-2.0 AND CC-BY-4.0
    poster / community designs, and exported figures — free to reuse and adapt
    with attribution.
 
-3. RESERVED MARKS
+3. FONTS — SIL Open Font License 1.1  (see fonts/OFL.txt)
+   The Sora, Instrument Sans, and Spline Sans Mono font files in fonts/ are
+   third-party works and are not covered by the grants above.
+
+4. RESERVED MARKS
    The PROTEUS name, wordmark, and phase glyph are reserved. The CC BY 4.0
    grant on the artwork does NOT grant permission to use these marks to imply
    endorsement by, or affiliation with, the PROTEUS Framework or the Forming

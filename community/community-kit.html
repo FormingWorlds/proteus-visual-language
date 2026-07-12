@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="design_doc_mode" content="canvas">
-<title>PROTEUS Community Kit — Stage 4</title>
+<title>PROTEUS Community Kit — Thermocline</title>
+<link rel="icon" href="../logo/favicon/favicon.png">
 <link rel="stylesheet" href="../fonts/fonts.css">
 <link rel="stylesheet" href="../tokens/tokens.css">
 <style>
@@ -12,7 +12,7 @@
   body { font-family: var(--pt-font-body); }
   a { color: var(--pt-azure); } a:hover { color: var(--pt-ice); }
   .frame { position: absolute; box-shadow: 0 2px 8px rgba(0,0,0,0.10), 0 12px 40px -12px rgba(0,0,0,0.2); }
-  .frame-label { position: absolute; top: -30px; left: 0; font-family: var(--pt-font-mono); font-size: 13px; letter-spacing: 0.08em; color: #666; white-space: nowrap; }
+  .frame-label { position: absolute; top: -30px; left: 0; font-family: var(--pt-font-mono); font-size: 13px; letter-spacing: 0.08em; color: #7A8894; white-space: nowrap; }
   .cap { font-family: var(--pt-font-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--pt-text-d3); }
 
   .lockup { display: inline-flex; flex-direction: column; }
@@ -24,7 +24,7 @@
   .social { width: 1280px; height: 640px; background: var(--pt-void); color: var(--pt-text-d); overflow: hidden; position: relative; }
   .social .glyph-bleed { position: absolute; right: -230px; top: 50%; transform: translateY(-50%); width: 700px; opacity: 0.9; }
   .social .inner { position: absolute; inset: 0; padding: 70px 80px; display: flex; flex-direction: column; justify-content: space-between; }
-  .social .repo { font-family: var(--pt-font-mono); font-size: 20px; letter-spacing: 0.16em; color: var(--pt-azure); }
+  .social .repo { font-family: var(--pt-font-mono); font-size: 20px; letter-spacing: var(--pt-track-label); color: var(--pt-azure); }
   .social h1 { font-family: var(--pt-font-display); font-weight: 800; font-size: 64px; letter-spacing: -0.02em; line-height: 1.1; max-width: 760px; }
   .social .sub { font-size: 24px; line-height: 1.5; color: var(--pt-text-d2); max-width: 680px; }
   .social .band { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: var(--pt-grad-phase); }
@@ -60,14 +60,14 @@
   .coupler { background: var(--pt-basalt); border: 1px solid var(--pt-azure); border-radius: 6px; padding: 28px 22px; text-align: center; }
   .coupler img { width: 64px; }
   .coupler b { font-family: var(--pt-font-display); font-weight: 800; font-size: 20px; display: block; margin-top: 14px; }
-  .coupler span { font-family: var(--pt-font-mono); font-size: 10px; letter-spacing: 0.16em; color: var(--pt-azure); display: block; margin-top: 6px; }
+  .coupler span { font-family: var(--pt-font-mono); font-size: 10px; letter-spacing: var(--pt-track-label); color: var(--pt-azure); display: block; margin-top: 6px; }
   .link-l, .link-r { height: 2px; background: var(--pt-text-d3); position: relative; }
   .link-l::before, .link-r::after { content: ""; position: absolute; top: -4px; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
   .link-l::before { left: -1px; border-right: 8px solid var(--pt-text-d3); }
   .link-r::after { right: -1px; border-left: 8px solid var(--pt-text-d3); }
   .diagram-rules { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; padding-top: 28px; border-top: 1px solid var(--pt-line-d); font-size: 13.5px; line-height: 1.6; color: var(--pt-text-d2); }
   .diagram-rules b { color: var(--pt-text-d); }
-  .diagram-rules .h { font-family: var(--pt-font-mono); font-size: 11px; letter-spacing: 0.16em; color: var(--pt-azure); margin-bottom: 10px; }
+  .diagram-rules .h { font-family: var(--pt-font-mono); font-size: 11px; letter-spacing: var(--pt-track-label); color: var(--pt-azure); margin-bottom: 10px; }
 
   /* ---------- 05 stickers ---------- */
   .stickers { width: 1180px; background: #C8CDD2; padding: 48px 52px 44px; color: var(--pt-ink); }

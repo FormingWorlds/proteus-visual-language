@@ -6,9 +6,11 @@
      theme:
        name: zensical            # or material
        palette:
-         - scheme: slate         # dark-first
+         - media: "(prefers-color-scheme: dark)"
+           scheme: slate         # dark-first
            toggle: { icon: material/brightness-7, name: Light mode }
-         - scheme: default
+         - media: "(prefers-color-scheme: light)"
+           scheme: default
            toggle: { icon: material/brightness-4, name: Dark mode }
        font: false               # fonts loaded below
        logo: assets/glyph_phase_dark.png
@@ -38,8 +40,8 @@
   --pt-basalt: #0E131B;
   --pt-line-d: #1A2230;
 
-  --md-text-font: "Instrument Sans", -apple-system, sans-serif;
-  --md-code-font: "Spline Sans Mono", ui-monospace, monospace;
+  --md-text-font: "Instrument Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --md-code-font: "Spline Sans Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 /* ---------- DARK (scheme: slate) — the primary mode ---------- */
@@ -111,7 +113,7 @@
 .md-nav__title, .md-nav--secondary .md-nav__title {
   font-family: var(--md-code-font);
   font-size: 0.62rem;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
