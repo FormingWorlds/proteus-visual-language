@@ -2,11 +2,15 @@
 
 All notable changes to the PROTEUS Visual Language are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); this project
-uses [calendar versioning](https://calver.org/) (`YY.MM.DD`), consistent with
-the wider PROTEUS ecosystem. Published package versions drop the leading
-zeros (`26.7.12`), as npm and PyPI require.
+uses [semantic versioning](https://semver.org/). The major version tracks
+the design generation (Thermocline launches the v1 series) and also bumps
+on breaking changes, such as removing or renaming a token. Git tags carry a
+`v` prefix (`v1.0.0`); the published packages use the same number without
+it.
 
-## [26.07.12] - 2026-07-12
+## [Unreleased]
+
+## [1.0.0] - 2026-07-12
 
 First public release of the **Thermocline** visual language.
 
@@ -27,4 +31,5 @@ First public release of the **Thermocline** visual language.
   identity badges, the coupler diagram language, and a sticker sheet.
 - **Brand guide**: interactive (`site/`) + per-topic Markdown (`docs/`).
 
-[26.07.12]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/26.07.12
+[unreleased]: https://github.com/FormingWorlds/proteus-visual-language/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.0.0

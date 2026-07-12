@@ -1,12 +1,12 @@
 name: Release packages
 
-# Tag a version (CalVer, YY.MM.DD) to publish the npm tokens package and
+# Tag a version (vX.Y.Z) to publish the npm tokens package and
 # the proteus-mpl PyPI package. Configure the secrets / trusted publishing
 # noted below before the first release.
 
 on:
   push:
-    tags: ["[0-9][0-9].[0-9][0-9].[0-9][0-9]"]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
 
 jobs:
   npm-tokens:
@@ -19,6 +19,8 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - name: Verify tokens.json and tokens.scss match tokens.css
         run: python3 tokens/check_sync.py
+      - name: Verify the tag matches the package version
+        run: test "${GITHUB_REF_NAME#v}" = "$(node -p "require('./tokens/package.json').version")"
       - name: Publish @formingworlds/proteus-tokens
         working-directory: tokens
         run: npm publish --access public
@@ -36,6 +38,9 @@ jobs:
           python-version: "3.11"
       - name: Verify packaged colour tables match tokens.css
         run: python3 tokens/check_copies.py --only mpl
+      - name: Verify the tag matches the package version
+        run: |
+          test "${GITHUB_REF_NAME#v}" = "$(python3 -c "import tomllib; print(tomllib.load(open('figures/proteus-mpl/pyproject.toml','rb'))['project']['version'])")"
       - name: Build sdist + wheel
         working-directory: figures/proteus-mpl
         run: |

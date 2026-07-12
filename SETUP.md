@@ -50,16 +50,17 @@ https://formingworlds.github.io/proteus-visual-language.
 
 ## 4. Cut a release
 
-Versioning is CalVer, `YY.MM.DD`, matching the wider PROTEUS ecosystem.
+Versioning is SemVer, `vX.Y.Z`; Thermocline launches the v1 series, and the
+major version bumps on a new design generation or a breaking change.
 
-1. Set the version (without leading zeros, e.g. `26.7.12`; npm and PyPI
-   reject padded forms) in [`tokens/package.json`](tokens/package.json) and
+1. Set the version without the `v` prefix (e.g. `1.0.0`) in
+   [`tokens/package.json`](tokens/package.json) and
    [`figures/proteus-mpl/pyproject.toml`](figures/proteus-mpl/pyproject.toml).
 2. Update [`CHANGELOG.md`](CHANGELOG.md).
 3. Tag and push:
 
 ```bash
-git tag 26.07.12
+git tag v1.0.0
 git push origin main --tags
 ```
 
