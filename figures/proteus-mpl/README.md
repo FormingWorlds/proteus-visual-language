@@ -6,7 +6,7 @@ fonts, and surfaces match the slides, the website, and the docs.
 ## Install
 
 ```bash
-pip install thermocline/proteus-mpl        # or cd into the folder: pip install .
+pip install figures/proteus-mpl            # or cd into the folder: pip install .
 ```
 
 ## Use

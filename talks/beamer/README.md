@@ -26,7 +26,7 @@ and the logo exports into `assets/`:
 assets/glyph_phase_dark.png        assets/glyph_phase_light.png
 ```
 
-(Both ship in the identity kit: `assets/logo/`.)
+(Both ship in the identity kit: `logo/glyph/`.)
 
 ## Quick start
 
