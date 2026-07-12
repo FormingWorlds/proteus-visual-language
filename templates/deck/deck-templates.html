@@ -252,7 +252,7 @@
     var mode = p === 'auto' ? (mq.matches ? 'light' : 'dark') : p;
     document.documentElement.setAttribute('data-th', mode);
     document.querySelectorAll('img.glyph-img').forEach(function (img) {
-      img.src = '../assets/logo/glyph_phase_' + mode + '.png';
+      img.src = '../../logo/glyph/glyph_phase_' + mode + '.png';
     });
     btnLabel.textContent = 'THEME · ' + p.toUpperCase() + (p === 'auto' ? ' (' + mode.toUpperCase() + ')' : '');
   }
