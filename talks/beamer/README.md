@@ -1,4 +1,4 @@
-# PROTEUS beamer theme (Thermocline v1.0)
+# PROTEUS beamer theme (Thermocline)
 
 LaTeX talk theme matching the HTML deck templates. Runs as a **fully light**
 or **fully dark** deck (`mode=light|dark`), with phase band, module domain
@@ -11,8 +11,8 @@ Compile with `latexmk -xelatex talk.tex`.
 
 ## Setup
 
-Copy this folder next to your `.tex` file, then add the static-weight OFL
-TTFs (download from Google Fonts) into `fonts/`:
+Copy this folder next to your `.tex` file, then copy the static-weight OFL
+TTFs from this repository's [`fonts/`](../../fonts/) folder into `fonts/`:
 
 ```
 fonts/InstrumentSans-Regular.ttf   fonts/InstrumentSans-SemiBold.ttf
@@ -37,7 +37,7 @@ assets/glyph_phase_dark.png        assets/glyph_phase_light.png
 % \usetheme[mode=light, titlesurface=dark]{proteus}  % light deck, dark title
 
 \title[Volatile delivery]{Volatile delivery across the \magma{magma-ocean} epoch}
-\subtitle{Exoplanets · Generation 3}     % azure mono eyebrow
+\subtitle{Exoplanets · Generation 3}     % mono eyebrow (ocean on light, azure on dark)
 \conference{Exoplanets · Cambridge 2026} % top-left label on the title slide
 \author{Tim Lichtenberg}
 \institute{on behalf of the PROTEUS collaboration · University of Groningen}

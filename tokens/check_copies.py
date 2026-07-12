@@ -180,7 +180,7 @@ ROW_DOCS = [
     "docs/module-colors.md",
     "docs/logo.md",
     "docs/figure-conventions.md",
-    "docs/index.md",
+    "docs/README.md",
 ]
 
 # path glob -> (allowlisted standalone values, minimum expected hex count)
@@ -198,7 +198,8 @@ MEMBERSHIP = [
     ("docs/module-colors.md", set(), 5),
     ("docs/figure-conventions.md", set(), 5),
     ("docs/logo.md", set(), 4),
-    ("docs/index.md", set(), 2),
+    ("docs/README.md", set(), 2),
+    ("community/community-kit.html", {"#4A525A", "#5A626A", "#AEB4BA", "#C8CDD2"}, 3),
     ("logo/glyph/*.svg", set(), 40),
     ("logo/favicon/*.svg", set(), 5),
 ]

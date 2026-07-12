@@ -41,7 +41,7 @@ header.site { position: sticky; top: 0; z-index: 50; background: var(--pt-header
 
 /* ---------- page hero ---------- */
 .page-hero { padding: 96px 0 64px; border-bottom: 1px solid var(--pt-line-d); }
-.eyebrow { font-family: var(--pt-font-mono); font-size: 13px; letter-spacing: 0.2em; color: var(--pt-azure); text-transform: uppercase; }
+.eyebrow { font-family: var(--pt-font-mono); font-size: 13px; letter-spacing: var(--pt-track-label); color: var(--pt-azure); text-transform: uppercase; }
 .page-hero h1 { font-family: var(--pt-font-display); font-weight: 800; font-size: 56px; letter-spacing: -0.025em; line-height: 1.08; margin-top: 20px; max-width: 22ch; }
 .page-hero .lede { font-size: 19px; line-height: 1.6; color: var(--pt-text-d2); max-width: none; margin-top: 22px; }
 

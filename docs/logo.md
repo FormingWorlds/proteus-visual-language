@@ -47,7 +47,7 @@ plus `favicon.png` / `favicon-light.png`.
 
 ## Rules
 
-- **Clear space:** keep at least the glyph's radius clear on all sides.
+- **Clear space:** keep at least 1× cap height clear on all sides.
 - **Minimum lockup width:** 90 px. Below that, glyph alone with the wordmark set
   *beside* it, not under.
 - **Colour split:** letters are Paper (on dark) or Ink (on light); the glyph

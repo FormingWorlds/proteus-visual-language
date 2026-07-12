@@ -1,7 +1,8 @@
 # site/ — the interactive brand guide
 
 `index.html` is the PROTEUS brand guide: a scrollable/keyed set of plates
-(cover, story, colour, type, logo, motifs, module colours, applications). It is
+(cover, story, colour, type, logo, motifs, module colours, applications,
+governance). It is
 deployed to GitHub Pages by [`../.github/workflows/pages.yml`](../.github/workflows/pages.yml)
 and served at:
 

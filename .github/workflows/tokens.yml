@@ -13,6 +13,7 @@ on:
       - "docs/*.md"
       - "site/index.html"
       - "site/logo-lockups.html"
+      - "community/community-kit.html"
       - "logo/**"
       - ".github/workflows/tokens.yml"
   pull_request:
@@ -26,6 +27,7 @@ on:
       - "docs/*.md"
       - "site/index.html"
       - "site/logo-lockups.html"
+      - "community/community-kit.html"
       - "logo/**"
       - ".github/workflows/tokens.yml"
   workflow_dispatch:

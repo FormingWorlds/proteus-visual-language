@@ -38,7 +38,7 @@ a:hover { color: var(--pt-ice); }
 .doc-body.wide { grid-template-columns: 264px minmax(0, 1fr); max-width: 1180px; }
 
 .side { align-self: start; position: sticky; top: 128px; max-height: calc(100vh - 150px); overflow-y: auto; }
-.side h5 { font-family: var(--pt-font-mono); font-size: 11px; letter-spacing: 0.16em; color: var(--pt-text-d3); text-transform: uppercase; margin: 22px 0 8px; }
+.side h5 { font-family: var(--pt-font-mono); font-size: 11px; letter-spacing: var(--pt-track-label); color: var(--pt-text-d3); text-transform: uppercase; margin: 22px 0 8px; }
 .side h5:first-child { margin-top: 0; }
 .side a { display: block; font-size: 14px; color: var(--pt-text-d2); padding: 6px 10px; border-left: 2px solid var(--pt-line-d); }
 .side a:hover { color: var(--pt-text-d); border-left-color: var(--pt-text-d3); }
@@ -46,7 +46,7 @@ a:hover { color: var(--pt-ice); }
 .side a.sub { padding-left: 24px; font-size: 13.5px; }
 
 .toc { align-self: start; position: sticky; top: 128px; }
-.toc h5 { font-family: var(--pt-font-mono); font-size: 11px; letter-spacing: 0.16em; color: var(--pt-text-d3); text-transform: uppercase; margin-bottom: 10px; }
+.toc h5 { font-family: var(--pt-font-mono); font-size: 11px; letter-spacing: var(--pt-track-label); color: var(--pt-text-d3); text-transform: uppercase; margin-bottom: 10px; }
 .toc a { display: block; font-size: 13px; color: var(--pt-text-d2); padding: 5px 0; border-left: 2px solid transparent; padding-left: 12px; margin-left: -14px; }
 .toc a:hover { color: var(--pt-text-d); }
 .toc a.on { color: var(--pt-azure); border-left-color: var(--pt-magma); }

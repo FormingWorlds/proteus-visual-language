@@ -14,7 +14,10 @@ Three families, no others. All artifacts load them self-hosted from
 ## Scale
 
 12 / 13 / 14 / 16 / 18 / 20 / 24 / 32 / 44 / 60 / 84 / 120 px (tokens
-`--pt-fs-*`). Slides never below 24 px; print never below 12 pt.
+`--pt-fs-*`) is the reference scale for new surfaces; shipped chrome may sit
+off-scale where optically tuned. On slides, body text never goes below 24 px;
+mono metadata (captions, footers, eyebrows) may go down to 19 px. Print never
+below 12 pt.
 
 ## Signature moves
 

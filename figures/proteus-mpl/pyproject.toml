@@ -11,6 +11,19 @@ requires-python = ">=3.8"
 license = { text = "Apache-2.0" }
 authors = [{ name = "PROTEUS collaboration", email = "proteus_dev@formingworlds.space" }]
 dependencies = ["matplotlib>=3.5"]
+keywords = ["matplotlib", "style", "theme", "PROTEUS", "planetary-science"]
+classifiers = [
+    "Framework :: Matplotlib",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+
+[project.urls]
+Homepage = "https://formingworlds.github.io/proteus-visual-language"
+Repository = "https://github.com/FormingWorlds/proteus-visual-language"
+Changelog = "https://github.com/FormingWorlds/proteus-visual-language/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["src"]

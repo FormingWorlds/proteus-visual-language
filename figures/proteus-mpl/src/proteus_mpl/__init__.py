@@ -48,7 +48,8 @@ DOMAINS = {
     "stellar":    "#A8D4E8",   # MORS
 }
 
-# Categorical cycles. Light cycle = the six domain colors + ink + fog;
+# Categorical cycles. Light cycle = five domain colors (stellar's pale tint
+# is omitted on Paper) + ink + fog;
 # dark drops the deep colors that vanish on Void and substitutes light tones.
 CYCLE = ["#E23D28", "#1B6FA8", "#593E74", "#4FA3D9", "#A03123", "#10151B", "#7A8894"]
 CYCLE_DARK = ["#E23D28", "#4FA3D9", "#A8D4E8", "#9B7BBE", "#E9EEF2", "#8FA0AE"]
