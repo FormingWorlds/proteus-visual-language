@@ -3,8 +3,10 @@
 One-time steps to take this folder from a local checkout to a published,
 releasable repository. Automation lives in
 [`.github/workflows/pages.yml`](.github/workflows/pages.yml) (brand-guide
-deployment) and [`.github/workflows/release.yml`](.github/workflows/release.yml)
-(npm + PyPI publishing).
+deployment), [`.github/workflows/release.yml`](.github/workflows/release.yml)
+(npm + PyPI publishing), and
+[`.github/workflows/tokens.yml`](.github/workflows/tokens.yml) (token sync
+check).
 
 ## 1. Create the repository
 

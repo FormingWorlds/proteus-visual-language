@@ -1,0 +1,24 @@
+name: Check token sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tokens/**"
+      - ".github/workflows/tokens.yml"
+  pull_request:
+    paths:
+      - "tokens/**"
+      - ".github/workflows/tokens.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify tokens.json and tokens.scss match tokens.css
+        run: python3 tokens/check_sync.py

@@ -17,6 +17,8 @@ jobs:
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
+      - name: Verify tokens.json and tokens.scss match tokens.css
+        run: python3 tokens/check_sync.py
       - name: Publish @formingworlds/proteus-tokens
         working-directory: tokens
         run: npm publish --access public
