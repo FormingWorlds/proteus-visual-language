@@ -48,6 +48,10 @@ colorways, Paper behind the light-surface ones). The multi-colour
   wordmark set beside it, not under it.
 - **Colour:** the letters are Paper (on dark) or Ink (on light); the glyph
   carries the colour. Use one hot moment (magma) per surface at most.
+- **Tag:** "framework" in Spline Sans Mono Medium, tracked +52%, at (26/150)
+  of the wordmark size, tucked into the lower-right corner (raised 0.03x,
+  inset 0.32x of the wordmark size; box measures, the final letter's ink
+  lands about 0.41x in); drop it below 200 px lockup width.
 - **Never:** rotate, add glow/shadow, outline, stretch, or place the glyph on a
   busy background without a scrim.
 

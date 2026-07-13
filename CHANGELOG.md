@@ -23,6 +23,7 @@ it.
   transparent pair.
 
 ### Changed
+- **Framework tag position**: the tag sits tucked into the lockup's lower-right corner (raised 0.03x, inset 0.32x of the wordmark size) in every template and page; all eight lockup exports regenerated, the transparent exports now measure 1554x370.
 - **Stellar (MORS) domain colour** from pale ice `#A8D4E8` to Solar Gold `#E0A32E`: the star gets its own colour, the six-domain CVD minimum stays at ΔE 16.4, and the recolour fixes ice being nearly invisible (1.59:1) on white pages.
 - `docs/color.md` restructured into primaries / accents / neutrals tiers.
 
