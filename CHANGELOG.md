@@ -10,11 +10,22 @@ it.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-13
+
 ### Added
+- **Accent colours**: Solar Gold (`--pt-solar` `#E0A32E`, auto-deepening to `--pt-solar-deep` `#C8860F` on light surfaces) for the star and its irradiation, and Verdant (`--pt-verdant` `#57A05C`) for the habitable endpoint. Both widen the categorical plot cycle for many-line figures and are CVD-validated as a set (Machado 2009): light cycle worst-pair ΔE 15.7, dark 16.8.
+- proteus-mpl: `CYCLE` grows to 9 colours and `CYCLE_DARK` (still 6) swaps azure and grey for solar and a brightened verdant, both cycles reordered neutral-first (first series draws in ink/paper); `COLORS` gains `solar`, `solar_deep`, `verdant`; a `use("white")` variant for journals that require a pure-white page; the OFL brand fonts now ship inside the package and register automatically.
+- Beamer: `ProteusSolar` / `ProteusSolarDeep` / `ProteusVerdant` colours and `\solar{}` / `\verdant{}` helpers; `\solar{}` follows the active frame surface.
+- `glyph_solar` colorway (SVG, PNG, JPG) completing the domain-tint matrix.
 - Background-free lockup exports in `logo/lockup/`: transparent PNG and PDF
   (vector wordmark text) in both letter colours, and plain on-black / on-white
   JPG compositions for contexts without transparency. The README uses the
   transparent pair.
+
+### Changed
+- **Framework tag position**: the tag sits tucked into the lockup's lower-right corner (raised 0.03x, inset 0.32x of the wordmark size) in every template and page; all eight lockup exports regenerated, the transparent exports now measure 1554x370.
+- **Stellar (MORS) domain colour** from pale ice `#A8D4E8` to Solar Gold `#E0A32E`: the star gets its own colour, the six-domain CVD minimum stays at ΔE 16.4, and the recolour fixes ice being nearly invisible (1.59:1) on white pages.
+- `docs/color.md` restructured into primaries / accents / neutrals tiers.
 
 ## [1.0.0] - 2026-07-12
 
@@ -37,5 +48,6 @@ First public release of the **Thermocline** visual language.
   identity badges, the coupler diagram language, and a sticker sheet.
 - **Brand guide**: interactive (`site/`) + per-topic Markdown (`docs/`).
 
-[unreleased]: https://github.com/FormingWorlds/proteus-visual-language/compare/v1.0.0...HEAD
+[unreleased]: https://github.com/FormingWorlds/proteus-visual-language/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.1.0
 [1.0.0]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.0.0

@@ -1,6 +1,6 @@
 {
   "name": "@formingworlds/proteus-tokens",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "PROTEUS Framework design tokens (Thermocline) — colours, type, spacing, radii as CSS, JSON, and SCSS.",
   "license": "Apache-2.0",
   "homepage": "https://github.com/FormingWorlds/proteus-visual-language/tree/main/tokens",

@@ -44,6 +44,8 @@ both themes (code blocks, hero bands) restore the dark tokens locally.
 ## Key groups
 
 - Brand core: `--pt-magma`, `--pt-ocean`, `--pt-azure`, `--pt-ice`, …
+- Accents: `--pt-solar` (deepens to `--pt-solar-deep` on light), `--pt-verdant`
+  — highlight one element, or extend the data cycle.
 - Surfaces: dark (`--pt-void`, `--pt-basalt`, `--pt-line-d`, `--pt-text-d*`)
   and light (`--pt-paper*`, `--pt-ink*`, `--pt-line-l`).
 - Phase ramp: `--pt-p1`…`--pt-p9` (magma → void → ocean, diverging).

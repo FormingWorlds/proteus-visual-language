@@ -107,4 +107,4 @@ Dual-licensed — see [`LICENSE`](LICENSE):
   `LICENSE-ASSETS.md`. Don't ship forks or unrelated products under the PROTEUS
   identity.
 
-© 2023–2026 Forming Worlds Lab · Thermocline v1.0
+© 2023–2026 Forming Worlds Lab · Thermocline v1.1

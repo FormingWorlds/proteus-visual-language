@@ -24,8 +24,9 @@ of one master vector.
 | `paper` | mono on dark surfaces | all `#F2F5F7` |
 | `mono` | inherits `currentColor` | any (for inline embedding) |
 
-Plus module domain tints (`azure`, `outgassing`, `tidal`, …) — see
-[module-colors.md](module-colors.md).
+Plus module domain tints (`azure`, `outgassing`, `tidal`, `solar`, …) — see
+[module-colors.md](module-colors.md). `solar` is the stellar domain gold
+(`#E0A32E`), at home on dark surfaces.
 
 ## File matrix
 
@@ -61,5 +62,11 @@ plus `favicon.png` / `favicon-light.png`.
   *beside* it, not under.
 - **Colour split:** letters are Paper (on dark) or Ink (on light); the glyph
   carries the colour.
+- **Tag:** "framework" in Spline Sans Mono Medium, lowercase, tracked +52%,
+  at (26/150) of the wordmark size, right-aligned and tucked into the
+  lower-right corner: raised 0.03x and inset 0.32x of the wordmark size.
+  These are CSS box measures; the tracking trails the final letter, so its
+  ink lands about 0.41x in from the wordmark's right edge.
+  Drop it below 200 px lockup width.
 - **Never:** rotate, add glow/shadow, outline, stretch, or place on a busy
   background without a scrim.

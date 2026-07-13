@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PROTEUS Visual Language v1.0 — Thermocline</title>
+<title>PROTEUS Visual Language v1.1 — Thermocline</title>
 <link rel="icon" href="../logo/favicon/favicon.png">
 <link rel="stylesheet" href="../fonts/fonts.css">
 <link rel="stylesheet" href="../tokens/tokens.css">
@@ -58,11 +58,11 @@
     <div class="plate" style="justify-content: center; align-items: flex-start;">
       <div class="lockup" style="font-size: 190px;">
         <div class="word" style="color: var(--pt-paper);">PR<img src="../logo/glyph/glyph_phase_dark.png" alt="O">TEUS</div>
-        <div class="tag" style="font-size: 33px; color: var(--pt-azure); margin-top: 24px; margin-right: 8px;">framework</div>
+        <div class="tag" style="font-size: 33px; color: var(--pt-azure); margin-top: -6px; margin-right: 61px;">framework</div>
       </div>
       <div style="margin-top: 110px; display: flex; align-items: baseline; gap: 48px;">
         <div style="font-family: var(--pt-font-display); font-weight: 700; font-size: 44px; letter-spacing: -0.02em;">Visual Language</div>
-        <div class="mono-cap">V1.0 · THERMOCLINE · JULY 2026</div>
+        <div class="mono-cap">V1.1 · THERMOCLINE · JULY 2026</div>
       </div>
       <div style="position: absolute; left: 110px; right: 110px; bottom: 90px; height: 10px; background: var(--pt-grad-phase); border-radius: 2px;"></div>
     </div>
@@ -103,7 +103,7 @@
           <div style="background: var(--pt-basalt); border: var(--pt-border-d); border-radius: 4px; padding: 60px 50px; display:flex; justify-content:center;">
             <div class="lockup" style="font-size: 108px;">
               <div class="word" style="color: var(--pt-paper);">PR<img src="../logo/glyph/glyph_phase_dark.png" alt="O">TEUS</div>
-              <div class="tag" style="font-size: 19px; color: var(--pt-azure); margin-top: 14px; margin-right: 4px;">framework</div>
+              <div class="tag" style="font-size: 19px; color: var(--pt-azure); margin-top: -3px; margin-right: 35px;">framework</div>
             </div>
           </div>
           <div class="mono-cap">PRIMARY LOCKUP · DARK SURFACE</div>
@@ -112,7 +112,7 @@
           <div class="k">GLYPH</div><div class="v"><b>Invariant geometry.</b> Never redrawn, rotated, mirrored, or reproportioned. Reproduce only from master assets. Color is the only variable.</div>
           <div class="k">WORDMARK</div><div class="v"><b>Sora ExtraBold (800), all caps</b>, letter-spacing +1%. The glyph replaces the O at 1.06× type size — outer arcs overshoot the cap height.</div>
           <div class="k">LETTERS</div><div class="v">Paper <b>#F2F5F7</b> on dark · Ink <b>#10151B</b> on light. Letters never carry color; the glyph does.</div>
-          <div class="k">TAG</div><div class="v">"framework" — Spline Sans Mono Medium, lowercase, tracked +52%, right-aligned under TEUS. Drop below 200px lockup width.</div>
+          <div class="k">TAG</div><div class="v">"framework" — Spline Sans Mono Medium, lowercase, tracked +52%, right-aligned, tucked into the wordmark’s lower-right corner (raised 0.03&times;, inset 0.32&times; of the wordmark size; box measures, the last letter’s ink lands ≈0.41&times; in). Drop below 200px lockup width.</div>
           <div class="k">CLEARSPACE</div><div class="v">1× cap height on all sides, minimum.</div>
           <div class="k">MINIMUM</div><div class="v">Lockup ≥ 90px wide on screen · ≥ 30mm in print. Below: glyph + side-set name, or glyph alone.</div>
         </div>
@@ -214,7 +214,18 @@
           <div class="body" style="font-size: 22px; margin-top: 10px;">Cool white for documents and light mode. Ink #10151B for text. Never pure white or pure black.</div>
         </div>
       </div>
-      <div class="mono-cap" style="margin-top: 30px;">DARK-FIRST · LIGHT MODE IS THE MIRROR, NOT THE DEFAULT · NO WARM CREAMS, NO AMBER</div>
+      <div class="mono-cap" style="margin-top: 34px; margin-bottom: 14px;">ACCENTS · SPORADIC HIGHLIGHT + EXTRA DATA-SERIES RANGE</div>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
+        <div style="display:flex; align-items:center; gap:20px;">
+          <div style="width:52px; height:36px; border-radius:3px; background:#E0A32E;"></div>
+          <div style="font-size:22px;"><b>Solar</b> <span style="color:var(--pt-text-d3);">#E0A32E — the star / MORS; deepens to #C8860F on light</span></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:20px;">
+          <div style="width:52px; height:36px; border-radius:3px; background:#57A05C;"></div>
+          <div style="font-size:22px;"><b>Verdant</b> <span style="color:var(--pt-text-d3);">#57A05C — the habitable endpoint</span></div>
+        </div>
+      </div>
+      <div class="mono-cap" style="margin-top: 30px;">DARK-FIRST · LIGHT MODE IS THE MIRROR, NOT THE DEFAULT · NO WARM CREAMS · GOLD IS AN ACCENT, NEVER A SURFACE</div>
     </div>
   </section>
 
@@ -238,7 +249,7 @@
             <div style="display:flex; align-items:center; gap:20px;"><div style="width:52px; height:36px; border-radius:3px; background:#593E74;"></div><div style="font-size:24px;"><b>Tidal</b> <span style="color:var(--pt-text-d3);">— LovePy · Obliqua</span></div></div>
             <div style="display:flex; align-items:center; gap:20px;"><div style="width:52px; height:36px; border-radius:3px; background:#1B6FA8;"></div><div style="font-size:24px;"><b>Chemistry &amp; escape</b> <span style="color:var(--pt-text-d3);">— VULCAN · ZEPHYRUS</span></div></div>
             <div style="display:flex; align-items:center; gap:20px;"><div style="width:52px; height:36px; border-radius:3px; background:#4FA3D9;"></div><div style="font-size:24px;"><b>Atmosphere</b> <span style="color:var(--pt-text-d3);">— AGNI · JANUS</span></div></div>
-            <div style="display:flex; align-items:center; gap:20px;"><div style="width:52px; height:36px; border-radius:3px; background:#A8D4E8;"></div><div style="font-size:24px;"><b>Stellar</b> <span style="color:var(--pt-text-d3);">— MORS</span></div></div>
+            <div style="display:flex; align-items:center; gap:20px;"><div style="width:52px; height:36px; border-radius:3px; background:#E0A32E;"></div><div style="font-size:24px;"><b>Stellar</b> <span style="color:var(--pt-text-d3);">— MORS</span></div></div>
           </div>
         </div>
       </div>
@@ -360,7 +371,7 @@
         <div style="display:flex; flex-direction:column; justify-content:flex-end; align-items:flex-end; gap: 36px;">
           <div class="lockup" style="font-size: 84px;">
             <div class="word" style="color: var(--pt-ink);">PR<img src="../logo/glyph/glyph_phase_light.png" alt="O">TEUS</div>
-            <div class="tag" style="font-size: 15px; color: var(--pt-abyss); margin-top: 12px; margin-right: 3px;">framework</div>
+            <div class="tag" style="font-size: 15px; color: var(--pt-abyss); margin-top: -3px; margin-right: 27px;">framework</div>
           </div>
           <div class="mono-cap" style="color:var(--pt-ink-3);">© 2023–2026 FORMING WORLDS LAB · PROTEUS-FRAMEWORK.ORG</div>
         </div>

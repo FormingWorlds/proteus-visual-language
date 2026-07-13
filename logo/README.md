@@ -12,11 +12,11 @@ concentric rings — the magma→ocean story in miniature.
 logo/
 ├── glyph/     the phase glyph, every colorway × three formats:
 │   ── SVG (vector):  glyph_phase.svg (multi-colour), glyph_magma/ocean/ice/
-│                  ink/paper/azure/outgassing/tidal.svg (single),
+│                  ink/paper/azure/outgassing/tidal/solar.svg (single),
 │                  glyph_mono.svg (currentColor, SVG-only by design)
 │   ── PNG (pixel, transparent, 950×998): glyph_phase_dark/light.png plus
 │                  every single colorway (glyph_magma/ocean/ice/ink/paper/
-│                  azure/outgassing/tidal.png)
+│                  azure/outgassing/tidal/solar.png)
 │   ── JPG (pixel, on background): glyph_phase_dark.jpg (on Void),
 │                  glyph_phase_light.jpg (on Paper), plus every single
 │                  colorway composited on its natural surface
@@ -35,8 +35,8 @@ inherits `currentColor` for inline embedding; PNG where transparency is needed
 (slides, matplotlib, favicons); JPG where transparency isn't available, composited
 on Void or Paper.
 
-**Themes:** `phase_dark` / single-colour `paper` / `ice` / `magma` / `azure`
-sit on dark surfaces; `phase_light` / `ink` / `ocean` / `outgassing` / `tidal`
+**Themes:** `phase_dark` / single-colour `paper` / `ice` / `magma` / `azure` /
+`solar` sit on dark surfaces; `phase_light` / `ink` / `ocean` / `outgassing` / `tidal`
 sit on light. The JPGs are composited accordingly (Void behind the dark-surface
 colorways, Paper behind the light-surface ones). The multi-colour
 `glyph_phase.svg` works on either.
@@ -48,6 +48,10 @@ colorways, Paper behind the light-surface ones). The multi-colour
   wordmark set beside it, not under it.
 - **Colour:** the letters are Paper (on dark) or Ink (on light); the glyph
   carries the colour. Use one hot moment (magma) per surface at most.
+- **Tag:** "framework" in Spline Sans Mono Medium, tracked +52%, at (26/150)
+  of the wordmark size, tucked into the lower-right corner (raised 0.03x,
+  inset 0.32x of the wordmark size; box measures, the final letter's ink
+  lands about 0.41x in); drop it below 200 px lockup width.
 - **Never:** rotate, add glow/shadow, outline, stretch, or place the glyph on a
   busy background without a scrim.
 

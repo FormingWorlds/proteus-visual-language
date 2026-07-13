@@ -54,6 +54,9 @@ MPL_COLORS = {
     "basalt": "pt-basalt",
     "paper": "pt-paper",
     "ink": "pt-ink",
+    "solar": "pt-solar",
+    "solar_deep": "pt-solar-deep",
+    "verdant": "pt-verdant",
     "fog": "pt-ink-3",
     "mist": "pt-text-d2",
 }
@@ -69,15 +72,17 @@ MPL_DOMAINS = {
 # deliberate standalone stop (dark-cycle substitutes, diverging midpoints).
 MPL_SEQUENCES = {
     "CYCLE": [
-        "pt-dom-interior",
-        "pt-dom-chem",
-        "pt-dom-tidal",
-        "pt-dom-atmos",
-        "pt-dom-outgassing",
         "pt-ink",
+        "pt-magma",
+        "pt-solar",
+        "pt-verdant",
+        "pt-ocean",
+        "pt-dom-tidal",
+        "pt-dom-outgassing",
         "pt-ink-3",
+        "pt-azure",
     ],
-    "CYCLE_DARK": ["pt-magma", "pt-azure", "pt-ice", None, "pt-text-d", None],
+    "CYCLE_DARK": ["pt-paper", "pt-magma", "pt-solar", None, "pt-ice", None],
     "_SEQ": ["pt-void", "pt-abyss", "pt-ocean", "pt-azure", "pt-ice", "pt-paper"],
     "_DIV": ["pt-crimson", None, None, None, "pt-ocean"],
     "_PHASE": [f"pt-p{i}" for i in range(1, 10)],
@@ -122,6 +127,9 @@ BEAMER = {
     "ProteusAbyss": "pt-abyss",
     "ProteusAzure": "pt-azure",
     "ProteusIce": "pt-ice",
+    "ProteusSolar": "pt-solar",
+    "ProteusSolarDeep": "pt-solar-deep",
+    "ProteusVerdant": "pt-verdant",
     "ProteusPaper": "pt-paper",
     "ProteusInk": "pt-ink",
     "ProteusInkSoft": "pt-ink-2",
@@ -161,6 +169,8 @@ LIGHT_PAIRS = {
     "pt-text-d3": "pt-ink-3",
     "pt-azure": "pt-ocean",
     "pt-ice": "pt-abyss",
+    "pt-solar": "pt-solar-deep",
+    "pt-dom-stellar": "pt-solar-deep",
 }
 # Remapped tokens with no counterpart token (theme-specific values by design).
 LIGHT_FREE = {"pt-header-bg", "pt-shadow-2"}
@@ -172,6 +182,8 @@ RESTORE_EXPECTED = {
     "pt-line-d",
     "pt-azure",
     "pt-ice",
+    "pt-solar",
+    "pt-dom-stellar",
 }
 
 # Docs pages checked row-aware (a --pt-* reference pins the hexes on its line).

@@ -1,5 +1,5 @@
 /* ============================================================
-   PROTEUS FRAMEWORK — THERMOCLINE DESIGN TOKENS  v1.0
+   PROTEUS FRAMEWORK — THERMOCLINE DESIGN TOKENS  v1.1
    Magma · Void · Ocean — dark-first, instrument-grade
    Fonts: Sora / Instrument Sans / Spline Sans Mono
    ============================================================ */
@@ -13,6 +13,11 @@
   --pt-abyss:      #14406B;  /* deep blue, heading accents on light */
   --pt-azure:      #4FA3D9;  /* eyebrows, active nav on dark */
   --pt-ice:        #A8D4E8;  /* cool highlight on dark */
+
+  /* ——— ACCENTS (sporadic highlight, extra data-series range) ——— */
+  --pt-solar:      #E0A32E;  /* the star / MORS; bright, for dark surfaces and the data cycle */
+  --pt-solar-deep: #C8860F;  /* solar deepened for light surfaces (3.06:1 on white) */
+  --pt-verdant:    #57A05C;  /* habitable endpoint / surface; brand green, distinct from --pt-positive */
 
   /* ——— SURFACES · DARK (primary mode) ——— */
   --pt-void:       #05070B;  /* page background */
@@ -49,7 +54,7 @@
   --pt-dom-tidal:      #593E74;  /* LovePy, Obliqua — red→blue midpoint (CVD-safe) */
   --pt-dom-chem:       #1B6FA8;  /* VULCAN, ZEPHYRUS */
   --pt-dom-atmos:      #4FA3D9;  /* AGNI, JANUS */
-  --pt-dom-stellar:    #A8D4E8;  /* MORS */
+  --pt-dom-stellar:    #E0A32E;  /* MORS — solar gold, deepens on light for contrast */
 
   /* ——— SEMANTIC ——— */
   --pt-positive: #2E8B57;
@@ -117,6 +122,9 @@
   --pt-azure:    #1B6FA8;
   --pt-ice:      #14406B;
   --pt-shadow-2: 0 8px 28px -10px rgba(16,21,27,0.18);
+  /* solar deepens on light for adequate contrast (mirrors magma/crimson) */
+  --pt-solar:       #C8860F;
+  --pt-dom-stellar: #C8860F;
 }
 /* regions that stay dark in BOTH themes (hero band, code blocks,
    API signatures): restore dark tokens for their subtree only. */
@@ -129,6 +137,8 @@
   --pt-line-d:  #1A2230;
   --pt-azure:   #4FA3D9;
   --pt-ice:     #A8D4E8;
+  --pt-solar:   #E0A32E;
+  --pt-dom-stellar: #E0A32E;
 }
 [data-theme="light"] .foot-lockup .word,
 [data-theme="light"] .lockup .word { color: var(--pt-ink); }
