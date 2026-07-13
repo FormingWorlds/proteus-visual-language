@@ -24,8 +24,9 @@ of one master vector.
 | `paper` | mono on dark surfaces | all `#F2F5F7` |
 | `mono` | inherits `currentColor` | any (for inline embedding) |
 
-Plus module domain tints (`azure`, `outgassing`, `tidal`, …) — see
-[module-colors.md](module-colors.md).
+Plus module domain tints (`azure`, `outgassing`, `tidal`, `solar`, …) — see
+[module-colors.md](module-colors.md). `solar` is the stellar domain gold
+(`#E0A32E`), at home on dark surfaces.
 
 ## File matrix
 

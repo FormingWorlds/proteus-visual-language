@@ -1,4 +1,4 @@
-/* PROTEUS website — shared chrome (Thermocline v1.0). Pairs with tokens.css */
+/* PROTEUS website — shared chrome (Thermocline v1.1). Pairs with tokens.css */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { font-family: var(--pt-font-body); background: var(--pt-void); color: var(--pt-text-d); -webkit-font-smoothing: antialiased; }

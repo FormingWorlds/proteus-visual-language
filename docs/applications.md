@@ -27,11 +27,12 @@ statement, closing — in **both light and dark**. Driven by `deck-stage.js`;
 (toggle top-right; print at 100%). Figure slots take `proteus-mpl` exports.
 
 ## Figures — `figures/proteus-mpl/`
-`pip install proteus-mpl`; `proteus_mpl.use()` / `use("dark")`. Brand colour
-cycles (domain set and light cycle CVD-checked), the phase diverging colormap, a sequential map, and the
-font configuration (copy the TTFs from `fonts/` into the package to bundle
-them) — every figure in every paper carries the identity. Match the figure
-variant to its surface (light figure ↔ light slide/frame, dark ↔ dark).
+`pip install proteus-mpl`; `proteus_mpl.use()` / `use("dark")` / `use("white")`.
+Brand colour cycles (domain set and both cycles CVD-checked), the phase
+diverging colormap, a sequential map, and the bundled brand fonts — every
+figure in every paper carries the identity. Match the figure variant to its
+surface (light figure ↔ light slide/frame, dark ↔ dark, white for journal
+pages).
 
 ## Talks (LaTeX) — `talks/beamer/`
 `\usetheme[mode=dark]{proteus}` or `mode=light` — a fully light or dark deck,

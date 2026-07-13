@@ -12,11 +12,11 @@ concentric rings — the magma→ocean story in miniature.
 logo/
 ├── glyph/     the phase glyph, every colorway × three formats:
 │   ── SVG (vector):  glyph_phase.svg (multi-colour), glyph_magma/ocean/ice/
-│                  ink/paper/azure/outgassing/tidal.svg (single),
+│                  ink/paper/azure/outgassing/tidal/solar.svg (single),
 │                  glyph_mono.svg (currentColor, SVG-only by design)
 │   ── PNG (pixel, transparent, 950×998): glyph_phase_dark/light.png plus
 │                  every single colorway (glyph_magma/ocean/ice/ink/paper/
-│                  azure/outgassing/tidal.png)
+│                  azure/outgassing/tidal/solar.png)
 │   ── JPG (pixel, on background): glyph_phase_dark.jpg (on Void),
 │                  glyph_phase_light.jpg (on Paper), plus every single
 │                  colorway composited on its natural surface
@@ -35,8 +35,8 @@ inherits `currentColor` for inline embedding; PNG where transparency is needed
 (slides, matplotlib, favicons); JPG where transparency isn't available, composited
 on Void or Paper.
 
-**Themes:** `phase_dark` / single-colour `paper` / `ice` / `magma` / `azure`
-sit on dark surfaces; `phase_light` / `ink` / `ocean` / `outgassing` / `tidal`
+**Themes:** `phase_dark` / single-colour `paper` / `ice` / `magma` / `azure` /
+`solar` sit on dark surfaces; `phase_light` / `ink` / `ocean` / `outgassing` / `tidal`
 sit on light. The JPGs are composited accordingly (Void behind the dark-surface
 colorways, Paper behind the light-surface ones). The multi-colour
 `glyph_phase.svg` works on either.

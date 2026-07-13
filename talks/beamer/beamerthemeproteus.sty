@@ -1,5 +1,5 @@
 % ==========================================================================
-% beamerthemeproteus.sty — PROTEUS Thermocline beamer theme v1.0
+% beamerthemeproteus.sty — PROTEUS Thermocline beamer theme v1.1
 % Requires XeLaTeX or LuaLaTeX (fontspec). Compile: latexmk -xelatex talk.tex
 %
 % Setup: put this file, fonts/ (Sora, Instrument Sans, Spline Sans Mono OFL
@@ -22,7 +22,7 @@
 %   \begin{lightframes} ... frames ... \end{lightframes}
 % ==========================================================================
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{beamerthemeproteus}[2026/07/12 v1.0 PROTEUS Thermocline]
+\ProvidesPackage{beamerthemeproteus}[2026/07/13 v1.1 PROTEUS Thermocline]
 
 \RequirePackage{ifxetex,ifluatex}
 \ifxetex\else\ifluatex\else
@@ -73,6 +73,9 @@
 \definecolor{ProteusAbyss}{HTML}{14406B}
 \definecolor{ProteusAzure}{HTML}{4FA3D9}
 \definecolor{ProteusIce}{HTML}{A8D4E8}
+\definecolor{ProteusSolar}{HTML}{E0A32E}
+\definecolor{ProteusSolarDeep}{HTML}{C8860F}
+\definecolor{ProteusVerdant}{HTML}{57A05C}
 \definecolor{ProteusPaper}{HTML}{F2F5F7}
 \definecolor{ProteusInk}{HTML}{10151B}
 \definecolor{ProteusInkSoft}{HTML}{3E4A55}
@@ -85,13 +88,18 @@
 \definecolor{ProteusDomTidal}{HTML}{593E74}
 \definecolor{ProteusDomChem}{HTML}{1B6FA8}
 \definecolor{ProteusDomAtmos}{HTML}{4FA3D9}
-\definecolor{ProteusDomStellar}{HTML}{A8D4E8}
+\definecolor{ProteusDomStellar}{HTML}{E0A32E}
 
 % inline helpers
 \newcommand{\magma}[1]{{\color{ProteusMagma}#1}}
 \newcommand{\ocean}[1]{{\color{ProteusOcean}#1}}
 \newcommand{\azure}[1]{{\color{ProteusAzure}#1}}
 \newcommand{\ice}[1]{{\color{ProteusIce}#1}}
+% accents: solar deepens on light surfaces for contrast (mirrors magma/crimson);
+% the active shade is carried by the 'proteus solar' beamercolor, which the
+% surface macros set, so darkframes/lightframes overrides are honoured.
+\newcommand{\solar}[1]{{\usebeamercolor[fg]{proteus solar}#1}}
+\newcommand{\verdant}[1]{{\color{ProteusVerdant}#1}}
 
 % ---------------- fonts ----------------
 \setsansfont[Path=\ProteusFontPath,
@@ -140,6 +148,7 @@
   \setbeamercolor{block body alerted}{fg=ProteusInk, bg=ProteusCrimson!8!ProteusPaper}%
   \setbeamercolor{block title example}{fg=ProteusPaper, bg=ProteusOcean}%
   \setbeamercolor{block body example}{fg=ProteusInk, bg=ProteusOcean!8!ProteusPaper}%
+  \setbeamercolor{proteus solar}{fg=ProteusSolarDeep}%
   \usebeamercolor[fg]{normal text}%
 }
 % DARK content surface (Void / Paper)
@@ -160,6 +169,7 @@
   \setbeamercolor{block body alerted}{fg=ProteusPaper, bg=ProteusMantle!35!ProteusVoid}%
   \setbeamercolor{block title example}{fg=ProteusVoid, bg=ProteusAzure}%
   \setbeamercolor{block body example}{fg=ProteusPaper, bg=ProteusBasaltTwo}%
+  \setbeamercolor{proteus solar}{fg=ProteusSolar}%
   \usebeamercolor[fg]{normal text}%
 }
 

@@ -4,13 +4,16 @@ Usage:
     import proteus_mpl
     proteus_mpl.use()          # light variant, Paper background
     proteus_mpl.use("dark")    # dark variant, Void background (matches dark slides)
+    proteus_mpl.use("white")   # light variant on pure white (journal pages)
 
-Registers the brand fonts (if bundled in fonts/), the `proteus`,
-`proteus_div`, and `proteus_phase` colormaps (+ reversed `_r` versions),
-applies the style sheet, and sets `proteus` as the default image colormap.
+Registers the bundled brand fonts, the `proteus`, `proteus_div`, and
+`proteus_phase` colormaps (+ reversed `_r` versions), applies the style
+sheet, and sets `proteus` as the default image colormap.
 
 All brand colors are available by name in COLORS, the categorical cycles as
-CYCLE (light) and CYCLE_DARK, and the stable module-domain colors as DOMAINS.
+CYCLE (light/white) and CYCLE_DARK, and the stable module-domain colors as
+DOMAINS. Solar gold is the star (MORS), verdant the habitable endpoint; both
+are accents that extend the cycle for many-line figures.
 """
 
 from pathlib import Path
@@ -31,6 +34,10 @@ COLORS = {
     "basalt":  "#0E131B",
     "paper":   "#F2F5F7",
     "ink":     "#10151B",
+    # accents — solar is the star (MORS), verdant the habitable endpoint
+    "solar":      "#E0A32E",   # bright: dark surfaces and the data cycle
+    "solar_deep": "#C8860F",   # deepened: gold fills/text on light (3.06:1 on white)
+    "verdant":    "#57A05C",   # brand green, distinct from the semantic positive
     # neutrals
     "fog":     "#7A8894",
     "mist":    "#9FB0BE",
@@ -45,14 +52,20 @@ DOMAINS = {
     "tidal":      "#593E74",   # LovePy, Obliqua
     "chemistry":  "#1B6FA8",   # VULCAN, ZEPHYRUS
     "atmosphere": "#4FA3D9",   # AGNI, JANUS
-    "stellar":    "#A8D4E8",   # MORS
+    "stellar":    "#E0A32E",   # MORS — solar gold; prefer COLORS["solar_deep"]
+                               # for gold fills or thin marks on light surfaces
 }
 
-# Categorical cycles. Light cycle = five domain colors (stellar's pale tint
-# is omitted on Paper) + ink + fog;
-# dark drops the deep colors that vanish on Void and substitutes light tones.
-CYCLE = ["#E23D28", "#1B6FA8", "#593E74", "#4FA3D9", "#A03123", "#10151B", "#7A8894"]
-CYCLE_DARK = ["#E23D28", "#4FA3D9", "#A8D4E8", "#9B7BBE", "#E9EEF2", "#8FA0AE"]
+# Categorical cycles. Both are neutral-first: a single-series plot draws in
+# ink (light) / paper (dark), so magma stays a deliberate signal.
+# LIGHT: ink + 7 hues + fog. Machado 2009 CVD min pairwise deltaE = 15.7.
+# DARK: paper + 5 hues (Void leaves less room). min pairwise deltaE = 16.8.
+# Never insert extra neutral greys between the hues: a grey next to a
+# desaturated hue collapses the CVD separation to ~6. Past the cycle, encode
+# additional series with line style, not more hues.
+CYCLE = ["#10151B", "#E23D28", "#E0A32E", "#57A05C", "#1B6FA8", "#593E74",
+         "#A03123", "#7A8894", "#4FA3D9"]
+CYCLE_DARK = ["#F2F5F7", "#E23D28", "#E0A32E", "#57C08A", "#A8D4E8", "#9B7BBE"]
 
 # ---------------------------------------------------------------- colormaps
 _SEQ = ["#05070B", "#14406B", "#1B6FA8", "#4FA3D9", "#A8D4E8", "#F2F5F7"]          # void -> paper (cool)
@@ -74,11 +87,11 @@ def _register_cmaps():
 
 
 def _register_fonts():
-    """Register bundled fonts for this session (no system install needed).
+    """Register the bundled fonts for this session (no system install needed).
 
-    Drop the OFL TTFs into proteus_mpl/fonts/ :
-      Sora (variable or static weights), InstrumentSans, SplineSansMono.
-    Missing fonts degrade gracefully to matplotlib's default sans.
+    The package ships the OFL TTFs (Instrument Sans, Spline Sans Mono) in
+    proteus_mpl/fonts/. Missing fonts degrade gracefully to matplotlib's
+    default sans.
     """
     from matplotlib import font_manager
     fonts_dir = _HERE / "fonts"
@@ -92,7 +105,16 @@ def _register_fonts():
 
 
 def use(variant: str = "light"):
-    """Apply the PROTEUS theme. variant: 'light' (Paper) or 'dark' (Void)."""
+    """Apply the PROTEUS theme.
+
+    Parameters
+    ----------
+    variant : {"light", "dark", "white"}, default "light"
+        Surface treatment. "light" is the Paper background (papers, light
+        slides), "dark" the Void background (dark slides, hero figures),
+        "white" the light theme on a pure-white background for journals
+        whose pages must not show a card edge.
+    """
     import matplotlib as mpl
     import matplotlib.pyplot as plt
 
@@ -100,13 +122,16 @@ def use(variant: str = "light"):
     _register_cmaps()
 
     base = _HERE / "proteus.mplstyle"
-    if variant == "light":
+    if variant in ("light", "white"):
         plt.style.use(str(base))
         mpl.rcParams["axes.prop_cycle"] = mpl.cycler(color=CYCLE)
+        if variant == "white":
+            for key in ("figure.facecolor", "savefig.facecolor", "axes.facecolor"):
+                mpl.rcParams[key] = "#FFFFFF"
     elif variant == "dark":
         plt.style.use([str(base), str(_HERE / "proteus_dark.mplstyle")])
         mpl.rcParams["axes.prop_cycle"] = mpl.cycler(color=CYCLE_DARK)
     else:
-        raise ValueError(f"variant must be 'light' or 'dark', got {variant!r}")
+        raise ValueError(f"variant must be 'light', 'dark', or 'white', got {variant!r}")
 
     mpl.rcParams["image.cmap"] = "proteus"
