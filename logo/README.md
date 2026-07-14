@@ -12,7 +12,7 @@ concentric rings — the magma→ocean story in miniature.
 logo/
 ├── glyph/     the phase glyph, every colorway × four formats:
 │   ── SVG (vector):  glyph_phase.svg (multi-colour master),
-│                  glyph_phase_dark.svg (tuned for dark surfaces),
+│                  glyph_phase_dark.svg (master palette, dark surfaces),
 │                  glyph_phase_light.svg (tuned for light), glyph_magma/ocean/
 │                  ice/ink/paper/azure/outgassing/tidal/solar.svg (single),
 │                  glyph_mono.svg (currentColor, SVG-only by design)

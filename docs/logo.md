@@ -36,8 +36,9 @@ Every colorway ships in four formats, in [`../logo/glyph/`](../logo/glyph/)
 
 - **SVG** (vector) — `glyph_<name>.svg`. Scales to any size; preferred for web,
   docs, print. The phase colorway ships as the multi-colour master
-  `glyph_phase.svg` plus surface-tuned `glyph_phase_dark.svg` /
-  `glyph_phase_light.svg`.
+  `glyph_phase.svg`, also provided under the dark-surface name
+  `glyph_phase_dark.svg`, plus a light-surface variant `glyph_phase_light.svg`
+  with deepened tones.
 - **PDF** (vector, tight-cropped to the glyph): `glyph_<name>.pdf`, with the
   same `phase` / `phase_dark` / `phase_light` naming. For vector placement in
   print and LaTeX workflows.
