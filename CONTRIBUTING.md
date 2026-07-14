@@ -56,9 +56,9 @@ change). The tag triggers the release workflow, which publishes
 `@formingworlds/proteus-tokens` to npm and `proteus-mpl` to PyPI. Before
 tagging, set the same version without the `v` prefix (e.g. `1.0.0`) in
 `tokens/package.json` and `figures/proteus-mpl/pyproject.toml`, and bump
-`CHANGELOG.md` in the same PR. CI runs `tokens/check_versions.py` on every pull
-request, and the release workflow runs it again as a preflight that stops
-before publishing if the two version fields disagree, so both packages always
-release together on one version.
+`CHANGELOG.md` in the same PR. CI runs `tokens/check_versions.py` on pull
+requests that touch these files, and the release workflow runs it again as a
+preflight, so a version mismatch stops the release before either package
+publishes.
 
 Questions: proteus_dev@formingworlds.space
