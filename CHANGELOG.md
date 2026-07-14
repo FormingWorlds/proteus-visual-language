@@ -8,7 +8,16 @@ on breaking changes, such as removing or renaming a token. Git tags carry a
 `v` prefix (`v1.0.0`); the published packages use the same number without
 it.
 
-## [Unreleased]
+## [1.1.1] - 2026-07-14
+
+### Added
+- On-brand JPG lockup panels in `logo/lockup/`: `proteus-lockup-dark.jpg` (on Void) and `proteus-lockup-light.jpg` (on Paper), 924x540 with the clearspace baked in. These are the ready-to-ship form for contexts without transparency (a Discord avatar, an image embed), giving the wordmark the same on-brand JPG treatment the glyph colorways already have. The pure `*-on-black.jpg` / `*-on-white.jpg` compositions stay for the surfaces that need them.
+- Vector PDF exports for the whole glyph set in `logo/glyph/`: every single colorway (`glyph_magma` through `glyph_solar`), the multi-colour `glyph_phase`, and `glyph_phase_dark` / `glyph_phase_light`, each tight-cropped to the glyph, plus `logo/favicon/favicon.pdf`. This completes SVG/PNG/JPG/PDF parity for the glyph; `glyph_mono` stays SVG-only by design.
+- SVG sources for the two phase surface variants: `glyph_phase_dark.svg` and `glyph_phase_light.svg`, alongside the existing multi-colour master `glyph_phase.svg`, so the dark- and light-tuned phase glyphs are now available as vectors too.
+
+### Changed
+- The transparent lockup PDFs (`proteus-lockup-dark-transparent.pdf` and `-light-transparent.pdf`) are now fully vector: the wordmark text and the phase glyph both ship as paths, replacing the earlier form that carried the glyph as an embedded raster. Page box and layout are unchanged.
+- Glyph handedness is consistent across every format. The vector glyphs (SVG and PDF) share the orientation of the raster and lockup assets, with the bright arc sweeping in from the left in each deliverable.
 
 ## [1.1.0] - 2026-07-13
 
@@ -48,6 +57,6 @@ First public release of the **Thermocline** visual language.
   identity badges, the coupler diagram language, and a sticker sheet.
 - **Brand guide**: interactive (`site/`) + per-topic Markdown (`docs/`).
 
-[unreleased]: https://github.com/FormingWorlds/proteus-visual-language/compare/v1.1.0...HEAD
+[1.1.1]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.1.1
 [1.1.0]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.1.0
 [1.0.0]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.0.0
