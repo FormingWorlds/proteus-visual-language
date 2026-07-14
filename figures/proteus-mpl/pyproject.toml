@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "proteus-mpl"
-version = "1.1.0"
+version = "1.1.2"
 description = "PROTEUS Thermocline matplotlib theme: brand color cycles, phase colormaps, light + dark variants."
 readme = "README.md"
 requires-python = ">=3.8"

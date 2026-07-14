@@ -9,7 +9,18 @@ on:
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
 
 jobs:
+  version-lockstep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify the npm and PyPI packages share one version
+        run: python3 tokens/check_versions.py
+
   npm-tokens:
+    needs: version-lockstep
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,6 +39,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   pypi-proteus-mpl:
+    needs: version-lockstep
     runs-on: ubuntu-latest
     permissions:
       id-token: write   # PyPI Trusted Publishing (no token needed once configured)
