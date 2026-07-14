@@ -30,12 +30,18 @@ Plus module domain tints (`azure`, `outgassing`, `tidal`, `solar`, …) — see
 
 ## File matrix
 
-Every colorway ships in three formats, in [`../logo/glyph/`](../logo/glyph/)
+Every colorway ships in four formats, in [`../logo/glyph/`](../logo/glyph/)
 (`glyph_mono.svg` is the one deliberate exception: SVG-only, inheriting
 `currentColor` for inline embedding):
 
 - **SVG** (vector) — `glyph_<name>.svg`. Scales to any size; preferred for web,
-  docs, print.
+  docs, print. The phase colorway ships as the multi-colour master
+  `glyph_phase.svg`, also provided under the dark-surface name
+  `glyph_phase_dark.svg`, plus a light-surface variant `glyph_phase_light.svg`
+  with deepened tones.
+- **PDF** (vector, tight-cropped to the glyph): `glyph_<name>.pdf`, with the
+  same `phase` / `phase_dark` / `phase_light` naming. For vector placement in
+  print and LaTeX workflows.
 - **PNG** (pixel, transparent) — `glyph_<name>.png` (950×998); the phase
   colorway ships as `glyph_phase_dark.png` / `glyph_phase_light.png`. For
   raster contexts needing transparency (slides, matplotlib, favicons).
@@ -44,16 +50,20 @@ Every colorway ships in three formats, in [`../logo/glyph/`](../logo/glyph/)
   transparency (some social/email).
 
 Wordmark lockups live in [`../logo/lockup/`](../logo/lockup/) as
-`proteus-lockup-dark.png` (on Void) and `proteus-lockup-light.png` (on Paper),
-plus background-free `*-transparent.png` and `*-transparent.pdf` variants of
-both (for READMEs, composited layouts, and print; the PDF wordmark is vector
-text) and plain `*-on-black.jpg` / `*-on-white.jpg` compositions for contexts
-without transparency (the one sanctioned exception to the
-no-pure-black-or-white rule) —
-the wordmark is **Sora ExtraBold**, so it also reproduces live in HTML (see
+`proteus-lockup-dark.png` / `.jpg` (on Void) and `proteus-lockup-light.png` /
+`.jpg` (on Paper); these panels carry the clearspace baked in, and the JPGs are
+the default ready-to-ship form for when transparency is unavailable (a Discord
+avatar, an image embed), rendering cleanly anywhere. There are also
+background-free `*-transparent.png` and `*-transparent.pdf` variants of both
+(for READMEs, composited layouts, and print; the PDF is fully vector, wordmark
+text and phase glyph both as paths)
+and plain `*-on-black.jpg` / `*-on-white.jpg` compositions on pure black/white
+surfaces (the one sanctioned exception to the no-pure-black-or-white rule, for
+when a pure surface is specifically required).
+The wordmark is **Sora ExtraBold**, so it also reproduces live in HTML (see
 `../site/logo-lockups.html`) and the glyph itself is vector (`glyph_phase.svg`).
-Favicon in [`../logo/favicon/`](../logo/favicon/): `favicon.svg` (phase glyph)
-plus `favicon.png` / `favicon-light.png`.
+Favicon in [`../logo/favicon/`](../logo/favicon/): `favicon.svg` and
+`favicon.pdf` (phase glyph, vector) plus `favicon.png` / `favicon-light.png`.
 
 ## Rules
 
@@ -68,5 +78,6 @@ plus `favicon.png` / `favicon-light.png`.
   These are CSS box measures; the tracking trails the final letter, so its
   ink lands about 0.41x in from the wordmark's right edge.
   Drop it below 200 px lockup width.
-- **Never:** rotate, add glow/shadow, outline, stretch, or place on a busy
-  background without a scrim.
+- **Never:** rotate, mirror, add glow/shadow, outline, stretch, or place on a
+  busy background without a scrim. The bright arc always sweeps in from the left;
+  every asset shares that single handedness.
