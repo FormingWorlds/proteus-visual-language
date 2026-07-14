@@ -212,7 +212,7 @@ MEMBERSHIP = [
     ("docs/logo.md", set(), 4),
     ("docs/README.md", set(), 2),
     ("community/community-kit.html", {"#4A525A", "#5A626A", "#AEB4BA", "#C8CDD2"}, 3),
-    ("logo/glyph/*.svg", set(), 40),
+    ("logo/glyph/*.svg", {"#175181", "#333752"}, 40),
     ("logo/favicon/*.svg", set(), 5),
 ]
 # File suffixes where shorthand hex forms (#FFF) are treated as errors.
