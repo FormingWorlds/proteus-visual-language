@@ -29,7 +29,7 @@ This is a monorepo. Each top-level folder is independently consumable.
 | Folder | What it is | How to consume |
 |---|---|---|
 | [`tokens/`](tokens/) | Colours, type, spacing, radii — the source of truth. | npm: `@formingworlds/proteus-tokens` (CSS / JSON / SCSS) |
-| [`logo/`](logo/) | Glyph colorways, lockups, favicon (SVG, PNG, JPG, PDF). | download the files |
+| [`logo/`](logo/) | Glyph colorways, lockups, favicon. Formats: SVG, PNG, JPG, PDF. | download the files |
 | [`fonts/`](fonts/) | The three type families. | see [`fonts/README.md`](fonts/README.md) |
 | [`templates/`](templates/) | Production stylesheets + reference pages for web, docs, decks, poster. | copy the CSS/JS into your project |
 | [`figures/proteus-mpl/`](figures/proteus-mpl/) | Matplotlib theme for publication figures. | PyPI: `pip install proteus-mpl` |
