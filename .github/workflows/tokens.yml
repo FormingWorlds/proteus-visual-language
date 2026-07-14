@@ -9,6 +9,7 @@ on:
       - "templates/docs/docs.css"
       - "templates/web/site.css"
       - "figures/proteus-mpl/src/**"
+      - "figures/proteus-mpl/pyproject.toml"
       - "talks/beamer/beamerthemeproteus.sty"
       - "docs/*.md"
       - "site/index.html"
@@ -23,6 +24,7 @@ on:
       - "templates/docs/docs.css"
       - "templates/web/site.css"
       - "figures/proteus-mpl/src/**"
+      - "figures/proteus-mpl/pyproject.toml"
       - "talks/beamer/beamerthemeproteus.sty"
       - "docs/*.md"
       - "site/index.html"
@@ -40,7 +42,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
       - name: Verify tokens.json and tokens.scss match tokens.css
         run: python3 tokens/check_sync.py
       - name: Verify hand-maintained token copies match tokens.css
         run: python3 tokens/check_copies.py
+      - name: Verify the npm and PyPI packages share one version
+        run: python3 tokens/check_versions.py

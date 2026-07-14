@@ -8,6 +8,14 @@ on breaking changes, such as removing or renaming a token. Git tags carry a
 `v` prefix (`v1.0.0`); the published packages use the same number without
 it.
 
+## [1.1.2] - 2026-07-14
+
+### Changed
+- `proteus-mpl` and `@formingworlds/proteus-tokens` now carry and release from the same version, keeping the PyPI and npm packages in lockstep. `proteus-mpl` moves to 1.1.2 with no code or colour changes.
+
+### Added
+- `tokens/check_versions.py`, run in CI on pull requests and again as a release preflight, asserts that `tokens/package.json` and `figures/proteus-mpl/pyproject.toml` declare the same version. The release stops before either package publishes if the two disagree, so they cannot drift apart.
+
 ## [1.1.1] - 2026-07-14
 
 ### Added
@@ -57,6 +65,7 @@ First public release of the **Thermocline** visual language.
   identity badges, the coupler diagram language, and a sticker sheet.
 - **Brand guide**: interactive (`site/`) + per-topic Markdown (`docs/`).
 
+[1.1.2]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.1.2
 [1.1.1]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.1.1
 [1.1.0]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.1.0
 [1.0.0]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.0.0
