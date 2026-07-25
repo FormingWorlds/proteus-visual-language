@@ -24,9 +24,10 @@ of one master vector.
 | `paper` | mono on dark surfaces | all `#F2F5F7` |
 | `mono` | inherits `currentColor` | any (for inline embedding) |
 
-Plus module domain tints (`azure`, `outgassing`, `tidal`, `solar`, …) — see
-[module-colors.md](module-colors.md). `solar` is the stellar domain gold
-(`#E0A32E`), at home on dark surfaces.
+Plus module domain tints (`azure`, `outgassing`, `tidal`, `solar`, `clay`, …) —
+see [module-colors.md](module-colors.md). `solar` is the stellar domain gold
+(`#E0A32E`) and `clay` the accretion tone (`#A38F7A`); both belong on dark
+surfaces, where clay reads at 6.5:1 against 2.8:1 on paper.
 
 ## File matrix
 

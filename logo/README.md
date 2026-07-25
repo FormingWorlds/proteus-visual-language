@@ -14,15 +14,15 @@ logo/
 │   ── SVG (vector):  glyph_phase.svg (multi-colour master),
 │                  glyph_phase_dark.svg (master palette, dark surfaces),
 │                  glyph_phase_light.svg (tuned for light), glyph_magma/ocean/
-│                  ice/ink/paper/azure/outgassing/tidal/solar.svg (single),
+│                  ice/ink/paper/azure/outgassing/tidal/solar/clay.svg (single),
 │                  glyph_mono.svg (currentColor, SVG-only by design)
 │   ── PDF (vector, tight-cropped to the glyph): glyph_phase.pdf,
 │                  glyph_phase_dark/light.pdf, plus every single colorway
 │                  (glyph_magma/ocean/ice/ink/paper/azure/outgassing/tidal/
-│                  solar.pdf)
+│                  solar/clay.pdf)
 │   ── PNG (pixel, transparent, 950×998): glyph_phase_dark/light.png plus
 │                  every single colorway (glyph_magma/ocean/ice/ink/paper/
-│                  azure/outgassing/tidal/solar.png)
+│                  azure/outgassing/tidal/solar/clay.png)
 │   ── JPG (pixel, on background): glyph_phase_dark.jpg (on Void),
 │                  glyph_phase_light.jpg (on Paper), plus every single
 │                  colorway composited on its natural surface
@@ -49,10 +49,10 @@ and LaTeX workflows, tight-cropped to the glyph; PNG where transparency is neede
 on Void or Paper.
 
 **Themes:** `phase_dark` / single-colour `paper` / `ice` / `magma` / `azure` /
-`solar` sit on dark surfaces; `phase_light` / `ink` / `ocean` / `outgassing` / `tidal`
-sit on light. The JPGs are composited accordingly (Void behind the dark-surface
-colorways, Paper behind the light-surface ones). The multi-colour
-`glyph_phase.svg` works on either.
+`solar` / `clay` sit on dark surfaces; `phase_light` / `ink` / `ocean` /
+`outgassing` / `tidal` sit on light. The JPGs are composited accordingly (Void
+behind the dark-surface colorways, Paper behind the light-surface ones). The
+multi-colour `glyph_phase.svg` works on either.
 
 ## Rules
 

@@ -67,6 +67,7 @@ MPL_DOMAINS = {
     "chemistry": "pt-dom-chem",
     "atmosphere": "pt-dom-atmos",
     "stellar": "pt-dom-stellar",
+    "accretion": "pt-dom-accretion",
 }
 # Positional token expectations for the colour sequences; None marks a
 # deliberate standalone stop (dark-cycle substitutes, diverging midpoints).
@@ -142,6 +143,7 @@ BEAMER = {
     "ProteusDomChem": "pt-dom-chem",
     "ProteusDomAtmos": "pt-dom-atmos",
     "ProteusDomStellar": "pt-dom-stellar",
+    "ProteusDomAccretion": "pt-dom-accretion",
 }
 
 # The --pt-* properties the docs drop-in re-declares.

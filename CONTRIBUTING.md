@@ -36,7 +36,17 @@ CI runs `python3 tokens/check_copies.py` to verify them against
   Space Grotesk or JetBrains Mono; the stack is a deliberate identity choice.
 - **The module domain colours.** They are stable and colour-blind-checked as a
   set (see [`docs/module-colors.md`](docs/module-colors.md)). Don't remap or
-  extend them without re-running the CVD ΔE check.
+  extend them without re-running `python3 tokens/check_cvd.py`, which measures
+  every pair under all three dichromacies on both surface sets and fails when
+  one drops below its floor. CI runs it alongside the other token checks. The
+  script also holds the roster: it fails when `tokens.css` declares a set of
+  domains other than the one in its `EXPECTED_DOMAINS`, so adding a domain
+  means naming it there as well. `CROSS_PALETTE` is a required minimum instead,
+  so an accent that is renamed or hidden fails the check while a new one is
+  measured only once it is listed there.
+  `python3 tokens/check_cvd_selftest.py` mutates a scratch copy of the palette
+  to confirm the check still catches each of those, and runs in CI too; a change
+  to how the check reads `tokens.css` belongs there as a new case.
 - **The phase gradient direction.** Always hot-left → cold-right.
 
 ## Proposing a change

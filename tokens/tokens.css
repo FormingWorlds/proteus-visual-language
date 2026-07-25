@@ -1,5 +1,5 @@
 /* ============================================================
-   PROTEUS FRAMEWORK — THERMOCLINE DESIGN TOKENS  v1.1
+   PROTEUS FRAMEWORK — THERMOCLINE DESIGN TOKENS  v1.2
    Magma · Void · Ocean — dark-first, instrument-grade
    Fonts: Sora / Instrument Sans / Spline Sans Mono
    ============================================================ */
@@ -55,6 +55,7 @@
   --pt-dom-chem:       #1B6FA8;  /* VULCAN, ZEPHYRUS */
   --pt-dom-atmos:      #4FA3D9;  /* AGNI, JANUS */
   --pt-dom-stellar:    #E0A32E;  /* MORS — solar gold, deepens on light for contrast */
+  --pt-dom-accretion:  #A38F7A;  /* Morrigan, clay; sits clear of the reds and the blues */
 
   /* ——— SEMANTIC ——— */
   --pt-positive: #2E8B57;

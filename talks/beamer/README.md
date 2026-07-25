@@ -82,4 +82,4 @@ assets/glyph_phase_dark.png        assets/glyph_phase_light.png
   `\proteusPhaseBand{\paperwidth}{1.6mm}`).
 - Module domain colors are available by name: `ProteusDomInterior`,
   `ProteusDomOutgas`, `ProteusDomTidal`, `ProteusDomChem`,
-  `ProteusDomAtmos`, `ProteusDomStellar`.
+  `ProteusDomAtmos`, `ProteusDomStellar`, `ProteusDomAccretion`.

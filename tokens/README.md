@@ -49,7 +49,7 @@ both themes (code blocks, hero bands) restore the dark tokens locally.
 - Surfaces: dark (`--pt-void`, `--pt-basalt`, `--pt-line-d`, `--pt-text-d*`)
   and light (`--pt-paper*`, `--pt-ink*`, `--pt-line-l`).
 - Phase ramp: `--pt-p1`…`--pt-p9` (magma → void → ocean, diverging).
-- Module domain colours: `--pt-dom-interior/outgassing/tidal/chem/atmos/stellar`
+- Module domain colours: `--pt-dom-interior/outgassing/tidal/chem/atmos/stellar/accretion`
   — stable and colour-blind-checked.
 - Type, spacing (8-pt grid), radii (0–8 px), elevation, gradients.
 

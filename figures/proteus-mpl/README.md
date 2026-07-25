@@ -33,9 +33,13 @@ proteus_mpl.use()           # light: Paper background — papers, light slides
 - **Accents** — `COLORS["solar"]` (`#E0A32E`, the star) with
   `COLORS["solar_deep"]` (`#C8860F`) for gold fills or thin marks on light
   surfaces, and `COLORS["verdant"]` (`#57A05C`, the habitable endpoint).
-- **Module domain colors** — `proteus_mpl.DOMAINS["interior"]` etc. Use these
-  whenever a line *is* a module (SPIDER output → interior red, MORS → solar
-  gold). Stable across every paper, talk, and diagram.
+- **Module domain colors** — `proteus_mpl.DOMAINS["interior"]` etc, seven of
+  them. Use these whenever a line *is* a module (SPIDER output → interior red,
+  MORS → solar gold, Morrigan → accretion clay `#A38F7A`). Stable across every
+  paper, talk, and diagram. Three of them are light in tone and thin out on a
+  pale page: stellar gold at 2.0:1, atmosphere blue at 2.5:1, and accretion clay
+  at 2.8:1 against Paper. Give those a legend rather than leaning on the hue for
+  small marks.
 - **Colormaps** — `proteus` (sequential, Void→Paper; default for imshow /
   pcolormesh; the one ramp that survives greyscale reproduction),
   `proteus_div` (diverging, light midpoint — print-safe for
