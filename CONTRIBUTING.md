@@ -41,7 +41,10 @@ CI runs `python3 tokens/check_copies.py` to verify them against
   one drops below its floor. CI runs it alongside the other token checks. The
   script also holds the roster: it fails when `tokens.css` declares a set of
   domains other than the one in its `EXPECTED_DOMAINS`, so adding a domain
-  means naming it there as well.
+  means naming it there as well, and it holds `CROSS_PALETTE` the same way.
+  `python3 tokens/check_cvd_selftest.py` mutates a scratch copy of the palette
+  to confirm the check still catches each of those, and runs in CI too; a change
+  to how the check reads `tokens.css` belongs there as a new case.
 - **The phase gradient direction.** Always hot-left → cold-right.
 
 ## Proposing a change

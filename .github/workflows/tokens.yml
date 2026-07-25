@@ -53,3 +53,5 @@ jobs:
         run: python3 tokens/check_versions.py
       - name: Verify the domain colours stay separable under colour blindness
         run: python3 tokens/check_cvd.py
+      - name: Verify the separability check catches a broken palette
+        run: python3 tokens/check_cvd_selftest.py

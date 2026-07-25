@@ -27,7 +27,8 @@ are drawn from the same red-to-blue axis, so several land close under one
 dichromacy; the report exists so the closeness is a known quantity when a
 figure mixes module identity with status or ramp colour, and so a future domain
 colour is chosen against the whole palette rather than against six of its
-members.
+members. That roster is held as firmly as the domain one: a renamed or removed
+token stops the check rather than shrinking the comparison in silence.
 
 ``REJECTED`` records candidate hues that were measured and turned down, with
 the hex each figure belongs to, so the reasons stay reproducible instead of
@@ -37,9 +38,12 @@ candidate that fails outright from one that clears the domains and collides
 elsewhere. It is reporting only and never fails the check.
 
 Run without arguments to measure the committed tokens; the exit code is
-non-zero when a pair falls below the floor for its set. Pass ``--verbose`` to
-print every pair rather than the tightest few. Paths resolve relative to this
-file. Standard library only, so it runs anywhere ``tokens.css`` does.
+non-zero when a pair falls below the floor for its set, when either roster is
+incomplete, and when a colour is written in a form this check cannot read. Pass
+``--verbose`` to print every pair rather than the tightest few. Paths resolve
+relative to this file. Standard library only, so it runs anywhere
+``tokens.css`` does. ``check_cvd_selftest.py`` covers the reading rules with
+mutated copies of the palette.
 """
 
 import itertools
@@ -80,6 +84,13 @@ EXPECTED_DOMAINS = frozenset(
         "accretion",
     }
 )
+
+# Domains the light block is expected to override. Only Stellar deepens on a
+# light surface; the rest carry their dark value through. This is checked as an
+# exact set for the same reason as the roster above: if the one override goes
+# missing, every domain silently falls back to its dark value and the run
+# measures the dark palette twice while reporting a light-surface pass.
+EXPECTED_LIGHT_OVERRIDES = frozenset({"stellar"})
 
 # Machado, Oliveira & Fernandes (2009), "A Physiologically-based Model for
 # Simulation of Color Vision Deficiency", IEEE TVCG 15(6), severity 1.0.
@@ -177,34 +188,55 @@ def parse_domain_colours(css):
         writes a domain colour in a form the hex reader cannot measure.
     """
     css = _strip_comments(css)
-    dark = _domains_in_block(css, ":root")
-    _reject_unreadable(css, ":root", dark)
-    if set(dark) != EXPECTED_DOMAINS:
-        missing = sorted(EXPECTED_DOMAINS - set(dark))
-        extra = sorted(set(dark) - EXPECTED_DOMAINS)
-        detail = []
-        if missing:
-            detail.append(f"missing {', '.join(missing)}")
-        if extra:
-            detail.append(f"unexpected {', '.join(extra)}")
-        raise ValueError(
-            "the :root block does not declare the expected domain colours: "
-            + "; ".join(detail)
-        )
-    overrides = _domains_in_block(css, '[data-theme="light"]')
-    _reject_unreadable(css, '[data-theme="light"]', overrides)
-    stray = sorted(set(overrides) - EXPECTED_DOMAINS)
-    if stray:
-        raise ValueError(
-            'the [data-theme="light"] block declares domain colours outside the '
-            "expected set: " + ", ".join(stray)
-        )
+
+    dark_declared = _domain_declarations(css, ":root")
+    dark = _domains_in_block(dark_declared)
+    _reject_unreadable(":root", dark_declared, dark)
+    _require_roster(":root", set(dark), EXPECTED_DOMAINS)
+
+    light_declared = _domain_declarations(css, '[data-theme="light"]')
+    overrides = _domains_in_block(light_declared)
+    _reject_unreadable('[data-theme="light"]', light_declared, overrides)
+    _require_roster('[data-theme="light"]', set(overrides), EXPECTED_LIGHT_OVERRIDES)
+
     light = dict(dark)
     light.update(overrides)
     return dark, light
 
 
-def _reject_unreadable(css, selector, readable):
+def _require_roster(selector, found, expected):
+    """Fail unless a block declares exactly the domains it is expected to.
+
+    Parameters
+    ----------
+    selector : str
+        The block being checked, named in the error message.
+    found : set of str
+        Domain names read out of the block.
+    expected : frozenset of str
+        The names that block must declare, no more and no fewer.
+
+    Raises
+    ------
+    ValueError
+        If the two sets differ, naming what is missing and what is unexpected.
+    """
+    if found == expected:
+        return
+    detail = []
+    missing = sorted(expected - found)
+    extra = sorted(found - expected)
+    if missing:
+        detail.append(f"missing {', '.join(missing)}")
+    if extra:
+        detail.append(f"unexpected {', '.join(extra)}")
+    raise ValueError(
+        f"the {selector} block does not declare the expected domain colours: "
+        + "; ".join(detail)
+    )
+
+
+def _reject_unreadable(selector, declarations, readable):
     """Fail on a ``--pt-dom-*`` declaration the hex reader had to skip.
 
     A domain written as a ``var()`` reference, a three-digit hex, or a colour
@@ -215,22 +247,19 @@ def _reject_unreadable(css, selector, readable):
 
     Parameters
     ----------
-    css : str
-        Comment-stripped text of ``tokens.css``.
     selector : str
-        The block to inspect.
+        The block the declarations came from, named in the error message.
+    declarations : dict of str to str
+        Domain name to its winning value in that block.
     readable : dict of str to str
-        The domains the hex reader recovered from that block.
+        The subset of those the hex reader recovered.
 
     Raises
     ------
     ValueError
         If the block declares a domain the hex reader did not recover.
     """
-    declared = set()
-    for block in _top_level_bodies(css, selector):
-        declared.update(re.findall(r"--pt-dom-([a-z-]+)\s*:", block))
-    skipped = sorted(declared - set(readable))
+    skipped = sorted(set(declarations) - set(readable))
     if skipped:
         raise ValueError(
             f"the {selector} block writes "
@@ -260,37 +289,62 @@ def _strip_comments(css):
     return re.sub(r"/\*.*?\*/", " ", css, flags=re.S)
 
 
+def _selector_targets(prelude, selector):
+    """Return whether a rule's prelude targets exactly this selector.
+
+    A selector list is split on commas and each part compared whole, so
+    ``:root, html`` counts as a ``:root`` rule while a compound such as
+    ``[data-theme="light"] .hero`` stays out of the theme block.
+
+    Parameters
+    ----------
+    prelude : str
+        The text between the previous rule and this one's opening brace.
+    selector : str
+        The selector being looked for.
+
+    Returns
+    -------
+    bool
+        True when any part of the list is exactly ``selector``.
+    """
+    return any(part.strip() == selector for part in prelude.split(","))
+
+
 def _top_level_bodies(css, selector):
-    """Return the body of every top-level block whose selector matches exactly.
+    """Return the body of every top-level block that targets this selector.
 
-    Walks the text with a brace counter rather than a regex, for two reasons.
-    A rule nested inside ``@media``, ``@supports``, ``@layer`` or ``@container``
-    carries the same selector text as the unconditional one, and a conditional
-    value must never stand in for the value the palette actually ships. And an
-    exact selector match keeps a compound rule such as
-    ``[data-theme="light"] .hero`` out of the theme block.
-
-    Declarations nested one level deeper are dropped for the same reason, so a
-    block written with CSS nesting contributes only its own cascade.
+    Walks the text with a brace counter rather than a regex. A rule nested
+    inside ``@media``, ``@supports`` or ``@container`` carries the same selector
+    text as the unconditional one, and a value that applies only under a
+    condition must never stand in for the value the palette ships everywhere.
 
     Parameters
     ----------
     css : str
         Comment-stripped text of ``tokens.css``.
     selector : str
-        The exact selector text preceding the opening brace.
+        The selector to collect, matched whole against each part of a
+        comma-separated list.
 
     Returns
     -------
     list of str
-        One string per matching block, holding that block's own declarations.
+        One string per matching block, holding that block's declarations.
+
+    Raises
+    ------
+    ValueError
+        If a matching block contains a nested rule. Nesting is refused rather
+        than skipped: a bare ``&`` block applies unconditionally and outranks
+        the declarations beside it, so dropping it would measure a colour the
+        page does not use.
     """
     bodies = []
     depth = 0
     prelude_start = 0
     matched = False
-    segments = []
-    segment_start = 0
+    body_start = 0
     quote = None
     index = 0
     while index < len(css):
@@ -306,20 +360,20 @@ def _top_level_bodies(css, selector):
         elif char == "{":
             depth += 1
             if depth == 1:
-                matched = css[prelude_start:index].strip() == selector
-                segments = []
-                segment_start = index + 1
+                matched = _selector_targets(css[prelude_start:index], selector)
+                body_start = index + 1
             elif depth == 2 and matched:
-                segments.append(css[segment_start:index])
+                raise ValueError(
+                    f"the {selector} block contains a nested rule; this check "
+                    "reads flat declarations only, so write the block without "
+                    "nesting"
+                )
         elif char == "}":
             if depth >= 2:
                 depth -= 1
-                if depth == 1 and matched:
-                    segment_start = index + 1
             else:
                 if depth == 1 and matched:
-                    segments.append(css[segment_start:index])
-                    bodies.append(" ".join(segments))
+                    bodies.append(css[body_start:index])
                 matched = False
                 depth = 0
                 prelude_start = index + 1
@@ -329,28 +383,60 @@ def _top_level_bodies(css, selector):
     return bodies
 
 
-def _domains_in_block(css, selector):
-    """Return the ``--pt-dom-*`` declarations inside one top-level block.
+_DOMAIN_DECLARATION = re.compile(r"--pt-dom-([a-z0-9-]+)\s*:\s*([^;}]*)")
+_NAMED_DECLARATION = re.compile(r"--pt-([a-z0-9-]+)\s*:\s*([^;}]*)")
+_SIX_DIGIT_HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
+
+
+def _domain_declarations(css, selector):
+    """Return the winning ``--pt-dom-*`` value of each domain in one block.
+
+    A declaration repeated within a block is a live CSS idiom: the later one
+    wins and is what the page ships. Reading in source order and letting the
+    last write stand keeps the check measuring the shipped value rather than
+    the first one it happens to recognise. The value runs to the next ``;`` or
+    to the closing brace, so a final declaration written without a trailing
+    semicolon reads the same as any other.
 
     Parameters
     ----------
     css : str
         Comment-stripped text of ``tokens.css``.
     selector : str
-        The exact selector text preceding the opening brace.
+        The selector whose blocks to read.
 
     Returns
     -------
     dict of str to str
-        Domain name (the part after ``--pt-dom-``) to lower-cased hex.
+        Domain name (the part after ``--pt-dom-``) to its winning value,
+        verbatim and unvalidated.
     """
-    found = {}
+    winning = {}
     for block in _top_level_bodies(css, selector):
-        for name, hex_value in re.findall(
-            r"--pt-dom-([a-z-]+)\s*:\s*(#[0-9A-Fa-f]{6})\s*;", block
-        ):
-            found[name] = hex_value.lower()
-    return found
+        for match in _DOMAIN_DECLARATION.finditer(block):
+            winning[match.group(1)] = match.group(2).strip()
+    return winning
+
+
+def _domains_in_block(declarations):
+    """Reduce declared domain values to the ones readable as a six-digit hex.
+
+    Parameters
+    ----------
+    declarations : dict of str to str
+        Domain name to its winning value, from ``_domain_declarations``.
+
+    Returns
+    -------
+    dict of str to str
+        Domain name to lower-cased hex, omitting every value that is not a
+        plain six-digit hex literal.
+    """
+    return {
+        name: value.lower()
+        for name, value in declarations.items()
+        if _SIX_DIGIT_HEX.match(value)
+    }
 
 
 def parse_named_colours(css, names):
@@ -366,16 +452,35 @@ def parse_named_colours(css, names):
     Returns
     -------
     dict of str to str
-        Name to lower-cased hex, in the order requested, omitting any name the
-        block does not declare.
+        Name to lower-cased hex, in the order requested.
+
+    Raises
+    ------
+    ValueError
+        If any requested name is missing from the block or written in a form
+        this check cannot read. The roster is held for the same reason the
+        domain roster is: a renamed or removed token would otherwise shrink the
+        cross-palette report without a word, and the colour that drops out of
+        the comparison is exactly the one a future domain then collides with.
     """
+    names = tuple(names)
     css = _strip_comments(css)
     declared = {}
     for block in _top_level_bodies(css, ":root"):
-        declared.update(
-            re.findall(r"--pt-([a-z0-9-]+)\s*:\s*(#[0-9A-Fa-f]{6})\s*;", block)
+        for match in _NAMED_DECLARATION.finditer(block):
+            declared[match.group(1)] = match.group(2).strip()
+    readable = {
+        n: declared[n].lower()
+        for n in names
+        if n in declared and _SIX_DIGIT_HEX.match(declared[n])
+    }
+    missing = [n for n in names if n not in readable]
+    if missing:
+        raise ValueError(
+            "the :root block does not declare a readable six-digit hex for "
+            + ", ".join("--pt-" + n for n in missing)
         )
-    return {n: declared[n].lower() for n in names if n in declared}
+    return readable
 
 
 def hex_to_rgb(value):
@@ -639,6 +744,11 @@ def main(argv):
     except (OSError, ValueError) as exc:
         print(f"could not read the domain colours: {exc}")
         return 1
+    try:
+        named = parse_named_colours(css, CROSS_PALETTE)
+    except ValueError as exc:
+        print(f"could not read the cross-palette colours: {exc}")
+        return 1
     # Drop any named colour that is a domain colour on either surface. Solar
     # deep is the light-surface stellar, so measuring it against dark stellar
     # would report a domain against itself.
@@ -650,7 +760,7 @@ def main(argv):
     domain_hexes |= {v.lower() for v in light.values()}
     others = {}
     seen = set(domain_hexes)
-    for name, value in parse_named_colours(css, CROSS_PALETTE).items():
+    for name, value in named.items():
         if value.lower() in seen:
             continue
         seen.add(value.lower())
@@ -670,7 +780,7 @@ def main(argv):
     # with.
     incumbents = {k: v for k, v in dark.items() if k != "accretion"}
     print("\nrejected candidates for the accretion slot")
-    print("    vs the other six domains        vs the rest of the palette")
+    print("    vs the other six domains    vs the rest of the palette")
     for name, value in REJECTED.items():
         near, other, dichromacy = closest_in(value, incumbents)
         # A candidate that is itself a palette colour would otherwise be
@@ -680,7 +790,7 @@ def main(argv):
             distance, other_name, other_dichromacy = closest_in(value, rest)
             cross = f"{distance:6.2f} --pt-{other_name:<10} {other_dichromacy[:6]}"
         else:
-            cross = "     no palette colour to compare  "
+            cross = f"{'no palette colour to compare':<30}"
         print(
             f"    {near:6.2f} {other:<10} {dichromacy[:6]}    {cross}    {name} {value}"
         )
