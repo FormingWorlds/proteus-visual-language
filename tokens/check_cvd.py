@@ -863,7 +863,11 @@ def _reject_unmeasured_domain_rules(css, dark, light):
 
 
 _DOMAIN_DECLARATION = re.compile(r"--pt-dom-([a-z0-9-]+)\s*:\s*([^;}]*)")
-_PROPERTY_REGISTRATION = re.compile(r"^@property\s+--pt-dom-([a-zA-Z0-9-]+)$")
+# The at-rule keyword is matched without regard to case, the way CSS matches
+# it, while the custom-property name stays case-sensitive, the way CSS treats
+# that. Folding the whole pattern would let --PT-DOM-ATMOS, a different
+# property altogether, answer for a domain.
+_PROPERTY_REGISTRATION = re.compile(r"^@(?i:property)\s+--pt-dom-([a-zA-Z0-9-]+)$")
 _INITIAL_VALUE = re.compile(r"(?:^|[;{\s])initial-value\s*:\s*([^;}]*)", re.I)
 _NAMED_DECLARATION = re.compile(r"--pt-([a-z0-9-]+)\s*:\s*([^;}]*)")
 _SIX_DIGIT_HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")

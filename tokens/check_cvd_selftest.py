@@ -515,6 +515,37 @@ CASES = [
             'syntax: "<color>"; inherits: false; initial-value: %s; } }' % INTERIOR
         ),
     ),
+    # CSS matches an at-rule keyword without regard to case, so the shouted
+    # spelling registers the property exactly as the quiet one does. The
+    # property name it registers is case-sensitive, so a shouted name is a
+    # different property and no business of the roster.
+    (
+        "registered property whose keyword is written in capitals",
+        "fail",
+        UNMEASURED_INITIAL,
+        append(
+            '@PROPERTY --pt-dom-atmos { syntax: "<color>"; inherits: false; '
+            "initial-value: %s; }" % INTERIOR
+        ),
+    ),
+    (
+        "registered property whose keyword is written in mixed case",
+        "fail",
+        UNMEASURED_INITIAL,
+        append(
+            '@Property --pt-dom-atmos { syntax: "<color>"; inherits: false; '
+            "initial-value: %s; }" % INTERIOR
+        ),
+    ),
+    (
+        "registered property under a shouted name of its own",
+        "pass",
+        SEPARABLE,
+        append(
+            '@property --PT-DOM-ATMOS { syntax: "<color>"; inherits: false; '
+            "initial-value: %s; }" % INTERIOR
+        ),
+    ),
     # Selectors that reach the root at a higher specificity than :root decide
     # the shipped colour, so they cannot be left unread.
     (
