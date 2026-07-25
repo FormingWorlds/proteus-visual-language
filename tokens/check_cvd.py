@@ -728,11 +728,17 @@ def _property_registrations(css):
     css : str
         Comment-stripped text of ``tokens.css``.
 
+    Every ``initial-value`` in the body is reported, not just the first. A
+    descriptor repeated in one block follows the same rule as a repeated
+    declaration, so the last one is what the browser registers, and a block
+    that opens on a shipped colour can still end on one the check never
+    measured.
+
     Yields
     ------
-    tuple of (str, str, str or None)
+    tuple of (str, str, list of str)
         The at-rule's prelude with its whitespace collapsed, the domain name it
-        registers, and its ``initial-value``, or ``None`` when it declares none.
+        registers, and every ``initial-value`` its body declares, in order.
     """
     for prelude, body, _nested in _top_level_rules(css):
         head = " ".join(prelude.split())
@@ -742,12 +748,8 @@ def _property_registrations(css):
         if registered is None:
             yield from _property_registrations(body)
             continue
-        initial = _INITIAL_VALUE.search(body)
-        yield (
-            head,
-            registered.group(1),
-            None if initial is None else _declaration_value(initial.group(1)),
-        )
+        initials = [_declaration_value(raw) for raw in _INITIAL_VALUE.findall(body)]
+        yield head, registered.group(1), initials
 
 
 def _reject_unmeasured_domain_rules(css, dark, light):
@@ -783,7 +785,10 @@ def _reject_unmeasured_domain_rules(css, dark, light):
     ``inherits: false`` puts every element below the root there at once. A
     registration that gives no initial value at all is refused on the same
     terms, because the rule is about the value the page can end up with rather
-    than about which declaration happens to win.
+    than about which declaration happens to win. Every ``initial-value`` in the
+    block has to satisfy it, since a repeated descriptor resolves the same way
+    a repeated declaration does and a block that opens on a shipped colour can
+    still end on one the check never measured.
 
     Parameters
     ----------
@@ -833,8 +838,8 @@ def _reject_unmeasured_domain_rules(css, dark, light):
                 "guarantee covers those colours and nothing else"
             )
 
-    for prelude, name, initial in _property_registrations(css):
-        if initial is None:
+    for prelude, name, initials in _property_registrations(css):
+        if not initials:
             raise ValueError(
                 f"the rule '{prelude}' registers --pt-dom-{name} without an "
                 "initial-value, so an element the property does not reach by "
@@ -843,17 +848,18 @@ def _reject_unmeasured_domain_rules(css, dark, light):
                 f"{PALETTE_BLOCKS[0]} and {PALETTE_BLOCKS[1]} blocks declares "
                 "for that domain"
             )
-        if initial.lower() in measured.get(name, ()):
-            continue
-        raise ValueError(
-            f"the rule '{prelude}' gives --pt-dom-{name} the initial-value "
-            f"{initial}, which is not a colour this check measured for {name}; "
-            "a registered property computes its initial value wherever it does "
-            "not reach an element by inheritance, and inherits: false puts "
-            "every element below the root there at once, so the initial-value "
-            "has to repeat the colour one of the palette blocks declares for "
-            "that domain"
-        )
+        for initial in initials:
+            if initial.lower() in measured.get(name, ()):
+                continue
+            raise ValueError(
+                f"the rule '{prelude}' gives --pt-dom-{name} the initial-value "
+                f"{initial}, which is not a colour this check measured for "
+                f"{name}; a registered property computes its initial value "
+                "wherever it does not reach an element by inheritance, and "
+                "inherits: false puts every element below the root there at "
+                "once, so the initial-value has to repeat the colour one of "
+                "the palette blocks declares for that domain"
+            )
 
 
 _DOMAIN_DECLARATION = re.compile(r"--pt-dom-([a-z0-9-]+)\s*:\s*([^;}]*)")

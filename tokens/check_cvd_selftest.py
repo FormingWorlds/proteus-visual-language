@@ -491,6 +491,16 @@ CASES = [
         ),
     ),
     (
+        "registered property whose second initial value is unmeasured",
+        "fail",
+        UNMEASURED_INITIAL,
+        append(
+            '@property --pt-dom-atmos { syntax: "<color>"; inherits: false; '
+            "initial-value: %s; initial-value: %s; }"
+            % (ATMOS.split(":")[1].strip(" ;"), INTERIOR)
+        ),
+    ),
+    (
         "registered property leaving the domain without an initial value",
         "fail",
         NO_INITIAL,

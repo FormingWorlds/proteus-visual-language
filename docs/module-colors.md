@@ -105,9 +105,12 @@ the parts that name one, so `:root, body` has to satisfy that rule for its
 `body` part. An `@property` registration is held to the same rule through its
 `initial-value`, which is what an element computes wherever the property does
 not reach it by inheritance, and `inherits: false` puts the whole page below the
-root in that position at once. The `--pt-dom-` prefix itself is reserved for the seven domains:
-a name outside the roster is refused wherever it appears, even carrying a
-shipped colour, so variants belong under a prefix of their own.
+root in that position at once. Every value the block writes has to satisfy the
+rule, since a repeated declaration or descriptor is a live CSS idiom and a block
+that opens on a shipped colour can still end on one the check never measured.
+The `--pt-dom-` prefix itself is reserved for the seven domains: a name outside
+the roster is refused wherever it appears, even carrying a shipped colour, so
+variants belong under a prefix of their own.
 `tokens/check_cvd_selftest.py`
 pins those reading rules against mutated copies of the palette, and CI runs it
 beside the check itself.
