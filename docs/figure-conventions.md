@@ -16,6 +16,7 @@ colour. Identical in every artifact, no exceptions:
 | Chemistry & escape | VULCAN · ZEPHYRUS | `#1B6FA8` |
 | Atmosphere | AGNI · JANUS | `#4FA3D9` |
 | Stellar | MORS | `#E0A32E` |
+| Accretion | Morrigan | `#A38F7A` |
 
 CVD-checked (Machado 2009, protan/deutan/tritan @ full severity): min
 pairwise ΔE = 16.4 (target ≥ 12). Still: always keep a legend or direct

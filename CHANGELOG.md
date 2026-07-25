@@ -8,6 +8,12 @@ on breaking changes, such as removing or renaming a token. Git tags carry a
 `v` prefix (`v1.0.0`); the published packages use the same number without
 it.
 
+## [1.2.0] - 2026-07-25
+
+### Added
+- **Accretion domain colour**: clay (`--pt-dom-accretion` `#A38F7A`) for Morrigan and the accretion domain, taking the module palette to seven. It keeps a minimum ΔE of 29.6 against the other six under protanopia, deuteranopia, and tritanopia (Machado 2009, full severity), comfortably above the palette's 16.4 floor, and holds on both the dark and the light surface set. The intuitive candidates all land under that floor: sienna at ΔE 4.1 and ochre at 8.4 against Outgassing and Interior under deuteranopia, olive at 7.5 and a forest green at 10.6 against Interior under protanopia, a teal at 7.8 against Chemistry under tritanopia, and even the brand green Verdant at 15.7 against Atmosphere under tritanopia. The red-to-blue ramp is dense enough that a low-chroma warm neutral is what it leaves room for.
+- proteus-mpl gains `DOMAINS["accretion"]` and the Beamer theme gains `ProteusDomAccretion`, so the colour is available in figures and decks alongside the CSS token.
+
 ## [1.1.2] - 2026-07-14
 
 ### Changed

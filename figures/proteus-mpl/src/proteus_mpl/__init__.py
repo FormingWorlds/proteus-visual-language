@@ -54,6 +54,7 @@ DOMAINS = {
     "atmosphere": "#4FA3D9",   # AGNI, JANUS
     "stellar":    "#E0A32E",   # MORS — solar gold; prefer COLORS["solar_deep"]
                                # for gold fills or thin marks on light surfaces
+    "accretion":  "#A38F7A",   # Morrigan; clay, min deltaE 29.6 to the others
 }
 
 # Categorical cycles. Both are neutral-first: a single-series plot draws in

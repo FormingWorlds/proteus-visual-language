@@ -13,24 +13,40 @@ reader learns the colour once.
 | Chemistry & escape | `--pt-dom-chem` | `#1B6FA8` | VULCAN, ZEPHYRUS |
 | Atmosphere | `--pt-dom-atmos` | `#4FA3D9` | AGNI, JANUS |
 | Stellar | `--pt-dom-stellar` | `#E0A32E` | MORS |
+| Accretion | `--pt-dom-accretion` | `#A38F7A` | Morrigan |
 
 Stellar is solar gold, the star's own colour. On light surfaces the token
 deepens to `#C8860F` so the gold keeps adequate contrast (bright gold reads at
 2.22:1 on white); in matplotlib use `COLORS["solar_deep"]` for stellar fills
 or thin marks on light figures.
 
+Accretion is a muted clay, the rock the planets are built from. Its separation
+from every other domain is wider than the tightest pair among the others, so it
+never becomes the colour a reader has to squint at.
+
 ## Colour-blind safety
 
-The six colours were checked as a **set** under protanopia, deuteranopia, and
+The colours were checked as a **set** under protanopia, deuteranopia, and
 tritanopia (Machado 2009, full severity). Every pair keeps a perceptual
 separation of ΔE ≥ 16.4 under all three — which is why Tidal is a desaturated
 violet `#593E74` rather than a green or a mid-purple that would collide with
 the reds or blues, and why gold works for Stellar: it sits far from both the
 reds and the blues in every dichromacy projection.
 
+Accretion clay `#A38F7A` holds a minimum ΔE of 29.6 against the other six, its
+tightest pair being Interior under protanopia. The intuitive candidates all
+land under the floor: sienna at 4.1 and ochre at 8.4 against Outgassing and
+Interior under deuteranopia, olive at 7.5 and a forest green at 10.6 against
+Interior under protanopia, a teal at 7.8 against Chemistry under tritanopia,
+and even the brand green Verdant at 15.7 against Atmosphere under tritanopia.
+The red-to-blue ramp is dense enough that a low-chroma warm neutral is what it
+leaves room for.
+
 **Do not remap or extend** these without re-running the CVD ΔE check. If a new
 domain is added, pick its colour by maximising the minimum pairwise ΔE across
-all dichromacy types against the existing six.
+all dichromacy types against the existing set, and check the result on both the
+dark and light surfaces (Stellar deepens on light, so the light-surface set is
+not the same set).
 
 ## In practice
 
