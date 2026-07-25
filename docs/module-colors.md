@@ -102,7 +102,10 @@ root, on the root at a higher specificity than `:root`, or inside an `@media` or
 `@supports` wrapper reaches the page unmeasured unless it restores a colour the
 check has already cleared. A selector list counts as a palette block only for
 the parts that name one, so `:root, body` has to satisfy that rule for its
-`body` part. The `--pt-dom-` prefix itself is reserved for the seven domains:
+`body` part. An `@property` registration is held to the same rule through its
+`initial-value`, which is what an element computes wherever the property does
+not reach it by inheritance, and `inherits: false` puts the whole page below the
+root in that position at once. The `--pt-dom-` prefix itself is reserved for the seven domains:
 a name outside the roster is refused wherever it appears, even carrying a
 shipped colour, so variants belong under a prefix of their own.
 `tokens/check_cvd_selftest.py`

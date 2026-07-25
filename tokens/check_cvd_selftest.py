@@ -156,7 +156,9 @@ BELOW_FLOOR = "fall below their floor"
 UNREADABLE = "in a form this check cannot measure"
 WRONG_ROSTER = "does not declare the expected domain colours"
 NESTED = "contains a nested rule"
-UNMEASURED = "can win the cascade and reach the page unmeasured"
+UNMEASURED = "guarantee covers those colours and nothing else"
+UNMEASURED_INITIAL = "the initial-value has to repeat the colour"
+NO_INITIAL = "registers --pt-dom-atmos without an initial-value"
 LIGHT_FIRST = "is written before the :root block"
 
 # Each case is a name, the outcome it claims, what its output has to contain,
@@ -189,6 +191,15 @@ CASES = [
         "pass",
         SEPARABLE,
         append(":root, body { %s }" % ATMOS),
+    ),
+    (
+        "registered property whose initial value is the shipped colour",
+        "pass",
+        SEPARABLE,
+        append(
+            '@property --pt-dom-atmos { syntax: "<color>"; inherits: false; '
+            "initial-value: %s; }" % ATMOS.split(":")[1].strip(" ;")
+        ),
     ),
     (
         "theme selector carrying the case-insensitive flag",
@@ -456,6 +467,42 @@ CASES = [
         append(
             "%s, body { --pt-dom-stellar: %s; }\n%s { %s }"
             % (LIGHT_SELECTOR, INTERIOR, LIGHT_SELECTOR, LIGHT_STELLAR)
+        ),
+    ),
+    # A registered property computes its initial value wherever it does not
+    # reach an element by inheritance, so that value ships as surely as a
+    # declaration does.
+    (
+        "registered property handing the page another domain's colour",
+        "fail",
+        UNMEASURED_INITIAL,
+        append(
+            '@property --pt-dom-atmos { syntax: "<color>"; inherits: false; '
+            "initial-value: %s; }" % INTERIOR
+        ),
+    ),
+    (
+        "registered property carrying an unmeasured colour while inheriting",
+        "fail",
+        UNMEASURED_INITIAL,
+        append(
+            '@property --pt-dom-atmos { syntax: "<color>"; inherits: true; '
+            "initial-value: %s; }" % INTERIOR
+        ),
+    ),
+    (
+        "registered property leaving the domain without an initial value",
+        "fail",
+        NO_INITIAL,
+        append('@property --pt-dom-atmos { syntax: "*"; inherits: false; }'),
+    ),
+    (
+        "registered property wrapped in a media query",
+        "fail",
+        UNMEASURED_INITIAL,
+        append(
+            "@media screen { @property --pt-dom-atmos { "
+            'syntax: "<color>"; inherits: false; initial-value: %s; } }' % INTERIOR
         ),
     ),
     # Selectors that reach the root at a higher specificity than :root decide

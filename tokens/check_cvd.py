@@ -685,7 +685,9 @@ def _rules_declaring_domains(css, conditional=False):
     carries the same selector as an unconditional one, so a value inside them
     reaches the page while sitting outside the two blocks the palette is read
     from. Everything below an at-rule is reported as conditional, which is what
-    stops a wrapped ``:root`` passing itself off as the palette block.
+    stops a wrapped ``:root`` passing itself off as the palette block. The one
+    at-rule left alone is ``@property``, whose body holds descriptors rather
+    than rules; ``_property_registrations`` reads those instead.
 
     Parameters
     ----------
@@ -703,9 +705,49 @@ def _rules_declaring_domains(css, conditional=False):
     for prelude, body, _nested in _top_level_rules(css):
         head = " ".join(prelude.split())
         if head.startswith("@"):
-            yield from _rules_declaring_domains(body, True)
+            if _PROPERTY_REGISTRATION.match(head) is None:
+                yield from _rules_declaring_domains(body, True)
         elif _DOMAIN_DECLARATION.search(body):
             yield head, body, conditional
+
+
+def _property_registrations(css):
+    """Yield every ``@property`` rule that registers a domain colour.
+
+    A registered custom property carries its own ``initial-value``, and that
+    value, not the one the palette declares on the root, is what an element
+    computes wherever the property does not reach it by inheritance. Declaring
+    ``inherits: false`` is enough to put every element below the root in that
+    position at once. The registration therefore decides what the page paints
+    while naming the colour in a descriptor rather than in a ``--pt-dom-*``
+    declaration, so it has to be read separately from the rules that declare
+    one.
+
+    Parameters
+    ----------
+    css : str
+        Comment-stripped text of ``tokens.css``.
+
+    Yields
+    ------
+    tuple of (str, str, str or None)
+        The at-rule's prelude with its whitespace collapsed, the domain name it
+        registers, and its ``initial-value``, or ``None`` when it declares none.
+    """
+    for prelude, body, _nested in _top_level_rules(css):
+        head = " ".join(prelude.split())
+        if not head.startswith("@"):
+            continue
+        registered = _PROPERTY_REGISTRATION.match(head)
+        if registered is None:
+            yield from _property_registrations(body)
+            continue
+        initial = _INITIAL_VALUE.search(body)
+        yield (
+            head,
+            registered.group(1),
+            None if initial is None else _declaration_value(initial.group(1)),
+        )
 
 
 def _reject_unmeasured_domain_rules(css, dark, light):
@@ -735,6 +777,14 @@ def _reject_unmeasured_domain_rules(css, dark, light):
     on body, where a later ``:root`` block takes it back for the root element
     and leaves the whole visible page on the value the list gave it.
 
+    An ``@property`` rule is held to the same value rule through its
+    ``initial-value``, since that is what an element computes wherever the
+    property does not reach it by inheritance, and a registration declaring
+    ``inherits: false`` puts every element below the root there at once. A
+    registration that gives no initial value at all is refused on the same
+    terms, because the rule is about the value the page can end up with rather
+    than about which declaration happens to win.
+
     Parameters
     ----------
     css : str
@@ -748,7 +798,9 @@ def _reject_unmeasured_domain_rules(css, dark, light):
     ------
     ValueError
         If a ``--pt-dom-*`` declaration outside the two palette blocks carries a
-        value neither block declares for that domain.
+        value neither block declares for that domain, or if an ``@property``
+        rule registers a domain colour without repeating one of those values as
+        its ``initial-value``.
     """
     measured = {}
     for palette in (dark, light):
@@ -777,12 +829,36 @@ def _reject_unmeasured_domain_rules(css, dark, light):
                 f"outside the {PALETTE_BLOCKS[0]} block and the "
                 f"{PALETTE_BLOCKS[1]} block, an @media or @supports wrapper "
                 "included, a domain colour has to repeat the value one of "
-                "those blocks declares for it, because anything else can win "
-                "the cascade and reach the page unmeasured"
+                "those blocks declares for it, because the separability "
+                "guarantee covers those colours and nothing else"
             )
+
+    for prelude, name, initial in _property_registrations(css):
+        if initial is None:
+            raise ValueError(
+                f"the rule '{prelude}' registers --pt-dom-{name} without an "
+                "initial-value, so an element the property does not reach by "
+                "inheritance computes no colour at all; a registration has to "
+                "carry an initial-value repeating the colour one of the "
+                f"{PALETTE_BLOCKS[0]} and {PALETTE_BLOCKS[1]} blocks declares "
+                "for that domain"
+            )
+        if initial.lower() in measured.get(name, ()):
+            continue
+        raise ValueError(
+            f"the rule '{prelude}' gives --pt-dom-{name} the initial-value "
+            f"{initial}, which is not a colour this check measured for {name}; "
+            "a registered property computes its initial value wherever it does "
+            "not reach an element by inheritance, and inherits: false puts "
+            "every element below the root there at once, so the initial-value "
+            "has to repeat the colour one of the palette blocks declares for "
+            "that domain"
+        )
 
 
 _DOMAIN_DECLARATION = re.compile(r"--pt-dom-([a-z0-9-]+)\s*:\s*([^;}]*)")
+_PROPERTY_REGISTRATION = re.compile(r"^@property\s+--pt-dom-([a-zA-Z0-9-]+)$")
+_INITIAL_VALUE = re.compile(r"(?:^|[;{\s])initial-value\s*:\s*([^;}]*)", re.I)
 _NAMED_DECLARATION = re.compile(r"--pt-([a-z0-9-]+)\s*:\s*([^;}]*)")
 _SIX_DIGIT_HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
 _IMPORTANT = re.compile(r"!\s*important\s*$", re.I)
