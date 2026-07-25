@@ -36,9 +36,10 @@ proteus_mpl.use()           # light: Paper background — papers, light slides
 - **Module domain colors** — `proteus_mpl.DOMAINS["interior"]` etc, seven of
   them. Use these whenever a line *is* a module (SPIDER output → interior red,
   MORS → solar gold, Morrigan → accretion clay `#A38F7A`). Stable across every
-  paper, talk, and diagram. Accretion clay and stellar gold are the two that
-  thin out on a white page (2.8:1 and 2.0:1), so give them a legend rather than
-  leaning on the hue for small marks.
+  paper, talk, and diagram. Three of them are light in tone and thin out on a
+  pale page: stellar gold at 2.0:1, atmosphere blue at 2.5:1, and accretion clay
+  at 2.8:1 against Paper. Give those a legend rather than leaning on the hue for
+  small marks.
 - **Colormaps** — `proteus` (sequential, Void→Paper; default for imshow /
   pcolormesh; the one ramp that survives greyscale reproduction),
   `proteus_div` (diverging, light midpoint — print-safe for

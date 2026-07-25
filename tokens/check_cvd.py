@@ -172,10 +172,13 @@ def parse_domain_colours(css):
     Raises
     ------
     ValueError
-        If the ``:root`` block does not declare exactly ``EXPECTED_DOMAINS``.
+        If the ``:root`` block does not declare exactly ``EXPECTED_DOMAINS``, if
+        the light block declares a domain outside that set, or if either block
+        writes a domain colour in a form the hex reader cannot measure.
     """
     css = _strip_comments(css)
     dark = _domains_in_block(css, ":root")
+    _reject_unreadable(css, ":root", dark)
     if set(dark) != EXPECTED_DOMAINS:
         missing = sorted(EXPECTED_DOMAINS - set(dark))
         extra = sorted(set(dark) - EXPECTED_DOMAINS)
@@ -188,9 +191,52 @@ def parse_domain_colours(css):
             "the :root block does not declare the expected domain colours: "
             + "; ".join(detail)
         )
+    overrides = _domains_in_block(css, '[data-theme="light"]')
+    _reject_unreadable(css, '[data-theme="light"]', overrides)
+    stray = sorted(set(overrides) - EXPECTED_DOMAINS)
+    if stray:
+        raise ValueError(
+            'the [data-theme="light"] block declares domain colours outside the '
+            "expected set: " + ", ".join(stray)
+        )
     light = dict(dark)
-    light.update(_domains_in_block(css, '[data-theme="light"]'))
+    light.update(overrides)
     return dark, light
+
+
+def _reject_unreadable(css, selector, readable):
+    """Fail on a ``--pt-dom-*`` declaration the hex reader had to skip.
+
+    A domain written as a ``var()`` reference, a three-digit hex, or a colour
+    function is a live value on the page but invisible to this check. Skipping
+    it silently is the worst outcome: on the light block the dark value fills
+    the gap, so the run measures a palette nobody ships and reports it as
+    passing.
+
+    Parameters
+    ----------
+    css : str
+        Comment-stripped text of ``tokens.css``.
+    selector : str
+        The block to inspect.
+    readable : dict of str to str
+        The domains the hex reader recovered from that block.
+
+    Raises
+    ------
+    ValueError
+        If the block declares a domain the hex reader did not recover.
+    """
+    declared = set()
+    for block in _top_level_bodies(css, selector):
+        declared.update(re.findall(r"--pt-dom-([a-z-]+)\s*:", block))
+    skipped = sorted(declared - set(readable))
+    if skipped:
+        raise ValueError(
+            f"the {selector} block writes "
+            + ", ".join("--pt-dom-" + name for name in skipped)
+            + " in a form this check cannot measure; use a six-digit hex literal"
+        )
 
 
 def _strip_comments(css):
@@ -214,16 +260,82 @@ def _strip_comments(css):
     return re.sub(r"/\*.*?\*/", " ", css, flags=re.S)
 
 
-def _domains_in_block(css, selector):
-    """Return the ``--pt-dom-*`` declarations inside one top-level block.
+def _top_level_bodies(css, selector):
+    """Return the body of every top-level block whose selector matches exactly.
 
-    Matches the selector exactly, so a compound rule such as
-    ``[data-theme="light"] .hero`` is not mistaken for the theme block.
+    Walks the text with a brace counter rather than a regex, for two reasons.
+    A rule nested inside ``@media``, ``@supports``, ``@layer`` or ``@container``
+    carries the same selector text as the unconditional one, and a conditional
+    value must never stand in for the value the palette actually ships. And an
+    exact selector match keeps a compound rule such as
+    ``[data-theme="light"] .hero`` out of the theme block.
+
+    Declarations nested one level deeper are dropped for the same reason, so a
+    block written with CSS nesting contributes only its own cascade.
 
     Parameters
     ----------
     css : str
-        Full text of ``tokens.css``.
+        Comment-stripped text of ``tokens.css``.
+    selector : str
+        The exact selector text preceding the opening brace.
+
+    Returns
+    -------
+    list of str
+        One string per matching block, holding that block's own declarations.
+    """
+    bodies = []
+    depth = 0
+    prelude_start = 0
+    matched = False
+    segments = []
+    segment_start = 0
+    quote = None
+    index = 0
+    while index < len(css):
+        char = css[index]
+        if quote is not None:
+            if char == "\\":
+                index += 2
+                continue
+            if char == quote:
+                quote = None
+        elif char in ('"', "'"):
+            quote = char
+        elif char == "{":
+            depth += 1
+            if depth == 1:
+                matched = css[prelude_start:index].strip() == selector
+                segments = []
+                segment_start = index + 1
+            elif depth == 2 and matched:
+                segments.append(css[segment_start:index])
+        elif char == "}":
+            if depth >= 2:
+                depth -= 1
+                if depth == 1 and matched:
+                    segment_start = index + 1
+            else:
+                if depth == 1 and matched:
+                    segments.append(css[segment_start:index])
+                    bodies.append(" ".join(segments))
+                matched = False
+                depth = 0
+                prelude_start = index + 1
+        elif char == ";" and depth == 0:
+            prelude_start = index + 1
+        index += 1
+    return bodies
+
+
+def _domains_in_block(css, selector):
+    """Return the ``--pt-dom-*`` declarations inside one top-level block.
+
+    Parameters
+    ----------
+    css : str
+        Comment-stripped text of ``tokens.css``.
     selector : str
         The exact selector text preceding the opening brace.
 
@@ -232,11 +344,8 @@ def _domains_in_block(css, selector):
     dict of str to str
         Domain name (the part after ``--pt-dom-``) to lower-cased hex.
     """
-    pattern = re.compile(
-        r"(?:^|\})\s*" + re.escape(selector) + r"\s*\{(.*?)\}", re.S | re.M
-    )
     found = {}
-    for block in pattern.findall(css):
+    for block in _top_level_bodies(css, selector):
         for name, hex_value in re.findall(
             r"--pt-dom-([a-z-]+)\s*:\s*(#[0-9A-Fa-f]{6})\s*;", block
         ):
@@ -261,9 +370,8 @@ def parse_named_colours(css, names):
         block does not declare.
     """
     css = _strip_comments(css)
-    pattern = re.compile(r"(?:^|\})\s*:root\s*\{(.*?)\}", re.S | re.M)
     declared = {}
-    for block in pattern.findall(css):
+    for block in _top_level_bodies(css, ":root"):
         declared.update(
             re.findall(r"--pt-([a-z0-9-]+)\s*:\s*(#[0-9A-Fa-f]{6})\s*;", block)
         )
@@ -447,19 +555,19 @@ def report_cross(domains, others, verbose):
     verbose : bool
         Print every pair rather than the tightest eight.
     """
+    print("domain colours against the rest of the palette (reported, not enforced)")
+    if not others:
+        print("    every named palette colour is a domain colour, nothing to compare")
+        return
     rows = cross_palette_pairs(domains, others)
     shown = rows if verbose else rows[:8]
-    print("domain colours against the rest of the palette (reported, not enforced)")
     for distance, other, domain, dichromacy in shown:
         print(f"    {distance:6.2f}  --pt-{other}/{domain} under {dichromacy}")
     if not verbose:
         print(f"    ... {len(rows) - len(shown)} wider pairs not shown")
     print("  tightest of these per domain")
     for domain in domains:
-        rest = {k: v for k, v in others.items() if v.lower() != domains[domain].lower()}
-        if not rest:
-            continue
-        distance, other, dichromacy = closest_in(domains[domain], rest)
+        distance, other, dichromacy = closest_in(domains[domain], others)
         print(f"    {distance:6.2f}  {domain} vs --pt-{other} under {dichromacy}")
     print(
         "  a figure that mixes module identity with status or ramp colour needs "
@@ -565,12 +673,16 @@ def main(argv):
     print("    vs the other six domains        vs the rest of the palette")
     for name, value in REJECTED.items():
         near, other, dichromacy = closest_in(value, incumbents)
+        # A candidate that is itself a palette colour would otherwise be
+        # measured against itself and report a flattering zero.
         rest = {k: v for k, v in others.items() if v.lower() != value.lower()}
-        cross = closest_in(value, rest)
+        if rest:
+            distance, other_name, other_dichromacy = closest_in(value, rest)
+            cross = f"{distance:6.2f} --pt-{other_name:<10} {other_dichromacy[:6]}"
+        else:
+            cross = "     no palette colour to compare  "
         print(
-            f"    {near:6.2f} {other:<10} {dichromacy[:6]}    "
-            f"{cross[0]:6.2f} --pt-{cross[1]:<10} {cross[2][:6]}    "
-            f"{name} {value}"
+            f"    {near:6.2f} {other:<10} {dichromacy[:6]}    {cross}    {name} {value}"
         )
 
     if not (ok_dark and ok_light):

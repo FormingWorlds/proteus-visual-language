@@ -36,10 +36,11 @@ reproduced. `tokens/check_cvd.py` performs the measurement and prints every
 pair; CI runs it whenever the tokens or these docs change.
 
 On the dark surface set every pair holds ΔE ≥ 16.4, the tightest being Interior
-against Outgassing under protanopia. That floor is why Tidal is a desaturated
-violet `#593E74` rather than a green or a mid-purple, either of which would
-collide with the reds or the blues, and why gold works for Stellar: it sits far
-from both in every dichromacy projection.
+against Outgassing under protanopia. The check enforces a floor of 16.0 just
+beneath that, as a regression guard rather than a target. That separation is
+why Tidal is a desaturated violet `#593E74` rather than a green or a mid-purple,
+either of which would collide with the reds or the blues, and why gold works for
+Stellar: it sits far from both in every dichromacy projection.
 
 The light surface set is a different set, because Stellar deepens to `#C8860F`
 there, and it is tighter. Interior against Stellar falls to ΔE 11.4 under
@@ -58,11 +59,12 @@ clears the domains at 21.0 and then lands 3.8 from `--pt-verdant` under
 deuteranopia, trading a collision with the modules for one with the accents; the
 brand green itself reaches only 15.7 against Atmosphere under tritanopia. What
 clears all three constraints at once, separation from the domains, separation
-from the accents, and legibility on Void and on Paper, is low in chroma. A
-desaturated sage passes the same three, but green already means something here,
-Verdant marks the habitable endpoint, so accretion takes the mineral colour
-instead. `check_cvd.py` prints every candidate with the hex its figure was
-measured on, scored against the domains and against the rest of the palette.
+from the accents, and legibility on Void and on Paper, is low in chroma. Green
+is unavailable in any case, since Verdant marks the habitable endpoint, and the
+greens that were measured bear that out: a desaturated sage still sits 5.9 from
+Interior under protanopia, so it fails on the numbers before the question of
+meaning arises. `check_cvd.py` prints every candidate with the hex its figure
+was measured on, scored against the domains and against the rest of the palette.
 
 ### Against the rest of the palette
 
@@ -82,7 +84,11 @@ surface sets, and read the cross-palette section of the output before settling
 on it. The script keeps the roster of domains it expects and fails when
 `tokens.css` declares a different set, so a new domain has to be named in
 `EXPECTED_DOMAINS` too; that is what stops a colour going missing from passing
-as a smaller palette that clears its floor.
+as a smaller palette that clears its floor. It fails on either surface block
+when a domain is written in a form it cannot read, a `var()` reference or a
+three-digit hex included, and it reads the unconditional blocks alone, so a
+value set inside a media query or a cascade layer cannot stand in for the one
+the palette ships.
 
 ## In practice
 

@@ -45,7 +45,10 @@ COLORS = {
 
 # Stable module-domain colors — identical across papers, talks, docs, diagrams.
 # CVD-checked (Machado 2009 protan/deutan/tritan, full severity): min pairwise
-# deltaE = 16.4. Keep legends or direct labels on multi-series plots regardless.
+# deltaE = 16.4 for the colors as written. Substituting COLORS["solar_deep"] for
+# stellar, as the note below advises on light surfaces, moves it against interior
+# and the minimum drops to 11.4, so that pair needs a legend either way. Keep
+# legends or direct labels on multi-series plots regardless.
 DOMAINS = {
     "interior":   "#E23D28",   # SPIDER, Aragog, Zalmoxis
     "outgassing": "#A03123",   # CALLIOPE, Atmodeller
