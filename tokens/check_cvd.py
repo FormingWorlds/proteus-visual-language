@@ -194,7 +194,8 @@ def parse_domain_colours(css):
     Raises
     ------
     ValueError
-        If either block is absent, if the light block is written before the
+        If either block is absent, if an identifier anywhere in the file is
+        spelled with a CSS escape, if the light block is written before the
         base one, if the ``:root`` block does not declare exactly
         ``EXPECTED_DOMAINS``, if the light block does not declare exactly
         ``EXPECTED_LIGHT_OVERRIDES``, if either block contains a nested rule, if
@@ -203,6 +204,7 @@ def parse_domain_colours(css):
         neither block gives that domain.
     """
     css = _strip_comments(css)
+    _reject_escapes(css)
     dark_selector, light_selector = PALETTE_BLOCKS
 
     _require_block(css, dark_selector)
@@ -222,6 +224,54 @@ def parse_domain_colours(css):
     light.update(overrides)
     _reject_unmeasured_domain_rules(css, dark, light)
     return dark, light
+
+
+def _reject_escapes(css):
+    """Refuse a stylesheet that spells an identifier with a CSS escape.
+
+    Any CSS identifier may carry a backslash escape, so ``@\\70 roperty`` names
+    the same at-rule as ``@property`` and ``--pt-dom-atmo\\73`` names the same
+    property as ``--pt-dom-atmos``. This check matches names literally, so it
+    would read neither as the thing a browser reads it as, and a domain colour
+    written that way would reach the page having never been measured. Resolving
+    escapes would mean tokenising CSS properly; refusing them instead keeps the
+    reader honest about what it can read, the same way it refuses a colour
+    written as a ``var()`` reference. The palette needs no escapes, so nothing
+    a designer would write is turned away.
+
+    Parameters
+    ----------
+    css : str
+        The stylesheet, with comments already stripped.
+
+    Raises
+    ------
+    ValueError
+        If a backslash appears anywhere outside a quoted string.
+    """
+    quote = None
+    index = 0
+    length = len(css)
+    while index < length:
+        char = css[index]
+        if quote is not None:
+            if char == "\\":
+                index += 2
+                continue
+            if char == quote:
+                quote = None
+        elif char in ('"', "'"):
+            quote = char
+        elif char == "\\":
+            excerpt = " ".join(css[max(0, index - 20):index + 20].split())
+            raise ValueError(
+                "an identifier is spelled with a CSS escape near "
+                f"'{excerpt}'; this check matches names literally, so it "
+                "cannot tell which at-rule or property that is while a "
+                "browser can, and a domain colour hidden behind one would "
+                "reach the page unmeasured; write the name out in full"
+            )
+        index += 1
 
 
 def _require_light_after_dark(css):

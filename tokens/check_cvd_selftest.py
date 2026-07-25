@@ -160,6 +160,7 @@ UNMEASURED = "guarantee covers those colours and nothing else"
 UNMEASURED_INITIAL = "the initial-value has to repeat the colour"
 NO_INITIAL = "registers --pt-dom-atmos without an initial-value"
 LIGHT_FIRST = "is written before the :root block"
+ESCAPED = "spelled with a CSS escape"
 
 # Each case is a name, the outcome it claims, what its output has to contain,
 # and the mutation. That third field is one fragment or a tuple of them, all
@@ -545,6 +546,39 @@ CASES = [
             '@property --PT-DOM-ATMOS { syntax: "<color>"; inherits: false; '
             "initial-value: %s; }" % INTERIOR
         ),
+    ),
+    # A backslash escape spells the same identifier to a browser and a
+    # different one to a reader matching names literally, so the file is
+    # refused rather than measured on the wrong name.
+    (
+        "at-rule keyword hidden behind an escape",
+        "fail",
+        ESCAPED,
+        append(
+            "@\\70 roperty --pt-dom-atmos { syntax: \"<color>\"; "
+            "inherits: false; initial-value: %s; }" % INTERIOR
+        ),
+    ),
+    (
+        "registered domain name hidden behind an escape",
+        "fail",
+        ESCAPED,
+        append(
+            '@property --pt-dom-atmo\\73 { syntax: "<color>"; '
+            "inherits: false; initial-value: %s; }" % INTERIOR
+        ),
+    ),
+    (
+        "declared domain name hidden behind an escape",
+        "fail",
+        ESCAPED,
+        append("body { --pt-dom-atmo\\73 : %s; }" % INTERIOR),
+    ),
+    (
+        "backslash inside a quoted value",
+        "pass",
+        SEPARABLE,
+        append('.pull-quote::before { content: "\\201C"; }'),
     ),
     # Selectors that reach the root at a higher specificity than :root decide
     # the shipped colour, so they cannot be left unread.

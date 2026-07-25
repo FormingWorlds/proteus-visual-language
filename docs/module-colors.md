@@ -93,8 +93,10 @@ minimum rather than an exact roster: every name on it has to be readable, so
 renaming or hiding an accent cannot quietly drop it out of the comparison, but
 a new accent is measured only once it is added there. The script fails on
 either surface block when a domain is written in a form it
-cannot read, a `var()` reference or a three-digit hex included, and it reads the
-top-level blocks alone, so a value set inside a media query or a cascade layer
+cannot read, a `var()` reference or a three-digit hex included. It refuses the
+file outright when any identifier is spelled with a backslash escape, since a
+browser resolves the escape while this reader matches names literally. It reads
+the top-level blocks alone, so a value set inside a media query or a cascade layer
 cannot stand in for the one the palette ships. Anywhere outside those two
 blocks, a domain colour has to repeat the value one of them declares for that
 domain: custom properties inherit, so a retint written on a descendant of the
