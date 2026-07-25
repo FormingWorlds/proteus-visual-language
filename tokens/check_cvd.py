@@ -27,8 +27,10 @@ are drawn from the same red-to-blue axis, so several land close under one
 dichromacy; the report exists so the closeness is a known quantity when a
 figure mixes module identity with status or ramp colour, and so a future domain
 colour is chosen against the whole palette rather than against six of its
-members. That roster is held as firmly as the domain one: a renamed or removed
-token stops the check rather than shrinking the comparison in silence.
+members. That roster is a required minimum rather than an exact set: every name
+on it has to be readable, so a renamed or removed token stops the check rather
+than shrinking the comparison in silence, while a colour added to the palette
+joins the comparison once it is listed there.
 
 ``REJECTED`` records candidate hues that were measured and turned down, with
 the hex each figure belongs to, so the reasons stay reproducible instead of
@@ -38,9 +40,12 @@ candidate that fails outright from one that clears the domains and collides
 elsewhere. It is reporting only and never fails the check.
 
 Run without arguments to measure the committed tokens; the exit code is
-non-zero when a pair falls below the floor for its set, when either roster is
-incomplete, and when a colour is written in a form this check cannot read. Pass
-``--verbose`` to print every pair rather than the tightest few. Paths resolve
+non-zero when a pair falls below the floor for its set, when either domain
+roster is not the set expected or the cross-palette one is missing a colour,
+when a colour is written in a form this check cannot read, and when a domain
+colour reaches the root element from a block outside the two the palette is
+declared in. Pass ``--verbose`` to print every pair
+rather than the tightest few, which is what the default prints. Paths resolve
 relative to this file. Standard library only, so it runs anywhere
 ``tokens.css`` does. ``check_cvd_selftest.py`` covers the reading rules with
 mutated copies of the palette.
@@ -91,6 +96,12 @@ EXPECTED_DOMAINS = frozenset(
 # missing, every domain silently falls back to its dark value and the run
 # measures the dark palette twice while reporting a light-surface pass.
 EXPECTED_LIGHT_OVERRIDES = frozenset({"stellar"})
+
+# The two blocks the palette is declared in, dark first. A domain colour set on
+# the root element anywhere else is refused rather than read, because a selector
+# such as :root:root outranks :root and would decide the shipped colour while
+# this check measured the one underneath it.
+PALETTE_BLOCKS = (":root", '[data-theme="light"]')
 
 # Machado, Oliveira & Fernandes (2009), "A Physiologically-based Model for
 # Simulation of Color Vision Deficiency", IEEE TVCG 15(6), severity 1.0.
@@ -183,25 +194,59 @@ def parse_domain_colours(css):
     Raises
     ------
     ValueError
-        If the ``:root`` block does not declare exactly ``EXPECTED_DOMAINS``, if
-        the light block declares a domain outside that set, or if either block
-        writes a domain colour in a form the hex reader cannot measure.
+        If a domain colour is declared on the root element outside the two
+        palette blocks, if either block is absent, if the ``:root`` block does
+        not declare exactly ``EXPECTED_DOMAINS``, if the light block does not
+        declare exactly ``EXPECTED_LIGHT_OVERRIDES``, if either block contains a
+        nested rule, or if either writes a domain colour in a form the hex
+        reader cannot measure.
     """
     css = _strip_comments(css)
+    _reject_unrecognised_root_rules(css)
+    dark_selector, light_selector = PALETTE_BLOCKS
 
-    dark_declared = _domain_declarations(css, ":root")
+    _require_block(css, dark_selector)
+    dark_declared = _domain_declarations(css, dark_selector)
     dark = _domains_in_block(dark_declared)
-    _reject_unreadable(":root", dark_declared, dark)
-    _require_roster(":root", set(dark), EXPECTED_DOMAINS)
+    _reject_unreadable(dark_selector, dark_declared, dark)
+    _require_roster(dark_selector, set(dark), EXPECTED_DOMAINS)
 
-    light_declared = _domain_declarations(css, '[data-theme="light"]')
+    _require_block(css, light_selector)
+    light_declared = _domain_declarations(css, light_selector)
     overrides = _domains_in_block(light_declared)
-    _reject_unreadable('[data-theme="light"]', light_declared, overrides)
-    _require_roster('[data-theme="light"]', set(overrides), EXPECTED_LIGHT_OVERRIDES)
+    _reject_unreadable(light_selector, light_declared, overrides)
+    _require_roster(light_selector, set(overrides), EXPECTED_LIGHT_OVERRIDES)
 
     light = dict(dark)
     light.update(overrides)
     return dark, light
+
+
+def _require_block(css, selector):
+    """Fail when no top-level rule targets this selector at all.
+
+    Without this, a missing block is reported as every one of its domains being
+    absent, which points at the declarations rather than at the block that
+    should hold them.
+
+    Parameters
+    ----------
+    css : str
+        Comment-stripped text of ``tokens.css``.
+    selector : str
+        The selector that must appear.
+
+    Raises
+    ------
+    ValueError
+        If no outermost rule targets the selector.
+    """
+    if not _top_level_bodies(css, selector):
+        raise ValueError(
+            f"no top-level {selector} block; the palette is read from the "
+            f"{PALETTE_BLOCKS[0]} block and the {PALETTE_BLOCKS[1]} block, and "
+            "both have to be present at the top level of the file"
+        )
 
 
 def _require_roster(selector, found, expected):
@@ -275,6 +320,10 @@ def _strip_comments(css):
     measured; without this a disabled domain colour still parses and reports
     as live.
 
+    Comment markers inside a quoted value are content, not syntax. The walk
+    tracks quoting so a string holding ``/*`` cannot open a comment that then
+    swallows the live declarations after it.
+
     Parameters
     ----------
     css : str
@@ -286,7 +335,130 @@ def _strip_comments(css):
         The same text with every comment replaced by a single space, so a
         comment between two declarations cannot join them.
     """
-    return re.sub(r"/\*.*?\*/", " ", css, flags=re.S)
+    out = []
+    quote = None
+    index = 0
+    length = len(css)
+    while index < length:
+        char = css[index]
+        if quote is not None:
+            out.append(char)
+            if char == "\\" and index + 1 < length:
+                out.append(css[index + 1])
+                index += 2
+                continue
+            if char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in ('"', "'"):
+            quote = char
+            out.append(char)
+            index += 1
+            continue
+        if char == "/" and css.startswith("/*", index):
+            end = css.find("*/", index + 2)
+            index = length if end == -1 else end + 2
+            out.append(" ")
+            continue
+        out.append(char)
+        index += 1
+    return "".join(out)
+
+
+_ATTRIBUTE_SELECTOR = re.compile(
+    r"""\[\s*([-\w]+)\s*(?:([~|^$*]?=)\s*(?:"([^"]*)"|'([^']*)'|([^\]\s]*))\s*)?\]"""
+)
+
+
+def _normalise_selector(part):
+    """Return one selector with its attribute values written in a single form.
+
+    ``[data-theme="light"]``, ``[data-theme='light']`` and ``[data-theme=light]``
+    select the same elements, so a comparison against a spelled-out selector has
+    to see them as one string. Whitespace inside the brackets is dropped and the
+    value is requoted with double quotes.
+
+    Parameters
+    ----------
+    part : str
+        A single selector, already split out of any comma-separated list.
+
+    Returns
+    -------
+    str
+        The selector with every attribute test in canonical form and its
+        surrounding whitespace collapsed.
+    """
+
+    def rewrite(match):
+        name, operator = match.group(1), match.group(2)
+        if operator is None:
+            return f"[{name}]"
+        value = next(g for g in match.group(3, 4, 5) if g is not None)
+        return f'[{name}{operator}"{value}"]'
+
+    return re.sub(r"\s+", " ", _ATTRIBUTE_SELECTOR.sub(rewrite, part)).strip()
+
+
+def _mask_bracketed(selector):
+    """Return the selector with bracketed and parenthesised spans neutralised.
+
+    Commas and whitespace inside ``[...]`` or ``(...)`` belong to an attribute
+    value or a functional pseudo-class, not to the selector list or a descendant
+    combinator. Replacing that content with a filler character lets a plain
+    ``split`` and a plain combinator search work on the outer structure alone.
+
+    Parameters
+    ----------
+    selector : str
+        One selector or a comma-separated list of them.
+
+    Returns
+    -------
+    str
+        The same length of text, with every character inside brackets or
+        parentheses replaced by ``_``.
+    """
+    out = []
+    depth = 0
+    for char in selector:
+        if char in "[(":
+            depth += 1
+            out.append(char)
+        elif char in "])":
+            depth = max(0, depth - 1)
+            out.append(char)
+        elif depth:
+            out.append("_")
+        else:
+            out.append(char)
+    return "".join(out)
+
+
+def _split_selector_list(prelude):
+    """Return the individual selectors of a comma-separated prelude.
+
+    Parameters
+    ----------
+    prelude : str
+        The text between the previous rule and this one's opening brace.
+
+    Returns
+    -------
+    list of str
+        One entry per selector, stripped, skipping empty entries. Commas inside
+        an attribute value or a functional pseudo-class do not split.
+    """
+    masked = _mask_bracketed(prelude)
+    parts = []
+    start = 0
+    for index, char in enumerate(masked):
+        if char == ",":
+            parts.append(prelude[start:index])
+            start = index + 1
+    parts.append(prelude[start:])
+    return [part.strip() for part in parts if part.strip()]
 
 
 def _selector_targets(prelude, selector):
@@ -306,18 +478,121 @@ def _selector_targets(prelude, selector):
     Returns
     -------
     bool
-        True when any part of the list is exactly ``selector``.
+        True when any part of the list is exactly ``selector``, comparing the
+        two in their canonical attribute-value form.
     """
-    return any(part.strip() == selector for part in prelude.split(","))
+    wanted = _normalise_selector(selector)
+    return any(_normalise_selector(part) == wanted for part in _split_selector_list(prelude))
+
+
+_CUSTOM_PROPERTY_NAME = re.compile(r"^\s*--[\w-]+$")
+
+
+def _top_level_rules(css):
+    """Return every outermost rule in the text as prelude, body, and nesting.
+
+    Walks the text with a brace counter rather than a regex, so the structure
+    is read the way a browser reads it. Three kinds of brace are distinguished
+    from a rule's own braces: one inside a quoted string, one inside
+    parentheses such as a ``url()`` value, and one inside a custom property's
+    value, where the syntax permits an arbitrary token stream. Miscounting any
+    of them would shift every following rule to the wrong depth.
+
+    Parameters
+    ----------
+    css : str
+        Comment-stripped text of ``tokens.css``.
+
+    Returns
+    -------
+    list of tuple
+        One ``(prelude, body, nested)`` triple per outermost rule, where
+        ``prelude`` is the selector text preceding the brace, ``body`` is the
+        text between the braces, and ``nested`` says whether the rule contains
+        a rule of its own.
+    """
+    rules = []
+    depth = 0
+    paren = 0
+    quote = None
+    in_value = False
+    value_brace = 0
+    prelude = ""
+    prelude_start = 0
+    body_start = 0
+    segment_start = 0
+    nested = False
+    index = 0
+    length = len(css)
+    while index < length:
+        char = css[index]
+        if quote is not None:
+            if char == "\\":
+                index += 2
+                continue
+            if char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in ('"', "'"):
+            quote = char
+        elif char == "(":
+            paren += 1
+        elif char == ")":
+            paren = max(0, paren - 1)
+        elif paren:
+            pass
+        elif char == ":":
+            if (
+                depth >= 1
+                and not in_value
+                and _CUSTOM_PROPERTY_NAME.match(css[segment_start:index])
+            ):
+                in_value = True
+        elif char == "{":
+            if in_value:
+                value_brace += 1
+            else:
+                depth += 1
+                if depth == 1:
+                    prelude = css[prelude_start:index]
+                    body_start = index + 1
+                    nested = False
+                elif depth == 2:
+                    nested = True
+                segment_start = index + 1
+        elif char == "}":
+            if in_value and value_brace:
+                value_brace -= 1
+            elif depth >= 2:
+                depth -= 1
+                in_value = False
+                segment_start = index + 1
+            else:
+                if depth == 1:
+                    rules.append((prelude, css[body_start:index], nested))
+                depth = 0
+                in_value = False
+                value_brace = 0
+                prelude_start = index + 1
+                segment_start = index + 1
+        elif char == ";":
+            if in_value and value_brace == 0:
+                in_value = False
+            if depth == 0:
+                prelude_start = index + 1
+            segment_start = index + 1
+        index += 1
+    return rules
 
 
 def _top_level_bodies(css, selector):
     """Return the body of every top-level block that targets this selector.
 
-    Walks the text with a brace counter rather than a regex. A rule nested
-    inside ``@media``, ``@supports`` or ``@container`` carries the same selector
-    text as the unconditional one, and a value that applies only under a
-    condition must never stand in for the value the palette ships everywhere.
+    A rule nested inside ``@media``, ``@supports`` or ``@container`` carries the
+    same selector text as the unconditional one, and a value that applies only
+    under a condition must never stand in for the value the palette ships
+    everywhere, so only the outermost rules are read.
 
     Parameters
     ----------
@@ -341,51 +616,88 @@ def _top_level_bodies(css, selector):
         page does not use.
     """
     bodies = []
-    depth = 0
-    prelude_start = 0
-    matched = False
-    body_start = 0
-    quote = None
-    index = 0
-    while index < len(css):
-        char = css[index]
-        if quote is not None:
-            if char == "\\":
-                index += 2
-                continue
-            if char == quote:
-                quote = None
-        elif char in ('"', "'"):
-            quote = char
-        elif char == "{":
-            depth += 1
-            if depth == 1:
-                matched = _selector_targets(css[prelude_start:index], selector)
-                body_start = index + 1
-            elif depth == 2 and matched:
-                raise ValueError(
-                    f"the {selector} block contains a nested rule; this check "
-                    "reads flat declarations only, so write the block without "
-                    "nesting"
-                )
-        elif char == "}":
-            if depth >= 2:
-                depth -= 1
-            else:
-                if depth == 1 and matched:
-                    bodies.append(css[body_start:index])
-                matched = False
-                depth = 0
-                prelude_start = index + 1
-        elif char == ";" and depth == 0:
-            prelude_start = index + 1
-        index += 1
+    for prelude, body, nested in _top_level_rules(css):
+        if prelude.lstrip().startswith("@"):
+            continue
+        if not _selector_targets(prelude, selector):
+            continue
+        if nested:
+            raise ValueError(
+                f"the {selector} block contains a nested rule; this check "
+                "reads flat declarations only, so write the block without "
+                "nesting"
+            )
+        bodies.append(body)
     return bodies
+
+
+_COMBINATOR = re.compile(r"[\s>+~]")
+
+
+def _reject_unrecognised_root_rules(css):
+    """Refuse a domain colour declared on the root under an unread selector.
+
+    ``:root:root`` and ``html:root`` both select the root element at a higher
+    specificity than ``:root``, so a domain colour written there is what the
+    page ships. Reading only the two blocks the palette is documented to use
+    would measure the value underneath it and report a palette the page never
+    renders. A selector carrying a combinator is scoped below the root and
+    cannot override the palette wholesale, so the compound theme rules that
+    retint a single component stay allowed.
+
+    Parameters
+    ----------
+    css : str
+        Comment-stripped text of ``tokens.css``.
+
+    Raises
+    ------
+    ValueError
+        If a rule declaring a ``--pt-dom-*`` value neither names one of the two
+        palette blocks nor scopes every one of its selectors below the root.
+    """
+    for prelude, body, _nested in _top_level_rules(css):
+        if prelude.lstrip().startswith("@"):
+            continue
+        if not _DOMAIN_DECLARATION.search(body):
+            continue
+        parts = _split_selector_list(prelude)
+        if any(_selector_targets(part, known) for part in parts for known in PALETTE_BLOCKS):
+            continue
+        if all(_COMBINATOR.search(_mask_bracketed(part)) for part in parts):
+            continue
+        raise ValueError(
+            f"the rule '{' '.join(prelude.split())}' declares a domain colour "
+            "in a block this check does not read; put domain colours in the "
+            ':root block or the [data-theme="light"] block, which are the two '
+            "the palette ships, or scope the rule below the root element"
+        )
 
 
 _DOMAIN_DECLARATION = re.compile(r"--pt-dom-([a-z0-9-]+)\s*:\s*([^;}]*)")
 _NAMED_DECLARATION = re.compile(r"--pt-([a-z0-9-]+)\s*:\s*([^;}]*)")
 _SIX_DIGIT_HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
+_IMPORTANT = re.compile(r"!\s*important\s*$", re.I)
+
+
+def _declaration_value(raw):
+    """Return a declared value with its priority flag and whitespace removed.
+
+    ``!important`` raises a declaration's priority; it does not change the
+    colour. Reading it as part of the value would report a hex the file plainly
+    writes as unmeasurable.
+
+    Parameters
+    ----------
+    raw : str
+        The text between the colon and the end of the declaration.
+
+    Returns
+    -------
+    str
+        The value alone, stripped.
+    """
+    return _IMPORTANT.sub("", raw).strip()
 
 
 def _domain_declarations(css, selector):
@@ -414,7 +726,7 @@ def _domain_declarations(css, selector):
     winning = {}
     for block in _top_level_bodies(css, selector):
         for match in _DOMAIN_DECLARATION.finditer(block):
-            winning[match.group(1)] = match.group(2).strip()
+            winning[match.group(1)] = _declaration_value(match.group(2))
     return winning
 
 
@@ -458,17 +770,18 @@ def parse_named_colours(css, names):
     ------
     ValueError
         If any requested name is missing from the block or written in a form
-        this check cannot read. The roster is held for the same reason the
-        domain roster is: a renamed or removed token would otherwise shrink the
-        cross-palette report without a word, and the colour that drops out of
+        this check cannot read. Only the requested names are held, so a colour
+        added to the palette is measured once it joins ``names``; what the
+        requirement stops is a renamed or removed token shrinking the
+        cross-palette report without a word, since the colour that drops out of
         the comparison is exactly the one a future domain then collides with.
     """
     names = tuple(names)
     css = _strip_comments(css)
     declared = {}
-    for block in _top_level_bodies(css, ":root"):
+    for block in _top_level_bodies(css, PALETTE_BLOCKS[0]):
         for match in _NAMED_DECLARATION.finditer(block):
-            declared[match.group(1)] = match.group(2).strip()
+            declared[match.group(1)] = _declaration_value(match.group(2))
     readable = {
         n: declared[n].lower()
         for n in names
@@ -739,7 +1052,9 @@ def main(argv):
             print("usage: check_cvd.py [--verbose]")
             return 2
     try:
-        css = TOKENS_CSS.read_text(encoding="utf-8")
+        # utf-8-sig, so a byte-order mark left by an editor is consumed rather
+        # than read as part of the first selector.
+        css = TOKENS_CSS.read_text(encoding="utf-8-sig")
         dark, light = parse_domain_colours(css)
     except (OSError, ValueError) as exc:
         print(f"could not read the domain colours: {exc}")

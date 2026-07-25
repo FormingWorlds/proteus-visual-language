@@ -32,8 +32,9 @@ tritanopia (Machado 2009, full severity), measured as the CIE76 difference
 `ΔE*ab` in CIE Lab under D65, with the simulation applied in linear RGB. The
 metric is part of the claim: CIEDE2000 returns substantially smaller numbers
 for the same pairs, so a figure quoted without its formula cannot be
-reproduced. `tokens/check_cvd.py` performs the measurement and prints every
-pair; CI runs it whenever the tokens or these docs change.
+reproduced. `tokens/check_cvd.py` performs the measurement and reports the
+tightest few pairs of each set, with `--verbose` for every pair; CI runs it
+whenever the tokens or these docs change.
 
 On the dark surface set the tightest pair is Interior against Outgassing under
 protanopia, at ΔE 16.36; every other pair sits above it. What the check enforces
@@ -87,9 +88,11 @@ surface sets, and read the cross-palette section of the output before settling
 on it. The script keeps the roster of domains it expects and fails when
 `tokens.css` declares a different set, so a new domain has to be named in
 `EXPECTED_DOMAINS` too; that is what stops a colour going missing from passing
-as a smaller palette that clears its floor. `CROSS_PALETTE` is held the same
-way, so renaming an accent cannot quietly drop it out of the comparison. The
-script fails on either surface block when a domain is written in a form it
+as a smaller palette that clears its floor. `CROSS_PALETTE` is a required
+minimum rather than an exact roster: every name on it has to be readable, so
+renaming or hiding an accent cannot quietly drop it out of the comparison, but
+a new accent is measured only once it is added there. The script fails on
+either surface block when a domain is written in a form it
 cannot read, a `var()` reference or a three-digit hex included, and it reads the
 top-level blocks alone, so a value set inside a media query or a cascade layer
 cannot stand in for the one the palette ships. `tokens/check_cvd_selftest.py`
