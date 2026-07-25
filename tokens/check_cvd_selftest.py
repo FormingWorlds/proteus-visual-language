@@ -156,7 +156,7 @@ BELOW_FLOOR = "fall below their floor"
 UNREADABLE = "in a form this check cannot measure"
 WRONG_ROSTER = "does not declare the expected domain colours"
 NESTED = "contains a nested rule"
-UNMEASURED = "reaches the page unmeasured"
+UNMEASURED = "can win the cascade and reach the page unmeasured"
 LIGHT_FIRST = "is written before the :root block"
 
 # Each case is a name, the outcome it claims, what its output has to contain,
@@ -182,6 +182,13 @@ CASES = [
         "pass",
         SEPARABLE,
         append("@media screen { :root { %s } }" % ATMOS),
+    ),
+    (
+        "selector list pairing the base palette with another element, "
+        "repeating a shipped colour",
+        "pass",
+        SEPARABLE,
+        append(":root, body { %s }" % ATMOS),
     ),
     (
         "theme selector carrying the case-insensitive flag",
@@ -431,6 +438,25 @@ CASES = [
         "fail",
         BELOW_FLOOR,
         append("html, :root { --pt-dom-atmos: %s; }" % INTERIOR),
+    ),
+    # A list pairing a palette block with another element also declares the
+    # colour on that element, where a later palette block cannot take it back.
+    (
+        "base palette listed with another element, taken back for the root",
+        "fail",
+        UNMEASURED,
+        append(
+            ":root, body { --pt-dom-atmos: %s; }\n:root { %s }" % (INTERIOR, ATMOS)
+        ),
+    ),
+    (
+        "light block listed with another element, taken back for the root",
+        "fail",
+        UNMEASURED,
+        append(
+            "%s, body { --pt-dom-stellar: %s; }\n%s { %s }"
+            % (LIGHT_SELECTOR, INTERIOR, LIGHT_SELECTOR, LIGHT_STELLAR)
+        ),
     ),
     # Selectors that reach the root at a higher specificity than :root decide
     # the shipped colour, so they cannot be left unread.

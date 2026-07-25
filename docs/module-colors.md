@@ -97,9 +97,15 @@ cannot read, a `var()` reference or a three-digit hex included, and it reads the
 top-level blocks alone, so a value set inside a media query or a cascade layer
 cannot stand in for the one the palette ships. Anywhere outside those two
 blocks, a domain colour has to repeat the value one of them declares for that
-domain: custom properties inherit, so a retint written on `html`, on a
-descendant of the root, or inside an `@media` or `@supports` wrapper reaches the
-page unmeasured unless it restores a colour the check has already cleared. `tokens/check_cvd_selftest.py`
+domain: custom properties inherit, so a retint written on a descendant of the
+root, on the root at a higher specificity than `:root`, or inside an `@media` or
+`@supports` wrapper reaches the page unmeasured unless it restores a colour the
+check has already cleared. A selector list counts as a palette block only for
+the parts that name one, so `:root, body` has to satisfy that rule for its
+`body` part. The `--pt-dom-` prefix itself is reserved for the seven domains:
+a name outside the roster is refused wherever it appears, even carrying a
+shipped colour, so variants belong under a prefix of their own.
+`tokens/check_cvd_selftest.py`
 pins those reading rules against mutated copies of the palette, and CI runs it
 beside the check itself.
 

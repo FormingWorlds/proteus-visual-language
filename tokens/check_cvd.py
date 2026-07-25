@@ -713,10 +713,14 @@ def _reject_unmeasured_domain_rules(css, dark, light):
 
     Custom properties inherit, so a domain colour set anywhere from the root
     down reaches the elements below it, and a selector that reaches the root at
-    a higher specificity than ``:root``, ``:root:root`` or ``html``, decides
-    what the page ships outright. Neither a combinator nor an at-rule wrapper
-    makes such a declaration harmless: ``:root body`` covers the whole visible
-    page, and ``@media screen`` applies on the only surface that matters.
+    a higher specificity than ``:root``, ``:root:root`` or ``html:root``,
+    decides what the page ships outright. Neither a combinator nor an at-rule
+    wrapper makes such a declaration harmless: ``:root body`` covers the whole
+    visible page, and ``@media screen`` applies on the only surface that
+    matters. A bare ``html`` is the one root-targeting form that loses instead
+    of winning, since ``:root`` outranks a type selector; it is refused on the
+    same terms all the same, because the rule is about the value rather than
+    about which selector happens to win.
 
     What separates a safe declaration from an unsafe one is therefore its value,
     not its selector. Repeating a colour the palette already declares for that
@@ -724,6 +728,12 @@ def _reject_unmeasured_domain_rules(css, dark, light):
     restore a base colour on a themed subtree stay allowed. Any other value is
     refused, because the separability guarantee covers the seven colours in the
     two palette blocks and nothing else.
+
+    A selector list is judged part by part. Only the parts naming a palette
+    block are read as the palette; the rest have to satisfy the value rule on
+    their own, because a list such as ``:root, body`` also declares the colour
+    on body, where a later ``:root`` block takes it back for the root element
+    and leaves the whole visible page on the value the list gave it.
 
     Parameters
     ----------
@@ -746,10 +756,17 @@ def _reject_unmeasured_domain_rules(css, dark, light):
             measured.setdefault(name, set()).add(value.lower())
 
     for prelude, body, conditional in _rules_declaring_domains(css):
-        if not conditional and any(
-            _selector_targets(prelude, known) for known in PALETTE_BLOCKS
-        ):
-            continue
+        if not conditional:
+            carried = [
+                part
+                for part in _split_selector_list(prelude)
+                if not any(
+                    _selector_targets(part, known) for known in PALETTE_BLOCKS
+                )
+            ]
+            if not carried:
+                continue
+            prelude = ", ".join(carried)
         for name, raw in _DOMAIN_DECLARATION.findall(body):
             value = _declaration_value(raw)
             if value.lower() in measured.get(name, ()):
@@ -760,8 +777,8 @@ def _reject_unmeasured_domain_rules(css, dark, light):
                 f"outside the {PALETTE_BLOCKS[0]} block and the "
                 f"{PALETTE_BLOCKS[1]} block, an @media or @supports wrapper "
                 "included, a domain colour has to repeat the value one of "
-                "those blocks declares for it, because anything else reaches "
-                "the page unmeasured"
+                "those blocks declares for it, because anything else can win "
+                "the cascade and reach the page unmeasured"
             )
 
 
