@@ -19,9 +19,22 @@ set is the ``:root`` block of ``tokens.css``; the light set is that block with
 the ``[data-theme="light"]`` overrides applied, which deepens stellar to
 ``#C8860F``.
 
+The floors apply within the domain set alone. A second section measures the
+domain colours against the palette colours that carry their own meaning
+(``--pt-verdant``, the semantic colours, the deep and light ends of the phase
+ramp) and prints the tightest pairs without enforcing anything. Those colours
+are drawn from the same red-to-blue axis, so several land close under one
+dichromacy; the report exists so the closeness is a known quantity when a
+figure mixes module identity with status or ramp colour, and so a future domain
+colour is chosen against the whole palette rather than against six of its
+members.
+
 ``REJECTED`` records candidate hues that were measured and turned down, with
 the hex each figure belongs to, so the reasons stay reproducible instead of
-resting on recollection. It is reporting only and never fails the check.
+resting on recollection. Each is reported against the six domains that predate
+the accretion slot and against the cross-palette set, which is what separates a
+candidate that fails outright from one that clears the domains and collides
+elsewhere. It is reporting only and never fails the check.
 
 Run without arguments to measure the committed tokens; the exit code is
 non-zero when a pair falls below the floor for its set. Pass ``--verbose`` to
@@ -79,11 +92,13 @@ RGB_TO_XYZ = (
 D65 = (0.95047, 1.0, 1.08883)
 
 # Hues considered for the accretion slot and turned down, each with the hex the
-# figure was measured on. Every one lands below the dark-set floor, which is why
-# the slot went to a low-chroma warm neutral: the palette already runs a dense
-# red-to-blue ramp, so a saturated warm or green candidate collapses onto
+# figure was measured on. Most land below the dark-set floor: the palette runs a
+# dense red-to-blue ramp, so a saturated warm or green candidate collapses onto
 # interior or outgassing under protanopia or deuteranopia, and a teal collapses
-# onto chemistry under tritanopia.
+# onto chemistry under tritanopia. The olive-green is the exception and the
+# reason this list is reported against two sets: it clears the six domains
+# comfortably and then lands on top of --pt-verdant under deuteranopia, which a
+# domain-only check cannot see.
 REJECTED = {
     "burnt sienna": "#96552E",
     "ochre brown": "#8C6A3F",
@@ -92,8 +107,32 @@ REJECTED = {
     "moss green": "#3F7A2E",
     "sage": "#4F7A3A",
     "teal": "#2F7D74",
+    "olive-green": "#7A9966",
     "verdant (the brand green)": "#57A05C",
 }
+
+# Palette colours outside the domain set that carry a meaning of their own and
+# can therefore share a figure or a legend with module data. Named rather than
+# swept from the whole file: surfaces, text, and hairlines are a contrast
+# question, not a confusion one. A name whose hex equals a domain colour is
+# skipped at run time, because the domain colours are drawn from the brand core
+# deliberately; --pt-magma and --pt-dom-interior being one hex is identity.
+CROSS_PALETTE = (
+    "magma",
+    "mantle",
+    "crimson",
+    "ocean",
+    "abyss",
+    "azure",
+    "ice",
+    "solar",
+    "solar-deep",
+    "verdant",
+    "positive",
+    "warning",
+    "danger",
+    "info",
+)
 
 
 def parse_domain_colours(css):
@@ -152,6 +191,31 @@ def _domains_in_block(css, selector):
         ):
             found[name] = hex_value.lower()
     return found
+
+
+def parse_named_colours(css, names):
+    """Extract specific ``--pt-*`` colour tokens from the ``:root`` block.
+
+    Parameters
+    ----------
+    css : str
+        Full text of ``tokens.css``.
+    names : iterable of str
+        Token names without the ``--pt-`` prefix, for example ``verdant``.
+
+    Returns
+    -------
+    dict of str to str
+        Name to lower-cased hex, in the order requested, omitting any name the
+        block does not declare.
+    """
+    pattern = re.compile(r"(?:^|\})\s*:root\s*\{(.*?)\}", re.S | re.M)
+    declared = {}
+    for block in pattern.findall(css):
+        declared.update(
+            re.findall(r"--pt-([a-z0-9-]+)\s*:\s*(#[0-9A-Fa-f]{6})\s*;", block)
+        )
+    return {n: declared[n].lower() for n in names if n in declared}
 
 
 def hex_to_rgb(value):
@@ -264,6 +328,106 @@ def nearest_neighbour(palette, name):
     return distance, (b if a == name else a), label
 
 
+def closest_in(value, palette):
+    """Return the tightest pairing of one hex against a palette it need not join.
+
+    Parameters
+    ----------
+    value : str
+        The hex to measure.
+    palette : dict of str to str
+        Name to hex.
+
+    Returns
+    -------
+    tuple
+        ``(distance, name, dichromacy)`` for the tightest pairing.
+    """
+    rgb = hex_to_rgb(value)
+    best = None
+    for name, other in palette.items():
+        other_rgb = hex_to_rgb(other)
+        for label, matrix in CVD_MATRICES.items():
+            distance = delta_e76(simulate(matrix, rgb), simulate(matrix, other_rgb))
+            if best is None or distance < best[0]:
+                best = (distance, name, label)
+    return best
+
+
+def cross_palette_pairs(domains, others):
+    """Measure each domain colour against every other named palette colour.
+
+    Colours whose hex matches a domain colour exactly are dropped: those are
+    deliberate aliases, not collisions.
+
+    Parameters
+    ----------
+    domains : dict of str to str
+        Domain name to hex.
+    others : dict of str to str
+        Palette colour name to hex.
+
+    Returns
+    -------
+    list of tuple
+        ``(distance, other_name, domain_name, dichromacy)``, ascending.
+    """
+    domain_hexes = {value.lower() for value in domains.values()}
+    rows = []
+    for name, value in others.items():
+        if value.lower() in domain_hexes:
+            continue
+        rgb = hex_to_rgb(value)
+        for domain, domain_hex in domains.items():
+            domain_rgb = hex_to_rgb(domain_hex)
+            for label, matrix in CVD_MATRICES.items():
+                rows.append(
+                    (
+                        delta_e76(simulate(matrix, rgb), simulate(matrix, domain_rgb)),
+                        name,
+                        domain,
+                        label,
+                    )
+                )
+    rows.sort()
+    return rows
+
+
+def report_cross(domains, others, verbose):
+    """Print how close the domain colours run to the rest of the palette.
+
+    Reporting only: no floor applies across sets, because several of these
+    colours share a hue axis with the domains by design.
+
+    Parameters
+    ----------
+    domains : dict of str to str
+        Domain name to hex.
+    others : dict of str to str
+        Palette colour name to hex.
+    verbose : bool
+        Print every pair rather than the tightest eight.
+    """
+    rows = cross_palette_pairs(domains, others)
+    shown = rows if verbose else rows[:8]
+    print("domain colours against the rest of the palette (reported, not enforced)")
+    for distance, other, domain, dichromacy in shown:
+        print(f"    {distance:6.2f}  --pt-{other}/{domain} under {dichromacy}")
+    if not verbose:
+        print(f"    ... {len(rows) - len(shown)} wider pairs not shown")
+    print("  tightest of these per domain")
+    for domain in domains:
+        rest = {k: v for k, v in others.items() if v.lower() != domains[domain].lower()}
+        if not rest:
+            continue
+        distance, other, dichromacy = closest_in(domains[domain], rest)
+        print(f"    {distance:6.2f}  {domain} vs --pt-{other} under {dichromacy}")
+    print(
+        "  a figure that mixes module identity with status or ramp colour needs "
+        "a legend, whatever the hues do"
+    )
+
+
 def report_set(label, palette, floor, verbose):
     """Print one palette's pair table and return whether it clears its floor.
 
@@ -323,26 +487,45 @@ def main(argv):
             print("usage: check_cvd.py [--verbose]")
             return 2
     try:
-        dark, light = parse_domain_colours(TOKENS_CSS.read_text(encoding="utf-8"))
+        css = TOKENS_CSS.read_text(encoding="utf-8")
+        dark, light = parse_domain_colours(css)
     except (OSError, ValueError) as exc:
         print(f"could not read the domain colours: {exc}")
         return 1
+    # Drop any named colour that is a domain colour on either surface. Solar
+    # deep is the light-surface stellar, so measuring it against dark stellar
+    # would report a domain against itself.
+    domain_hexes = {v.lower() for v in dark.values()}
+    domain_hexes |= {v.lower() for v in light.values()}
+    others = {
+        name: value
+        for name, value in parse_named_colours(css, CROSS_PALETTE).items()
+        if value.lower() not in domain_hexes
+    }
 
     print("CIE76 dE*ab on Machado 2009 full-severity simulations, linear RGB\n")
     ok_dark = report_set("dark surface", dark, FLOOR_DARK, verbose)
     print()
     ok_light = report_set("light surface", light, FLOOR_LIGHT, verbose)
+    print()
+    report_cross(dark, others, verbose)
 
     # Candidates competed for the accretion slot, so they are measured against
-    # the six domains that predate it, not against the colour that won.
+    # the six domains that predate it, not against the colour that won. The
+    # second column is the test a domain-only check misses: a candidate can
+    # clear all six and still land on a palette colour it will share a legend
+    # with.
     incumbents = {k: v for k, v in dark.items() if k != "accretion"}
-    print("\nrejected candidates for the accretion slot, against the other six")
+    print("\nrejected candidates for the accretion slot")
+    print("    vs the other six domains        vs the rest of the palette")
     for name, value in REJECTED.items():
-        trial = dict(incumbents)
-        trial["candidate"] = value
-        distance, other, dichromacy = nearest_neighbour(trial, "candidate")
+        near, other, dichromacy = closest_in(value, incumbents)
+        rest = {k: v for k, v in others.items() if v.lower() != value.lower()}
+        cross = closest_in(value, rest)
         print(
-            f"    {distance:6.2f}  {name} {value} vs {other} under {dichromacy}"
+            f"    {near:6.2f} {other:<10} {dichromacy[:6]}    "
+            f"{cross[0]:6.2f} --pt-{cross[1]:<10} {cross[2][:6]}    "
+            f"{name} {value}"
         )
 
     if not (ok_dark and ok_light):

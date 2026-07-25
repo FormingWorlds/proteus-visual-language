@@ -50,17 +50,36 @@ whole ecosystem, so it stands as a known limit rather than a pending fix: in
 light-surface figures, give those two a legend or a direct label.
 
 Accretion clay `#A38F7A` holds a minimum ΔE of 29.6 against the other six on
-both surface sets, its tightest pair being Interior under protanopia. The
-intuitive candidates all land below the dark floor, from burnt sienna at 4.8 up
-to olive at 11.2, and even the brand green Verdant reaches only 15.7 against
-Atmosphere under tritanopia; `check_cvd.py` lists each one with the hex its
-figure was measured on. The red-to-blue ramp is dense enough that a low-chroma
-warm neutral is what it leaves room for.
+both surface sets, its tightest pair being Interior under protanopia, and 11.4
+against the rest of the palette. The saturated candidates fail, and they fail in
+two different ways. The intuitive earth tones land far below the dark floor,
+burnt sienna at 4.8 and umber at 9.0 against Outgassing. A saturated olive-green
+clears the domains at 21.0 and then lands 3.8 from `--pt-verdant` under
+deuteranopia, trading a collision with the modules for one with the accents; the
+brand green itself reaches only 15.7 against Atmosphere under tritanopia. What
+clears all three constraints at once, separation from the domains, separation
+from the accents, and legibility on Void and on Paper, is low in chroma. A
+desaturated sage passes the same three, but green already means something here,
+Verdant marks the habitable endpoint, so accretion takes the mineral colour
+instead. `check_cvd.py` prints every candidate with the hex its figure was
+measured on, scored against the domains and against the rest of the palette.
+
+### Against the rest of the palette
+
+The floor is enforced among the domain colours only. Measured against the
+accents, status colours, and ramp anchors, the domains sit much closer: Tidal
+is 3.1 from `--pt-abyss` under protanopia, Interior 3.9 from `--pt-warning`
+under deuteranopia, Accretion 11.4 from `--pt-verdant` under deuteranopia.
+Tightening those would mean recolouring either the semantic set or a module
+identity, so `check_cvd.py` reports them and does not fail on them. The
+practical consequence is a rule, not a number: a figure that mixes module
+identity with status or ramp colour needs a legend, whatever the hues do.
 
 **Do not remap or extend** these without re-running `tokens/check_cvd.py`. If a
 new domain is added, pick its colour by maximising the minimum pairwise ΔE
-across all dichromacy types against the existing set, and check the result on
-both surface sets.
+across all dichromacy types against the existing set, check the result on both
+surface sets, and read the cross-palette section of the output before settling
+on it.
 
 ## In practice
 

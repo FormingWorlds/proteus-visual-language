@@ -22,7 +22,10 @@ CVD-checked (Machado 2009, protan/deutan/tritan @ full severity; CIE76
 `ΔE*ab`, target ≥ 12): min pairwise ΔE = 16.4 on dark surfaces. On light
 surfaces Stellar deepens to `#C8860F`, which brings Interior against Stellar
 down to 11.4, just under the target, so give those two a label. Run
-`tokens/check_cvd.py` to reproduce either figure. Still: always keep a legend
+`tokens/check_cvd.py` to reproduce either figure. That floor covers the seven
+domains against each other; against the accents and status colours they run far
+tighter (Tidal is 3.1 from `--pt-abyss` under protanopia), so a panel that codes
+modules and status together has to label both. Still: always keep a legend
 or direct labels; never encode meaning in colour alone. Stellar is solar gold; for
 gold fills, bars, or thin marks on light surfaces use the deepened
 `--pt-solar-deep` `#C8860F` (bright gold is 2.22:1 on white, fine for lines
