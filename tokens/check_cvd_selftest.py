@@ -156,7 +156,8 @@ BELOW_FLOOR = "fall below their floor"
 UNREADABLE = "in a form this check cannot measure"
 WRONG_ROSTER = "does not declare the expected domain colours"
 NESTED = "contains a nested rule"
-UNREAD_BLOCK = "in a block this check does not read"
+UNMEASURED = "reaches the page unmeasured"
+LIGHT_FIRST = "is written before the :root block"
 
 # Each case is a name, the outcome it claims, what its output has to contain,
 # and the mutation. That third field is one fragment or a tuple of them, all
@@ -168,13 +169,31 @@ CASES = [
         "compound light-theme descendant rule stays out of the light set",
         "pass",
         SEPARABLE,
-        append('[data-theme="light"] .hero { --pt-dom-atmos: %s; }' % INTERIOR),
+        append('[data-theme="light"] .hero { %s }' % ATMOS),
     ),
     (
-        "domain retinted for a subtree below the root",
+        "subtree below the root repeating a shipped colour",
         "pass",
         SEPARABLE,
-        append(":root > .panel { --pt-dom-atmos: %s; }" % INTERIOR),
+        append(":root > .panel { %s }" % ATMOS),
+    ),
+    (
+        "shipped colour repeated under a media query",
+        "pass",
+        SEPARABLE,
+        append("@media screen { :root { %s } }" % ATMOS),
+    ),
+    (
+        "theme selector carrying the case-insensitive flag",
+        "pass",
+        SEPARABLE,
+        lambda c: light_block(c, selector='[data-theme="light" i]'),
+    ),
+    (
+        "theme selector matching a differently cased value",
+        "pass",
+        SEPARABLE,
+        lambda c: light_block(c, selector='[data-theme="LIGHT" i]'),
     ),
     (
         "light block written as a selector list keeps its override",
@@ -234,16 +253,63 @@ CASES = [
     (
         "shipped value replaced, good value left inside a media query",
         "fail",
-        BELOW_FLOOR,
+        UNMEASURED,
         lambda c: replace(ATMOS, "--pt-dom-atmos: %s;" % INTERIOR)(c)
         + "\n@media print { :root { %s } }\n" % ATMOS,
     ),
     (
         "shipped value replaced, good value left inside a cascade layer",
         "fail",
-        BELOW_FLOOR,
+        UNMEASURED,
         lambda c: replace(ATMOS, "--pt-dom-atmos: %s;" % INTERIOR)(c)
         + "\n@layer tokens { :root { %s } }\n" % ATMOS,
+    ),
+    # An at-rule that applies on screen retints the root for real, so a value
+    # inside one cannot be waved through as conditional.
+    (
+        "domain retinted under a media query that applies on screen",
+        "fail",
+        UNMEASURED,
+        append("@media screen { :root { --pt-dom-atmos: %s; } }" % INTERIOR),
+    ),
+    (
+        "domain retinted under a feature query",
+        "fail",
+        UNMEASURED,
+        append("@supports (color: red) { :root { --pt-dom-atmos: %s; } }" % INTERIOR),
+    ),
+    (
+        "domain retinted inside two nested at-rules",
+        "fail",
+        UNMEASURED,
+        append(
+            "@media screen { @supports (color: red) { :root "
+            "{ --pt-dom-atmos: %s; } } }" % INTERIOR
+        ),
+    ),
+    # Custom properties inherit, so a rule scoped below the root still covers
+    # the page it is written for.
+    (
+        "domain retinted on a descendant that covers the page",
+        "fail",
+        UNMEASURED,
+        append(":root body { --pt-dom-atmos: %s; }" % INTERIOR),
+    ),
+    (
+        "domain retinted for a subtree below the root",
+        "fail",
+        UNMEASURED,
+        append(":root > .panel { --pt-dom-atmos: %s; }" % INTERIOR),
+    ),
+    # The two blocks reach the root at equal specificity, so their order decides
+    # which one wins.
+    (
+        "light block written before the base palette",
+        "fail",
+        LIGHT_FIRST,
+        lambda c: c.replace(LIGHT_RULE, "", 1).replace(
+            ":root {", LIGHT_RULE + "\n\n:root {", 1
+        ),
     ),
     # Forms the check cannot measure must fail rather than be skipped.
     (
@@ -308,7 +374,7 @@ CASES = [
     (
         "light block renamed to a class the check does not read",
         "fail",
-        UNREAD_BLOCK,
+        "no top-level %s block" % LIGHT_SELECTOR,
         lambda c: light_block(c, selector=".pt-light"),
     ),
     (
@@ -371,19 +437,19 @@ CASES = [
     (
         "domain overridden by a doubled root selector",
         "fail",
-        UNREAD_BLOCK,
+        UNMEASURED,
         append(":root:root { --pt-dom-atmos: %s; }" % INTERIOR),
     ),
     (
         "domain overridden by a qualified root selector",
         "fail",
-        UNREAD_BLOCK,
+        UNMEASURED,
         append("html:root { --pt-dom-atmos: %s; }" % INTERIOR),
     ),
     (
         "domain overridden on the html element",
         "fail",
-        UNREAD_BLOCK,
+        UNMEASURED,
         append("html { --pt-dom-atmos: %s; }" % INTERIOR),
     ),
     # A comment marker inside a string is content, so it must not blank out the
@@ -484,7 +550,10 @@ def main():
     for name, expect, fragment, mutate in CASES:
         wanted = (fragment,) if isinstance(fragment, str) else fragment
         caught, output, detail = run_case(mutate)
-        missing = [text for text in wanted if text not in output]
+        # Runs of spaces are collapsed on both sides so a fragment pins the
+        # words the check prints, not the column widths it prints them in.
+        squeezed = re.sub(r"[ \t]+", " ", output)
+        missing = [text for text in wanted if re.sub(r"[ \t]+", " ", text) not in squeezed]
         if caught != (expect == "fail"):
             verdict = "exit"
         elif missing:

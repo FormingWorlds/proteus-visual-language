@@ -95,7 +95,11 @@ a new accent is measured only once it is added there. The script fails on
 either surface block when a domain is written in a form it
 cannot read, a `var()` reference or a three-digit hex included, and it reads the
 top-level blocks alone, so a value set inside a media query or a cascade layer
-cannot stand in for the one the palette ships. `tokens/check_cvd_selftest.py`
+cannot stand in for the one the palette ships. Anywhere outside those two
+blocks, a domain colour has to repeat the value one of them declares for that
+domain: custom properties inherit, so a retint written on `html`, on a
+descendant of the root, or inside an `@media` or `@supports` wrapper reaches the
+page unmeasured unless it restores a colour the check has already cleared. `tokens/check_cvd_selftest.py`
 pins those reading rules against mutated copies of the palette, and CI runs it
 beside the check itself.
 

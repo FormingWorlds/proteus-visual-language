@@ -194,15 +194,15 @@ def parse_domain_colours(css):
     Raises
     ------
     ValueError
-        If a domain colour is declared on the root element outside the two
-        palette blocks, if either block is absent, if the ``:root`` block does
-        not declare exactly ``EXPECTED_DOMAINS``, if the light block does not
-        declare exactly ``EXPECTED_LIGHT_OVERRIDES``, if either block contains a
-        nested rule, or if either writes a domain colour in a form the hex
-        reader cannot measure.
+        If either block is absent, if the light block is written before the
+        base one, if the ``:root`` block does not declare exactly
+        ``EXPECTED_DOMAINS``, if the light block does not declare exactly
+        ``EXPECTED_LIGHT_OVERRIDES``, if either block contains a nested rule, if
+        either writes a domain colour in a form the hex reader cannot measure,
+        or if a domain colour is declared anywhere else in the file with a value
+        neither block gives that domain.
     """
     css = _strip_comments(css)
-    _reject_unrecognised_root_rules(css)
     dark_selector, light_selector = PALETTE_BLOCKS
 
     _require_block(css, dark_selector)
@@ -212,6 +212,7 @@ def parse_domain_colours(css):
     _require_roster(dark_selector, set(dark), EXPECTED_DOMAINS)
 
     _require_block(css, light_selector)
+    _require_light_after_dark(css)
     light_declared = _domain_declarations(css, light_selector)
     overrides = _domains_in_block(light_declared)
     _reject_unreadable(light_selector, light_declared, overrides)
@@ -219,7 +220,45 @@ def parse_domain_colours(css):
 
     light = dict(dark)
     light.update(overrides)
+    _reject_unmeasured_domain_rules(css, dark, light)
     return dark, light
+
+
+def _require_light_after_dark(css):
+    """Fail when the light block is written before the base palette.
+
+    ``:root`` and ``[data-theme="light"]`` both select the root element at the
+    same specificity, so the one written last is the one that wins. With the
+    light block first, every override in it loses to the base value underneath
+    and the light surface renders in the dark palette, while this check would
+    still report the overrides as shipped.
+
+    Parameters
+    ----------
+    css : str
+        Comment-stripped text of ``tokens.css``.
+
+    Raises
+    ------
+    ValueError
+        If the first light block precedes the first base block.
+    """
+    dark_selector, light_selector = PALETTE_BLOCKS
+    dark_at = light_at = None
+    for position, (prelude, _body, _nested) in enumerate(_top_level_rules(css)):
+        if prelude.lstrip().startswith("@"):
+            continue
+        if dark_at is None and _selector_targets(prelude, dark_selector):
+            dark_at = position
+        if light_at is None and _selector_targets(prelude, light_selector):
+            light_at = position
+    if dark_at is not None and light_at is not None and light_at < dark_at:
+        raise ValueError(
+            f"the {light_selector} block is written before the {dark_selector} "
+            "block; the two select the root element at the same specificity, "
+            "so the block written last wins and the light overrides would "
+            "never apply; put the light block after the base palette"
+        )
 
 
 def _require_block(css, selector):
@@ -367,7 +406,8 @@ def _strip_comments(css):
 
 
 _ATTRIBUTE_SELECTOR = re.compile(
-    r"""\[\s*([-\w]+)\s*(?:([~|^$*]?=)\s*(?:"([^"]*)"|'([^']*)'|([^\]\s]*))\s*)?\]"""
+    r"""\[\s*([-\w]+)\s*"""
+    r"""(?:([~|^$*]?=)\s*(?:"([^"]*)"|'([^']*)'|([^\]\s]*))\s*([iIsS])?\s*)?\]"""
 )
 
 
@@ -377,7 +417,10 @@ def _normalise_selector(part):
     ``[data-theme="light"]``, ``[data-theme='light']`` and ``[data-theme=light]``
     select the same elements, so a comparison against a spelled-out selector has
     to see them as one string. Whitespace inside the brackets is dropped and the
-    value is requoted with double quotes.
+    value is requoted with double quotes. A trailing ``i`` asks for a
+    case-insensitive match, so the value is lower-cased alongside it and the
+    flag drops out; ``s`` asks for the case-sensitive match that is already the
+    default and drops out on its own.
 
     Parameters
     ----------
@@ -396,6 +439,9 @@ def _normalise_selector(part):
         if operator is None:
             return f"[{name}]"
         value = next(g for g in match.group(3, 4, 5) if g is not None)
+        flag = match.group(6)
+        if flag and flag.lower() == "i":
+            value = value.lower()
         return f'[{name}{operator}"{value}"]'
 
     return re.sub(r"\s+", " ", _ATTRIBUTE_SELECTOR.sub(rewrite, part)).strip()
@@ -631,47 +677,92 @@ def _top_level_bodies(css, selector):
     return bodies
 
 
-_COMBINATOR = re.compile(r"[\s>+~]")
+def _rules_declaring_domains(css, conditional=False):
+    """Yield every rule that declares a domain colour, at any nesting depth.
 
-
-def _reject_unrecognised_root_rules(css):
-    """Refuse a domain colour declared on the root under an unread selector.
-
-    ``:root:root`` and ``html:root`` both select the root element at a higher
-    specificity than ``:root``, so a domain colour written there is what the
-    page ships. Reading only the two blocks the palette is documented to use
-    would measure the value underneath it and report a palette the page never
-    renders. A selector carrying a combinator is scoped below the root and
-    cannot override the palette wholesale, so the compound theme rules that
-    retint a single component stay allowed.
+    At-rules are descended into rather than skipped. ``@media``, ``@supports``
+    and ``@container`` all apply on the shipping surface, and the rule they wrap
+    carries the same selector as an unconditional one, so a value inside them
+    reaches the page while sitting outside the two blocks the palette is read
+    from. Everything below an at-rule is reported as conditional, which is what
+    stops a wrapped ``:root`` passing itself off as the palette block.
 
     Parameters
     ----------
     css : str
         Comment-stripped text of ``tokens.css``.
+    conditional : bool, optional
+        Whether this text is already inside an at-rule.
+
+    Yields
+    ------
+    tuple of (str, str, bool)
+        The rule's selector with its whitespace collapsed, its body, and
+        whether it sits under an at-rule.
+    """
+    for prelude, body, _nested in _top_level_rules(css):
+        head = " ".join(prelude.split())
+        if head.startswith("@"):
+            yield from _rules_declaring_domains(body, True)
+        elif _DOMAIN_DECLARATION.search(body):
+            yield head, body, conditional
+
+
+def _reject_unmeasured_domain_rules(css, dark, light):
+    """Refuse a domain colour the check has not measured.
+
+    Custom properties inherit, so a domain colour set anywhere from the root
+    down reaches the elements below it, and a selector that reaches the root at
+    a higher specificity than ``:root``, ``:root:root`` or ``html``, decides
+    what the page ships outright. Neither a combinator nor an at-rule wrapper
+    makes such a declaration harmless: ``:root body`` covers the whole visible
+    page, and ``@media screen`` applies on the only surface that matters.
+
+    What separates a safe declaration from an unsafe one is therefore its value,
+    not its selector. Repeating a colour the palette already declares for that
+    domain reaches the page having been measured, so the component retints that
+    restore a base colour on a themed subtree stay allowed. Any other value is
+    refused, because the separability guarantee covers the seven colours in the
+    two palette blocks and nothing else.
+
+    Parameters
+    ----------
+    css : str
+        Comment-stripped text of ``tokens.css``.
+    dark : dict of str to str
+        Domain name to hex, as read from the ``:root`` block.
+    light : dict of str to str
+        The same for the light surface set.
 
     Raises
     ------
     ValueError
-        If a rule declaring a ``--pt-dom-*`` value neither names one of the two
-        palette blocks nor scopes every one of its selectors below the root.
+        If a ``--pt-dom-*`` declaration outside the two palette blocks carries a
+        value neither block declares for that domain.
     """
-    for prelude, body, _nested in _top_level_rules(css):
-        if prelude.lstrip().startswith("@"):
+    measured = {}
+    for palette in (dark, light):
+        for name, value in palette.items():
+            measured.setdefault(name, set()).add(value.lower())
+
+    for prelude, body, conditional in _rules_declaring_domains(css):
+        if not conditional and any(
+            _selector_targets(prelude, known) for known in PALETTE_BLOCKS
+        ):
             continue
-        if not _DOMAIN_DECLARATION.search(body):
-            continue
-        parts = _split_selector_list(prelude)
-        if any(_selector_targets(part, known) for part in parts for known in PALETTE_BLOCKS):
-            continue
-        if all(_COMBINATOR.search(_mask_bracketed(part)) for part in parts):
-            continue
-        raise ValueError(
-            f"the rule '{' '.join(prelude.split())}' declares a domain colour "
-            "in a block this check does not read; put domain colours in the "
-            ':root block or the [data-theme="light"] block, which are the two '
-            "the palette ships, or scope the rule below the root element"
-        )
+        for name, raw in _DOMAIN_DECLARATION.findall(body):
+            value = _declaration_value(raw)
+            if value.lower() in measured.get(name, ()):
+                continue
+            raise ValueError(
+                f"the rule '{prelude}' declares --pt-dom-{name}: {value}, "
+                f"which is not a colour this check measured for {name}; "
+                f"outside the {PALETTE_BLOCKS[0]} block and the "
+                f"{PALETTE_BLOCKS[1]} block, an @media or @supports wrapper "
+                "included, a domain colour has to repeat the value one of "
+                "those blocks declares for it, because anything else reaches "
+                "the page unmeasured"
+            )
 
 
 _DOMAIN_DECLARATION = re.compile(r"--pt-dom-([a-z0-9-]+)\s*:\s*([^;}]*)")
