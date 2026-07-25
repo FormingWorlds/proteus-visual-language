@@ -38,7 +38,10 @@ CI runs `python3 tokens/check_copies.py` to verify them against
   set (see [`docs/module-colors.md`](docs/module-colors.md)). Don't remap or
   extend them without re-running `python3 tokens/check_cvd.py`, which measures
   every pair under all three dichromacies on both surface sets and fails when
-  one drops below its floor. CI runs it alongside the other token checks.
+  one drops below its floor. CI runs it alongside the other token checks. The
+  script also holds the roster: it fails when `tokens.css` declares a set of
+  domains other than the one in its `EXPECTED_DOMAINS`, so adding a domain
+  means naming it there as well.
 - **The phase gradient direction.** Always hot-left → cold-right.
 
 ## Proposing a change

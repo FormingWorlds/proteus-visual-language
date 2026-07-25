@@ -62,6 +62,25 @@ TOKENS_CSS = REPO / "tokens" / "tokens.css"
 FLOOR_DARK = 16.0
 FLOOR_LIGHT = 11.0
 
+# The domains the check expects to find. Without this the measurement shrinks
+# silently: a palette missing a colour has fewer pairs to compare, so its
+# minimum rises and the floor still clears. Anything that stops a declaration
+# from parsing (a removed line, a name change, a value moved behind var(), a
+# three-digit hex) then reads as a pass. Adding a domain means adding it here
+# too, which is the point: a new module colour has to be measured against the
+# set before it ships.
+EXPECTED_DOMAINS = frozenset(
+    {
+        "interior",
+        "outgassing",
+        "tidal",
+        "chem",
+        "atmos",
+        "stellar",
+        "accretion",
+    }
+)
+
 # Machado, Oliveira & Fernandes (2009), "A Physiologically-based Model for
 # Simulation of Color Vision Deficiency", IEEE TVCG 15(6), severity 1.0.
 # Applied to linear-light RGB, not gamma-encoded sRGB.
@@ -153,14 +172,46 @@ def parse_domain_colours(css):
     Raises
     ------
     ValueError
-        If the ``:root`` block is missing or declares no domain tokens.
+        If the ``:root`` block does not declare exactly ``EXPECTED_DOMAINS``.
     """
+    css = _strip_comments(css)
     dark = _domains_in_block(css, ":root")
-    if not dark:
-        raise ValueError("no --pt-dom-* tokens found in the :root block")
+    if set(dark) != EXPECTED_DOMAINS:
+        missing = sorted(EXPECTED_DOMAINS - set(dark))
+        extra = sorted(set(dark) - EXPECTED_DOMAINS)
+        detail = []
+        if missing:
+            detail.append(f"missing {', '.join(missing)}")
+        if extra:
+            detail.append(f"unexpected {', '.join(extra)}")
+        raise ValueError(
+            "the :root block does not declare the expected domain colours: "
+            + "; ".join(detail)
+        )
     light = dict(dark)
     light.update(_domains_in_block(css, '[data-theme="light"]'))
     return dark, light
+
+
+def _strip_comments(css):
+    """Return the CSS with ``/* ... */`` comments removed.
+
+    A commented-out declaration is not in the cascade, so it must not be
+    measured; without this a disabled domain colour still parses and reports
+    as live.
+
+    Parameters
+    ----------
+    css : str
+        Full text of ``tokens.css``.
+
+    Returns
+    -------
+    str
+        The same text with every comment replaced by a single space, so a
+        comment between two declarations cannot join them.
+    """
+    return re.sub(r"/\*.*?\*/", " ", css, flags=re.S)
 
 
 def _domains_in_block(css, selector):
@@ -209,6 +260,7 @@ def parse_named_colours(css, names):
         Name to lower-cased hex, in the order requested, omitting any name the
         block does not declare.
     """
+    css = _strip_comments(css)
     pattern = re.compile(r"(?:^|\})\s*:root\s*\{(.*?)\}", re.S | re.M)
     declared = {}
     for block in pattern.findall(css):
@@ -308,26 +360,6 @@ def pair_distances(palette):
     return rows
 
 
-def nearest_neighbour(palette, name):
-    """Return the tightest pairing of one colour against the rest of a palette.
-
-    Parameters
-    ----------
-    palette : dict of str to str
-        Domain name to hex; must contain ``name``.
-    name : str
-        The colour to measure against every other entry.
-
-    Returns
-    -------
-    tuple
-        ``(distance, other_name, dichromacy)`` for the tightest pairing.
-    """
-    rows = [r for r in pair_distances(palette) if name in (r[1], r[2])]
-    distance, a, b, label = rows[0]
-    return distance, (b if a == name else a), label
-
-
 def closest_in(value, palette):
     """Return the tightest pairing of one hex against a palette it need not join.
 
@@ -336,13 +368,20 @@ def closest_in(value, palette):
     value : str
         The hex to measure.
     palette : dict of str to str
-        Name to hex.
+        Name to hex. Must not be empty.
 
     Returns
     -------
     tuple
         ``(distance, name, dichromacy)`` for the tightest pairing.
+
+    Raises
+    ------
+    ValueError
+        If ``palette`` is empty, which has no tightest pairing to return.
     """
+    if not palette:
+        raise ValueError("closest_in needs a non-empty palette")
     rgb = hex_to_rgb(value)
     best = None
     for name, other in palette.items():
@@ -495,13 +534,19 @@ def main(argv):
     # Drop any named colour that is a domain colour on either surface. Solar
     # deep is the light-surface stellar, so measuring it against dark stellar
     # would report a domain against itself.
+    # Two names can also share one hex: --pt-danger repeats --pt-crimson. That
+    # is one colour on the page, so measuring both would print each pair twice
+    # and crowd out a genuinely tight pair in the listing. Keep whichever name
+    # comes first in CROSS_PALETTE.
     domain_hexes = {v.lower() for v in dark.values()}
     domain_hexes |= {v.lower() for v in light.values()}
-    others = {
-        name: value
-        for name, value in parse_named_colours(css, CROSS_PALETTE).items()
-        if value.lower() not in domain_hexes
-    }
+    others = {}
+    seen = set(domain_hexes)
+    for name, value in parse_named_colours(css, CROSS_PALETTE).items():
+        if value.lower() in seen:
+            continue
+        seen.add(value.lower())
+        others[name] = value
 
     print("CIE76 dE*ab on Machado 2009 full-severity simulations, linear RGB\n")
     ok_dark = report_set("dark surface", dark, FLOOR_DARK, verbose)

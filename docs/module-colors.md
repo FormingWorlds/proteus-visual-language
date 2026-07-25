@@ -79,7 +79,10 @@ identity with status or ramp colour needs a legend, whatever the hues do.
 new domain is added, pick its colour by maximising the minimum pairwise ΔE
 across all dichromacy types against the existing set, check the result on both
 surface sets, and read the cross-palette section of the output before settling
-on it.
+on it. The script keeps the roster of domains it expects and fails when
+`tokens.css` declares a different set, so a new domain has to be named in
+`EXPECTED_DOMAINS` too; that is what stops a colour going missing from passing
+as a smaller palette that clears its floor.
 
 ## In practice
 
