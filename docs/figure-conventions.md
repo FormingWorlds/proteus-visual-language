@@ -18,9 +18,12 @@ colour. Identical in every artifact, no exceptions:
 | Stellar | MORS | `#E0A32E` |
 | Accretion | Morrigan | `#A38F7A` |
 
-CVD-checked (Machado 2009, protan/deutan/tritan @ full severity): min
-pairwise ΔE = 16.4 (target ≥ 12). Still: always keep a legend or direct
-labels; never encode meaning in colour alone. Stellar is solar gold; for
+CVD-checked (Machado 2009, protan/deutan/tritan @ full severity; CIE76
+`ΔE*ab`, target ≥ 12): min pairwise ΔE = 16.4 on dark surfaces. On light
+surfaces Stellar deepens to `#C8860F`, which brings Interior against Stellar
+down to 11.4, just under the target, so give those two a label. Run
+`tokens/check_cvd.py` to reproduce either figure. Still: always keep a legend
+or direct labels; never encode meaning in colour alone. Stellar is solar gold; for
 gold fills, bars, or thin marks on light surfaces use the deepened
 `--pt-solar-deep` `#C8860F` (bright gold is 2.22:1 on white, fine for lines
 with a legend, marginal for small marks).

@@ -15,7 +15,7 @@ state. Dark-first, instrument-grade, editorial.
 - [Typography](typography.md) — Sora · Instrument Sans · Spline Sans Mono.
 - [Logo](logo.md) — the glyph, wordmark, colorways, clear space, file matrix.
 - [Motifs](motifs.md) — the glyph motif, phase band, hairline structure.
-- [Module colours](module-colors.md) — the six domain colours (CVD-checked).
+- [Module colours](module-colors.md) — the domain colours (CVD-checked).
 - [Figure conventions](figure-conventions.md) — data-viz rules for papers.
 - [Applications](applications.md) — web, docs, decks, poster, figures, community.
 

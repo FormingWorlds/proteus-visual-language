@@ -36,7 +36,9 @@ CI runs `python3 tokens/check_copies.py` to verify them against
   Space Grotesk or JetBrains Mono; the stack is a deliberate identity choice.
 - **The module domain colours.** They are stable and colour-blind-checked as a
   set (see [`docs/module-colors.md`](docs/module-colors.md)). Don't remap or
-  extend them without re-running the CVD ΔE check.
+  extend them without re-running `python3 tokens/check_cvd.py`, which measures
+  every pair under all three dichromacies on both surface sets and fails when
+  one drops below its floor. CI runs it alongside the other token checks.
 - **The phase gradient direction.** Always hot-left → cold-right.
 
 ## Proposing a change

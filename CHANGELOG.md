@@ -11,8 +11,12 @@ it.
 ## [1.2.0] - 2026-07-25
 
 ### Added
-- **Accretion domain colour**: clay (`--pt-dom-accretion` `#A38F7A`) for Morrigan and the accretion domain, taking the module palette to seven. It keeps a minimum ΔE of 29.6 against the other six under protanopia, deuteranopia, and tritanopia (Machado 2009, full severity), comfortably above the palette's 16.4 floor, and holds on both the dark and the light surface set. The intuitive candidates all land under that floor: sienna at ΔE 4.1 and ochre at 8.4 against Outgassing and Interior under deuteranopia, olive at 7.5 and a forest green at 10.6 against Interior under protanopia, a teal at 7.8 against Chemistry under tritanopia, and even the brand green Verdant at 15.7 against Atmosphere under tritanopia. The red-to-blue ramp is dense enough that a low-chroma warm neutral is what it leaves room for.
+- **Accretion domain colour**: clay (`--pt-dom-accretion` `#A38F7A`) for Morrigan and the accretion domain, taking the module palette to seven. It keeps a minimum ΔE of 29.6 against the other six under protanopia, deuteranopia, and tritanopia (Machado 2009 at full severity, CIE76 `ΔE*ab`), comfortably above the 16.4 floor of the dark surface set, and holds the same figure on the light set. The intuitive candidates all land below that floor, from burnt sienna at 4.8 up to olive at 11.2, and even the brand green Verdant reaches only 15.7 against Atmosphere under tritanopia. The red-to-blue ramp is dense enough that a low-chroma warm neutral is what it leaves room for.
 - proteus-mpl gains `DOMAINS["accretion"]` and the Beamer theme gains `ProteusDomAccretion`, so the colour is available in figures and decks alongside the CSS token.
+- `tokens/check_cvd.py`, run in CI alongside the other token checks, measures every domain pair under all three dichromacies on both surface sets and fails when one drops below its floor. The docs asked contributors to re-run the CVD check before remapping or extending the domain colours; this is that check. It reads the hexes from `tokens.css`, names the metric, and lists the rejected accretion candidates with the hex each figure was measured on, so the quoted numbers can be reproduced rather than taken on trust.
+
+### Changed
+- The colour-blind safety notes in `docs/module-colors.md` and `docs/figure-conventions.md` now name the difference metric and report both surface sets. The 16.4 minimum describes the dark set; on the light set, where Stellar deepens to `#C8860F` for contrast on paper, Interior against Stellar measures 11.4 under deuteranopia, just under the ≥ 12 target. Closing it would mean recolouring a module identity across the ecosystem, so it is documented as a known limit with the advice to label those two series in light-surface figures.
 
 ## [1.1.2] - 2026-07-14
 
@@ -71,6 +75,7 @@ First public release of the **Thermocline** visual language.
   identity badges, the coupler diagram language, and a sticker sheet.
 - **Brand guide**: interactive (`site/`) + per-topic Markdown (`docs/`).
 
+[1.2.0]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.2.0
 [1.1.2]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.1.2
 [1.1.1]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.1.1
 [1.1.0]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.1.0
