@@ -8,6 +8,11 @@ on breaking changes, such as removing or renaming a token. Git tags carry a
 `v` prefix (`v1.0.0`); the published packages use the same number without
 it.
 
+## [Unreleased]
+
+### Fixed
+- `tokens/check_cvd.py` ends a quoted value at the end of its line, the way CSS ends a string. It held one open until the next quote anywhere in the file, so an unterminated string hid every rule between the two from the check while a browser read them normally. Behind such a string an `@property` registration could hand every element under the root a domain colour that was never measured, an escaped identifier could slip past the guard that refuses escapes, and a pair of comment markers written as string values could blank out a live declaration. A backslash before the newline still carries a string across two lines, and a form feed ends a string as a line feed does. The self-test grows to seventy-four cases, twenty-two valid CSS the check has to keep reading and fifty-two it has to catch; seven of them pin this rule across the three passes that read the file's structure, four on where a string ends and three on a string carried across two lines, one for each pass. Neither published package carries this check, so nothing needs republishing.
+
 ## [1.2.0] - 2026-07-25
 
 ### Added
@@ -78,6 +83,7 @@ First public release of the **Thermocline** visual language.
   identity badges, the coupler diagram language, and a sticker sheet.
 - **Brand guide**: interactive (`site/`) + per-topic Markdown (`docs/`).
 
+[Unreleased]: https://github.com/FormingWorlds/proteus-visual-language/compare/v1.2.0...main
 [1.2.0]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.2.0
 [1.1.2]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.1.2
 [1.1.1]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.1.1

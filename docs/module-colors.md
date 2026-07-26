@@ -95,9 +95,11 @@ a new accent is measured only once it is added there. The script fails on
 either surface block when a domain is written in a form it
 cannot read, a `var()` reference or a three-digit hex included. It refuses the
 file outright when any identifier is spelled with a backslash escape, since a
-browser resolves the escape while this reader matches names literally. It reads
-the top-level blocks alone, so a value set inside a media query or a cascade layer
-cannot stand in for the one the palette ships. Anywhere outside those two
+browser resolves the escape while this reader matches names literally. An
+unterminated quoted value ends at the end of its line, the way CSS ends one, so it
+costs only the declaration it sits in and the rules below it are still read. It
+reads the top-level blocks alone, so a value set inside a media query or a cascade
+layer cannot stand in for the one the palette ships. Anywhere outside those two
 blocks, a domain colour has to repeat the value one of them declares for that
 domain: custom properties inherit, so a retint written on a descendant of the
 root, on the root at a higher specificity than `:root`, or inside an `@media` or

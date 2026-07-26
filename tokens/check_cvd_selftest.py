@@ -611,6 +611,73 @@ CASES = [
             '--pt-open: "/*"; --pt-dom-atmos: %s; --pt-close: "*/";' % INTERIOR,
         ),
     ),
+    # A string ends at a raw newline: a browser drops the declaration it sits in
+    # and reads on. A reader that holds the string open to the next quote in the
+    # file reads none of what lies between, so a registration, an escape
+    # spelling one, and the quote parity that decides whether the markers in the
+    # case above open a comment each reach the page unread.
+    (
+        "registration hidden behind an unterminated string",
+        "fail",
+        UNMEASURED_INITIAL,
+        append(
+            ':root { --x: "oops\n}\n'
+            '@property --pt-dom-atmos { syntax: "<color>"; '
+            "inherits: false; initial-value: %s; }" % INTERIOR
+        ),
+    ),
+    (
+        "escaped registration hidden behind an unterminated string",
+        "fail",
+        ESCAPED,
+        append(
+            ':root { --x: "oops\n}\n'
+            '@\\70 roperty --pt-dom-atmos { syntax: "<color>"; '
+            "inherits: false; initial-value: %s; }" % INTERIOR
+        ),
+    ),
+    (
+        "collision behind comment markers below an unterminated string",
+        "fail",
+        BELOW_FLOOR,
+        append(
+            ':root { --x: "oops\n}\n'
+            ':root { --pt-open: "/*"; --pt-dom-atmos: %s; '
+            '--pt-close: "*/"; }' % INTERIOR
+        ),
+    ),
+    # A form feed ends a string as a line feed does, and unlike a carriage
+    # return it survives the newline folding that reading the file applies, so
+    # it is the one other spelling that can reach the walk.
+    (
+        "collision below a string ended by a form feed",
+        "fail",
+        BELOW_FLOOR,
+        append(':root { --x: "oops\f}\n:root { --pt-dom-atmos: %s; }' % INTERIOR),
+    ),
+    # A backslash before a newline escapes it, which is how CSS writes one
+    # string across two lines, so the string carries on and everything inside it
+    # stays content. The three passes each read the string boundary for
+    # something different, an escape, a comment opener and a brace, so each one
+    # gets the character it would misread if the string stopped at the newline.
+    (
+        "escape carried across two lines by a backslash",
+        "pass",
+        SEPARABLE,
+        replace(ATMOS, '--pt-quote: "for\\\nwa\\72 d"; ' + ATMOS),
+    ),
+    (
+        "comment opener carried across two lines by a backslash",
+        "pass",
+        SEPARABLE,
+        replace(ATMOS, '--pt-quote: "for\\\n/*"; ' + ATMOS + ' --pt-close: "*/";'),
+    ),
+    (
+        "brace carried across two lines by a backslash",
+        "pass",
+        SEPARABLE,
+        replace(ATMOS, '--pt-quote: "for\\\n}"; ' + ATMOS),
+    ),
     # The floors, on each surface set.
     (
         "accretion moved onto a rejected candidate",

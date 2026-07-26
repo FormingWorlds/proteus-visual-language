@@ -226,6 +226,14 @@ def parse_domain_colours(css):
     return dark, light
 
 
+# The code points CSS ends a string at. A backslash before one escapes it, so a
+# string still carries across two lines the way CSS writes one. Reading the file
+# folds carriage returns into line feeds and leaves form feeds alone, so a form
+# feed is the only one besides a line feed that reaches the walks below; the
+# carriage return is listed so they read the same text either way.
+_STRING_NEWLINES = "\n\r\f"
+
+
 def _reject_escapes(css):
     """Refuse a stylesheet that spells an identifier with a CSS escape.
 
@@ -238,6 +246,9 @@ def _reject_escapes(css):
     reader honest about what it can read, the same way it refuses a colour
     written as a ``var()`` reference. The palette needs no escapes, so nothing
     a designer would write is turned away.
+
+    A string ends at a raw newline here too, so an escape below an unterminated
+    one is still refused rather than read as string content.
 
     Parameters
     ----------
@@ -258,7 +269,7 @@ def _reject_escapes(css):
             if char == "\\":
                 index += 2
                 continue
-            if char == quote:
+            if char == quote or char in _STRING_NEWLINES:
                 quote = None
         elif char in ('"', "'"):
             quote = char
@@ -411,7 +422,10 @@ def _strip_comments(css):
 
     Comment markers inside a quoted value are content, not syntax. The walk
     tracks quoting so a string holding ``/*`` cannot open a comment that then
-    swallows the live declarations after it.
+    swallows the live declarations after it. A string ends at a raw newline,
+    the way CSS ends one, so an unterminated string closes on its own line
+    rather than running to the next quote in the file and hiding everything
+    between the two.
 
     Parameters
     ----------
@@ -436,7 +450,7 @@ def _strip_comments(css):
                 out.append(css[index + 1])
                 index += 2
                 continue
-            if char == quote:
+            if char == quote or char in _STRING_NEWLINES:
                 quote = None
             index += 1
             continue
@@ -592,7 +606,10 @@ def _top_level_rules(css):
     from a rule's own braces: one inside a quoted string, one inside
     parentheses such as a ``url()`` value, and one inside a custom property's
     value, where the syntax permits an arbitrary token stream. Miscounting any
-    of them would shift every following rule to the wrong depth.
+    of them would shift every following rule to the wrong depth. A string ends
+    at a raw newline, the way CSS ends one, so an unterminated string costs at
+    most the declaration it sits in and cannot carry the brace counter past the
+    rules below it.
 
     Parameters
     ----------
@@ -626,7 +643,7 @@ def _top_level_rules(css):
             if char == "\\":
                 index += 2
                 continue
-            if char == quote:
+            if char == quote or char in _STRING_NEWLINES:
                 quote = None
             index += 1
             continue
