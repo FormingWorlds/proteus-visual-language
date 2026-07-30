@@ -8,7 +8,7 @@ on breaking changes, such as removing or renaming a token. Git tags carry a
 `v` prefix (`v1.0.0`); the published packages use the same number without
 it.
 
-## [Unreleased]
+## [1.3.0] - 2026-07-30
 
 ### Added
 - The docs drop-in `templates/docs/extra.css` carries the module domain colours, the nine phase-ramp stops, the four status colours, and the three accents (`--pt-solar`, `--pt-solar-deep`, `--pt-verdant`), so a documentation site can colour a module, a ramp, a status, or a highlight without copying hexes out of `tokens.css` by hand. Consumers were already doing that copying: PROTEUS had twenty custom properties transcribed into its own copy of the drop-in, which forked that copy from this one and broke the plain-copy sync the file exists to provide. The values are the ones `tokens.css` declares, and `check_copies.py` holds the drop-in to them in both directions, so a stale hex here fails the build rather than reaching a site.
