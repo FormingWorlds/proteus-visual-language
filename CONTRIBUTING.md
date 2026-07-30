@@ -65,8 +65,11 @@ series, and the major version bumps on a new design generation or a breaking
 change). The tag triggers the release workflow, which publishes
 `@formingworlds/proteus-tokens` to npm and `proteus-mpl` to PyPI. Before
 tagging, set the same version without the `v` prefix (e.g. `1.0.0`) in
-`tokens/package.json` and `figures/proteus-mpl/pyproject.toml`, and bump
-`CHANGELOG.md` in the same PR. CI runs `tokens/check_versions.py` on pull
+`tokens/package.json` and `figures/proteus-mpl/pyproject.toml`, bump
+`CHANGELOG.md`, and update the `vX.Y` shown to readers in `site/index.html`
+(title and banner), the `README.md` footer, `talks/beamer/beamerthemeproteus.sty`
+(header comment and `\ProvidesPackage` date), `templates/web/site.css`, and the
+`tokens/tokens.css` header, all in the same PR. CI runs `tokens/check_versions.py` on pull
 requests that touch these files, and the release workflow runs it again as a
 preflight, so a version mismatch stops the release before either package
 publishes.

@@ -8,6 +8,11 @@ on breaking changes, such as removing or renaming a token. Git tags carry a
 `v` prefix (`v1.0.0`); the published packages use the same number without
 it.
 
+## [Unreleased]
+
+### Fixed
+- The version shown to readers now says 1.3 rather than 1.2. It is written out in seven places across five artifacts, the brand-guide page title and banner, the README footer, the Beamer theme header and its `\ProvidesPackage` line, the web chrome, and the token file header; nothing generated them, so cutting 1.3.0 left all seven a release behind and the published brand guide announced a version that was no longer current. `tokens/check_versions.py` reads each of them against the package version and fails when any disagrees, so the next release cannot ship with them stale, and the release steps in `CONTRIBUTING.md` list them. The check names every artifact it could not find the version in rather than the first, so one run says everything that needs editing. `README.md` joins the paths that trigger the token workflow, since it carries one of those strings.
+
 ## [1.3.0] - 2026-07-30
 
 ### Added
