@@ -34,6 +34,12 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from check_cvd import (  # noqa: E402
+    _normalise_selector,
+    _split_selector_list,
+    _strip_comments,
+    _top_level_rules,
+)
 from check_sync import ParseError, parse_css  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
@@ -158,6 +164,29 @@ EXTRA_PT = {
     "pt-void",
     "pt-basalt",
     "pt-line-d",
+    "pt-solar",
+    "pt-solar-deep",
+    "pt-verdant",
+    "pt-dom-interior",
+    "pt-dom-outgassing",
+    "pt-dom-tidal",
+    "pt-dom-chem",
+    "pt-dom-atmos",
+    "pt-dom-stellar",
+    "pt-dom-accretion",
+    "pt-p1",
+    "pt-p2",
+    "pt-p3",
+    "pt-p4",
+    "pt-p5",
+    "pt-p6",
+    "pt-p7",
+    "pt-p8",
+    "pt-p9",
+    "pt-positive",
+    "pt-warning",
+    "pt-danger",
+    "pt-info",
 }
 
 # Light remap: dark-named token -> the light counterpart it must equal.
@@ -202,7 +231,7 @@ MEMBERSHIP = [
     (
         "templates/docs/extra.css",
         {"#04060A", "#22303B", "#2A343D", "#B8C6D2", "#C6D0D9", "#E9EEF3"},
-        30,
+        50,
     ),
     ("templates/docs/docs.css", {"#04060A", "#C9A26B"}, 3),
     ("templates/web/site.css", {"#C93321"}, 1),
@@ -297,6 +326,24 @@ def split_decls(block, where):
 def check_extra_css(tokens):
     """Verify the ``--pt-*`` re-declarations in the docs drop-in stylesheet.
 
+    The stylesheet declares the palette once in ``:root`` at the base token
+    values, and the ``default`` scheme block re-declares the few tokens whose
+    value differs on a light surface. Each block is read separately, because
+    reading the file flat would compare a scheme value against the base token
+    it departs from on purpose. A light re-declaration is held to the
+    counterpart named in ``LIGHT_PAIRS``, the rule the light remap inside
+    ``tokens.css`` already answers to.
+
+    The text is walked with the same reader ``check_cvd.py`` uses, so a brace
+    inside a string or a ``url()`` cannot shift the block structure, and a
+    rule nested inside another is refused rather than flattened into the block
+    around it. Only ``:root`` and the ``default`` scheme block are read, so a
+    ``--pt-*`` declared anywhere else, including inside an at-rule or a
+    selector list that also targets another element, is reported rather than
+    measured. ``:root`` must come first: the two select at equal specificity,
+    so a light block written above the palette would lose to it in a browser
+    while still reading as shipped here.
+
     Parameters
     ----------
     tokens : dict
@@ -305,22 +352,81 @@ def check_extra_css(tokens):
     Returns
     -------
     list of str
-        One message per mismatched, unknown, or missing declaration.
+        One message per mismatched, unknown, misplaced, or missing
+        declaration, or per construct the reader refuses.
     """
     path = REPO / "templates" / "docs" / "extra.css"
-    text = re.sub(r"/\*.*?\*/", "", path.read_text(encoding="utf-8"), flags=re.S)
-    found = dict(re.findall(r"--(pt-[A-Za-z0-9-]+)\s*:\s*([^;]+);", text))
+    text = _strip_comments(path.read_text(encoding="utf-8"))
     problems = []
-    for name in sorted(EXTRA_PT - found.keys()):
+    base_found, light_found = {}, {}
+    base_at = light_at = None
+    for order, (prelude, body, nested) in enumerate(_top_level_rules(text)):
+        if "--pt-" not in body:
+            continue
+        selector = " ".join(prelude.split())
+        pairs, block_problems = split_decls(body, f"{path.name} '{selector}'")
+        problems += block_problems
+        decls = [(name, value) for name, value in pairs if name.startswith("pt-")]
+        if not decls:
+            continue
+        if nested:
+            problems.append(
+                f"{path.name}: '{selector}' contains a nested rule; declare tokens "
+                "in a rule of their own"
+            )
+            continue
+        parts = [_normalise_selector(part) for part in _split_selector_list(prelude)]
+        if parts == [":root"]:
+            base_found.update(decls)
+            base_at = order if base_at is None else base_at
+        elif parts == ['[data-md-color-scheme="default"]']:
+            light_found.update(decls)
+            light_at = order if light_at is None else light_at
+        else:
+            for name, _ in decls:
+                problems.append(
+                    f"{path.name}: '--{name}' is declared under '{selector}'; declare "
+                    "it in :root or in the default-scheme block, and in no other rule"
+                )
+    if problems:
+        return problems
+    if not base_found:
+        problems.append(
+            f"{path.name}: the :root block was not found; extraction broken?"
+        )
+        return problems
+    if light_at is not None and base_at is not None and light_at < base_at:
+        problems.append(
+            f"{path.name}: the default-scheme block is written before :root, so its "
+            "overrides lose to the base palette at equal specificity"
+        )
+    for name in sorted(EXTRA_PT - base_found.keys()):
         problems.append(f"{path.name}: expected declaration '--{name}' is missing")
-    for name, value in sorted(found.items()):
+    for name, value in sorted(base_found.items()):
         if name not in tokens:
             problems.append(
                 f"{path.name}: declares '--{name}', which is not a token in tokens.css"
             )
         elif norm(value) != norm(tokens[name]):
             problems.append(
-                f"{path.name}: '--{name}' is {value.strip()}, tokens.css has {tokens[name]}"
+                f"{path.name}: '--{name}' is {value}, tokens.css has {tokens[name]}"
+            )
+    for name, value in sorted(light_found.items()):
+        counterpart = LIGHT_PAIRS.get(name)
+        if name not in base_found:
+            problems.append(
+                f"{path.name} light block: '--{name}' is re-declared but never "
+                "declared in :root"
+            )
+        elif counterpart is None:
+            problems.append(
+                f"{path.name} light block: '--{name}' is not classified in "
+                "check_copies.py; add it to LIGHT_PAIRS"
+            )
+        elif norm(value) != norm(tokens[counterpart]):
+            problems.append(
+                f"{path.name} light block: '--{name}' is {value}, but its counterpart "
+                f"'{counterpart}' is {tokens[counterpart]}"
             )
     return problems
 

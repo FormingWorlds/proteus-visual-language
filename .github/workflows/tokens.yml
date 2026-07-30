@@ -49,6 +49,8 @@ jobs:
         run: python3 tokens/check_sync.py
       - name: Verify hand-maintained token copies match tokens.css
         run: python3 tokens/check_copies.py
+      - name: Verify the docs drop-in reader behaves as pinned
+        run: python3 tokens/check_copies_selftest.py
       - name: Verify the npm and PyPI packages share one version
         run: python3 tokens/check_versions.py
       - name: Verify the domain colours stay separable under colour blindness
