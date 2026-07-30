@@ -26,7 +26,7 @@ Forming Worlds Lab. You may not use them:
 
 You *may* use them to refer to the PROTEUS Framework itself, in documentation,
 talks, and publications that build on or cite PROTEUS. When in doubt, ask:
-proteus_dev@formingworlds.space.
+dev@proteus-framework.org.
 
 ## Fonts
 

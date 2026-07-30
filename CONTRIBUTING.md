@@ -71,4 +71,4 @@ requests that touch these files, and the release workflow runs it again as a
 preflight, so a version mismatch stops the release before either package
 publishes.
 
-Questions: proteus_dev@formingworlds.space
+Questions: dev@proteus-framework.org

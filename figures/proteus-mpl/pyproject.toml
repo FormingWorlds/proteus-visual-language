@@ -9,7 +9,7 @@ description = "PROTEUS Thermocline matplotlib theme: brand color cycles, phase c
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "Apache-2.0" }
-authors = [{ name = "PROTEUS collaboration", email = "proteus_dev@formingworlds.space" }]
+authors = [{ name = "PROTEUS collaboration", email = "dev@proteus-framework.org" }]
 dependencies = ["matplotlib>=3.5"]
 keywords = ["matplotlib", "style", "theme", "PROTEUS", "planetary-science"]
 classifiers = [
