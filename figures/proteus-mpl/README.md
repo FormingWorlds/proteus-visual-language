@@ -58,6 +58,37 @@ proteus_mpl.use()           # light: Paper background — papers, light slides
 
 Regenerate with `python examples/cycle.py`.
 
+## Validation plots
+
+`proteus_mpl.validation.save` writes one validation plot as a light and a dark file, with the same bytes each time the same figure is drawn, so the files can be committed next to the docs:
+
+```python
+from proteus_mpl.validation import save
+
+def make_figure():
+    fig, ax = plt.subplots()
+    ax.plot(t, model, label="model")
+    ax.plot(t_ref, ref, "o", label="reference")
+    return fig
+
+save(make_figure, "melt_fraction", "docs/assets/validation")              # melt_fraction.svg, melt_fraction_dark.svg
+save(make_heatmap, "phase_map", "docs/assets/validation", kind="map")     # phase_map.avif, phase_map_dark.avif
+```
+
+`make_figure` is called once per theme, so it must create the figure itself. Line and point plots (`kind="line"`) are SVG with no date and a fixed hash salt; maps and heatmaps (`kind="map"`) are AVIF at quality 80 and need Pillow with AVIF support (`pip install "proteus-mpl[validation]"`). A file above 40 000 B (`validation.MAX_BYTES`) is refused with its name and size, and nothing is written; a dense field drawn with `rasterized=True` can stay in an SVG while the file is under the cap. The test id and the command that makes the plot again go into the file metadata.
+
+The package registers a pytest plugin. A test asks for the `validation_plot` fixture and calls it with the factory and a name:
+
+```python
+@pytest.mark.reference_pinned
+def test_melt_fraction(validation_plot):
+    t, model = run_case()
+    assert np.allclose(model, ref, rtol=1e-3)
+    validation_plot(lambda: plot_case(t, model), "melt_fraction")
+```
+
+Without an option the fixture does nothing, so the test only asserts. `pytest -m reference_pinned --validation-plots` writes every plot to `docs/assets/validation`; `--validation-plots=DIR` writes to another folder. Put test paths before a bare `--validation-plots`, since a word right after it is read as the folder.
+
 ## Conventions
 
 - Size figures at final printed size (A&A column ≈ 3.5 in) and keep default

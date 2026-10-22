@@ -1,0 +1,36 @@
+name: Test proteus-mpl
+
+on:
+  push:
+    paths:
+      - "figures/proteus-mpl/**"
+      - ".github/workflows/proteus-mpl-tests.yml"
+  pull_request:
+    paths:
+      - "figures/proteus-mpl/**"
+      - ".github/workflows/proteus-mpl-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install the package with its test extra
+        run: python -m pip install "./figures/proteus-mpl[test]" coverage
+      - name: Check that Pillow can write AVIF
+        run: python -c "from PIL import features; assert features.check('avif'), 'Pillow without AVIF'"
+      - name: Run the tests with coverage
+        working-directory: figures/proteus-mpl
+        run: |
+          python -m coverage run --branch --source=proteus_mpl -m pytest tests -q
+          python -m coverage report -m --fail-under=90

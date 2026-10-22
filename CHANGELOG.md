@@ -10,6 +10,13 @@ it.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-22
+
+### Added
+- `proteus_mpl.validation.save(fig_factory, name, outdir, kind="line"|"map")` writes a validation plot as a light and a dark file, `<name>.svg` and `<name>_dark.svg` for a line or point plot, `<name>.avif` and `<name>_dark.avif` for a map or heatmap. The factory is called once under `use("light")` and once under `use("dark")` inside an rc context, so the caller's rcParams are the same after the call. The SVG carries no date and a fixed hash salt, and the AVIF is written by Pillow at quality 80, so the same figure gives the same bytes and the files can be committed. A file above 40 000 B (`validation.MAX_BYTES`) is refused with its name and size before either file is written; a vector pcolormesh of 200 x 200 cells is several megabytes as SVG and is refused, while the same field with `rasterized=True` fits. The test id and the command that makes the plot again go into the SVG description and the AVIF XMP packet. The AVIF writer needs Pillow with AVIF support, the `validation` extra.
+- A pytest plugin, registered through the `pytest11` entry point, with the option `--validation-plots[=DIR]` (default `docs/assets/validation`) and the fixture `validation_plot(fig_factory, name, kind="line")`. Without the option the fixture returns without calling the factory, so a nightly run asserts its tolerances and writes nothing. A test path that the bare option has read as its folder is refused with a usage error.
+- Tests for the package under `figures/proteus-mpl/tests`, run in CI on every change to the package.
+
 ### Fixed
 - The version shown to readers now says 1.3 rather than 1.2. It is written out in seven places across five artifacts, the brand-guide page title and banner, the README footer, the Beamer theme header and its `\ProvidesPackage` line, the web chrome, and the token file header; nothing generated them, so cutting 1.3.0 left all seven a release behind and the published brand guide announced a version that was no longer current. `tokens/check_versions.py` reads each of them against the package version and fails when any disagrees, so the next release cannot ship with them stale, and the release steps in `CONTRIBUTING.md` list them. The check names every artifact it could not find the version in rather than the first, so one run says everything that needs editing. `README.md` joins the paths that trigger the token workflow, since it carries one of those strings.
 
