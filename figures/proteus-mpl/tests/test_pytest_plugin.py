@@ -257,7 +257,9 @@ def test_rerun_of_one_test_may_reuse_its_names(pytester, option):
     result.assert_outcomes(passed=1)
     result = pytester.runpytest("test_flaky.py", *option)
     result.assert_outcomes(passed=1, failed=1)
-    result.stdout.fnmatch_lines(["*test_other_test_same_name*used twice*"])
+    result.stdout.fnmatch_lines(
+        ["*flaky: used twice in this session, first in test_flaky.py::test_flaky;*"]
+    )
 
 
 @pytest.mark.parametrize("word", ["test_case.py", "test_case.py::test_case"])

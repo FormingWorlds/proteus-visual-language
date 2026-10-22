@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 DEFAULT_DIR = "docs/assets/validation"
-_SEEN = pytest.StashKey[set]()
+_SEEN = pytest.StashKey[dict]()
 
 
 def pytest_addoption(parser):
@@ -44,10 +44,16 @@ def pytest_configure(config):
     ]
     if ("--validation-plots", outdir) in zip(args, args[1:]):
         raise pytest.UsageError(
-            f"--validation-plots read {outdir!r} as its folder; write "
-            "--validation-plots=DIR, or put the option after the test paths"
+            f"--validation-plots read {outdir!r} as its folder; write --validation-plots=DIR, "
+            "also in addopts and PYTEST_ADDOPTS, or put the option after the test paths"
         )
-    config.stash[_SEEN] = set()
+    if outdir and (
+        "::" in outdir
+        or outdir.endswith(".py")
+        or Path(config.invocation_params.dir, outdir).is_file()
+    ):
+        raise pytest.UsageError(f"--validation-plots={outdir!r} is a test path, not a folder")
+    config.stash[_SEEN] = {}
 
 
 @pytest.fixture
@@ -55,22 +61,30 @@ def validation_plot(request):
     """Return ``plot(fig_factory, name, kind="line")``, which saves a validation plot pair.
 
     The call returns the written paths, or an empty list without
-    ``--validation-plots``; `fig_factory` is then not called. A name used
-    twice for one kind in a session raises ValueError, with or without the option.
+    ``--validation-plots``; `fig_factory` is then not called. A name used twice
+    for one kind in a session raises ValueError, with or without the option; a
+    rerun of the same test may use its names again.
     """
     from .validation import check_args, save
 
     config = request.config
     outdir = config.getoption("validation_plots")
+    nodeid = request.node.nodeid
+    seen = config.stash[_SEEN]
+    for key in [key for key, owner in seen.items() if owner == nodeid]:
+        del seen[key]
 
     def plot(fig_factory, name, kind="line"):
         check_args(name, kind)
-        if (name.lower(), kind) in config.stash[_SEEN]:
-            raise ValueError(f"{name}: used twice in this session; give each plot its own name")
-        config.stash[_SEEN].add((name.lower(), kind))
+        key = (name.lower(), kind)
+        if key in seen:
+            raise ValueError(
+                f"{name}: used twice in this session, first in {seen[key]}; "
+                "give each plot its own name"
+            )
+        seen[key] = nodeid
         if outdir is None:
             return []
-        nodeid = request.node.nodeid
         return save(
             fig_factory,
             name,

@@ -87,7 +87,7 @@ def test_melt_fraction(validation_plot):
     validation_plot(lambda: plot_case(t, model), "melt_fraction")
 ```
 
-Without the option the fixture checks its arguments and writes nothing, so the test only asserts. `pytest -m reference_pinned --validation-plots` writes every plot to `docs/assets/validation` under the pytest rootdir; `--validation-plots=DIR` writes to another folder, relative to the rootdir. A word right after a bare `--validation-plots`, also from `addopts`, is refused, so put test paths first. A plot name used twice for one kind in a session is refused, with or without the option. The `reference_pinned` marker belongs to the repository that runs the tests, which registers it in its pytest configuration.
+Without the option the fixture checks its arguments and writes nothing, so the test only asserts. `pytest -m reference_pinned --validation-plots` writes every plot to `docs/assets/validation` under the pytest rootdir; `--validation-plots=DIR` writes to another folder, relative to the rootdir. A word that a bare `--validation-plots` reads as its folder is refused, so write `--validation-plots=DIR` (always in `addopts` and `PYTEST_ADDOPTS`) or put the option after the test paths. A plot name used twice for one kind in a session is refused, with or without the option, so a parametrized test needs one name per parameter, such as `f"case_{param}"`; a rerun of the same test may use its names again. The `reference_pinned` marker belongs to the repository that runs the tests, which registers it in its pytest configuration.
 
 ## Conventions
 
