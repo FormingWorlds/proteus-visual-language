@@ -81,3 +81,10 @@ def test_option_value_naming_a_file_is_refused(tmp_path, value):
         pytest_plugin.pytest_configure(
             fake_config(value, tmp_path, args=(f"--validation-plots={value}",))
         )
+
+
+@pytest.mark.parametrize("value", ["numpy", "out/copy", "plots"])
+def test_folder_name_ending_in_py_without_a_dot_is_accepted(tmp_path, value):
+    config = fake_config(value, tmp_path, args=(f"--validation-plots={value}",))
+    pytest_plugin.pytest_configure(config)
+    assert config.stash == {pytest_plugin._SEEN: {}}

@@ -141,6 +141,14 @@ def test_stamp_is_written_and_stays_deterministic(tmp_path, kind, factory):
         assert data == b.read_bytes()
 
 
+def test_avif_stamp_is_the_xmp_description(tmp_path):
+    from PIL import Image
+
+    light, _ = save(map_figure, "case", tmp_path, kind="map", test_id="t::x", command="c")
+    xmp = Image.open(light).info["xmp"]
+    assert b"<dc:description>test: t::x; command: c</dc:description>" in xmp
+
+
 def test_stamp_escapes_markup(tmp_path):
     light, _ = save(line_figure, "case", tmp_path, kind="map", test_id="t[a<b&c]")
     assert b"t[a&lt;b&amp;c]" in light.read_bytes()
@@ -243,9 +251,10 @@ def test_failing_factory_leaves_no_open_figure(tmp_path, returns_axes):
     assert plt.get_fignums() == before
 
 
-def test_hyphen_in_name_is_allowed(tmp_path):
-    paths = save(line_figure, "case-1", tmp_path)
-    assert [p.name for p in paths] == ["case-1.svg", "case-1_dark.svg"]
+@pytest.mark.parametrize("name", ["case-1", "v1.5"])
+def test_hyphen_and_dot_in_name_are_allowed(tmp_path, name):
+    paths = save(line_figure, name, tmp_path)
+    assert [p.name for p in paths] == [f"{name}.svg", f"{name}_dark.svg"]
 
 
 def test_stamp_joins_test_and_command_with_a_semicolon(tmp_path):
