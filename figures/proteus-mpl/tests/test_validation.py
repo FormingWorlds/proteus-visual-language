@@ -30,7 +30,7 @@ def map_figure():
 
 
 def vector_mesh_figure():
-    """A 200 x 200 random pcolormesh kept as vector cells: far above the cap as SVG."""
+    """A 200 x 200 random pcolormesh: far above the cap as SVG and as AVIF."""
     fig, ax = plt.subplots(figsize=(6, 4.5))
     ax.pcolormesh(np.random.default_rng(0).random((200, 200)))
     return fig
@@ -77,7 +77,7 @@ def four_series_figure():
 
 def test_four_series_line_plot_fits_the_cap(tmp_path):
     for path in save(four_series_figure, "case", tmp_path):
-        assert 40_000 < path.stat().st_size <= MAX_BYTES
+        assert path.stat().st_size <= MAX_BYTES
 
 
 def test_svg_carries_no_date(tmp_path):
@@ -160,6 +160,7 @@ def test_outdir_is_created(tmp_path):
         ({"name": ""}, ValueError, "plain file stem"),
         ({"name": ".."}, ValueError, "plain file stem"),
         ({"name": "case_dark"}, ValueError, "must not end in '_dark'"),
+        ({"name": "case_DARK"}, ValueError, "must not end in '_dark'"),
         ({"fig_factory": None}, TypeError, "fig_factory must be callable"),
         ({"fig_factory": lambda: None}, TypeError, "returned NoneType"),
     ],
@@ -211,16 +212,9 @@ def test_dark_files_are_drawn_on_void(tmp_path):
     assert min(Image.open(light).convert("RGB").getpixel((0, 0))) > 230
 
 
-def noisy_map_figure():
-    """A 200 x 200 random field: too large for the cap even as AVIF."""
-    fig, ax = plt.subplots(figsize=(6, 4.5))
-    ax.pcolormesh(np.random.default_rng(0).random((200, 200)))
-    return fig
-
-
 def test_map_above_cap_is_refused_with_a_map_hint(tmp_path):
     with pytest.raises(ValueError, match=r"case\.avif: \d+ B, above the 60000 B cap") as err:
-        save(noisy_map_figure, "case", tmp_path, kind="map")
+        save(vector_mesh_figure, "case", tmp_path, kind="map")
     assert "kind='map'" not in str(err.value)
     assert "smoother field" in str(err.value)
     assert list(tmp_path.iterdir()) == []

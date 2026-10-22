@@ -35,18 +35,17 @@ def test_bad_kind(validation_plot):
 
 def test_same_name_twice(validation_plot):
     first = validation_plot(factory, "twice")
-    if not first:
-        return
+    before = first[0].read_bytes() if first else None
 
     def other():
         fig = factory()
         fig.axes[0].plot([0, 2], [0, 2])
         return fig
 
-    before = first[0].read_bytes()
-    with pytest.raises(ValueError, match="written twice in this session"):
-        validation_plot(other, "twice")
-    assert first[0].read_bytes() == before
+    with pytest.raises(ValueError, match="used twice in this session"):
+        validation_plot(other, "Twice")
+    if first:
+        assert first[0].read_bytes() == before
 
 
 def test_factory_not_called_without_option(validation_plot, request):
@@ -65,12 +64,12 @@ def case(pytester):
 
 
 def files(root):
-    """Every file under root except test sources and caches."""
+    """Every file under root except test sources, ini files and caches."""
     return sorted(
         str(p.relative_to(root))
         for p in root.rglob("*")
         if p.is_file()
-        and p.suffix != ".py"
+        and p.suffix not in (".py", ".ini")
         and not any(
             part.startswith(".") or part == "__pycache__" for part in p.relative_to(root).parts
         )
@@ -150,3 +149,49 @@ def test_stamp_quotes_a_node_id_with_a_space(case):
 def test_same_name_twice_in_a_session_is_refused(case):
     result = case.runpytest("test_case.py::test_same_name_twice", "--validation-plots")
     result.assert_outcomes(passed=1)
+
+
+def test_map_kind_writes_avif(case):
+    case.runpytest("test_case.py::test_map", "--validation-plots").assert_outcomes(passed=1)
+    assert files(case.path) == [
+        "docs/assets/validation/field.avif",
+        "docs/assets/validation/field_dark.avif",
+    ]
+
+
+def test_relative_dir_resolves_against_rootdir(case):
+    case.makeini("[pytest]\n")
+    sub = case.mkdir("sub")
+    sub.joinpath("test_sub.py").write_text(CASE)
+    with pytest.MonkeyPatch.context() as mp:
+        mp.chdir(sub)
+        result = case.runpytest("test_sub.py::test_case", "--validation-plots")
+    result.assert_outcomes(passed=1)
+    assert files(case.path) == [
+        "docs/assets/validation/case.svg",
+        "docs/assets/validation/case_dark.svg",
+    ]
+
+
+def test_bare_option_in_ini_addopts_is_checked(case):
+    case.makeini("[pytest]\naddopts = --validation-plots\n")
+    result = case.runpytest("test_case.py::test_case")
+    assert result.ret == pytest.ExitCode.USAGE_ERROR
+    result.stderr.fnmatch_lines(["*read 'test_case.py::test_case' as its folder*"])
+    assert files(case.path) == []
+
+
+def test_bare_option_in_env_addopts_is_checked(case, monkeypatch):
+    monkeypatch.setenv("PYTEST_ADDOPTS", "--validation-plots")
+    result = case.runpytest("test_case.py::test_case")
+    assert result.ret == pytest.ExitCode.USAGE_ERROR
+    assert files(case.path) == []
+
+
+def test_bare_option_in_addopts_before_an_option_writes_default(case):
+    case.makeini("[pytest]\naddopts = --validation-plots -q\n")
+    case.runpytest("test_case.py::test_case").assert_outcomes(passed=1)
+    assert files(case.path) == [
+        "docs/assets/validation/case.svg",
+        "docs/assets/validation/case_dark.svg",
+    ]

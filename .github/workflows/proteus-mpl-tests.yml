@@ -34,3 +34,6 @@ jobs:
         run: |
           python -m coverage run --branch --source=proteus_mpl -m pytest tests -q
           python -m coverage report -m --fail-under=90
+      - name: Run the plugin tests alone
+        working-directory: figures/proteus-mpl
+        run: python -m pytest tests/test_pytest_plugin.py -q
