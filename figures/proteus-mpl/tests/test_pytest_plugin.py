@@ -3,6 +3,7 @@
 import pytest
 
 CASE = """
+import pytest
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -23,6 +24,20 @@ def test_map(validation_plot):
     validation_plot(factory, "field", kind="map")
 
 
+@pytest.mark.parametrize("value", ["a b"])
+def test_spaced_id(validation_plot, value):
+    validation_plot(factory, "spaced")
+
+
+def test_bad_kind(validation_plot):
+    validation_plot(factory, "bad", kind="bar")
+
+
+def test_same_name_twice(validation_plot):
+    validation_plot(factory, "twice")
+    validation_plot(factory, "twice")
+
+
 def test_factory_not_called_without_option(validation_plot, request):
     def boom():
         raise RuntimeError("factory called")
@@ -39,12 +54,22 @@ def case(pytester):
 
 
 def files(root):
-    return sorted(str(p.relative_to(root)) for p in root.rglob("*.svg"))
+    """Every file under root except test sources and caches."""
+    return sorted(
+        str(p.relative_to(root))
+        for p in root.rglob("*")
+        if p.is_file()
+        and p.suffix != ".py"
+        and not any(
+            part.startswith(".") or part == "__pycache__" for part in p.relative_to(root).parts
+        )
+    )
 
 
 def test_without_option_writes_nothing(case):
     result = case.runpytest("-s")
-    result.assert_outcomes(passed=3)
+    result.assert_outcomes(passed=5, failed=1)
+    result.stdout.fnmatch_lines(["*test_bad_kind*kind must be 'line' or 'map'*"])
     result.stdout.fnmatch_lines(["*WRITTEN []*"])
     assert files(case.path) == []
 
@@ -83,29 +108,35 @@ def test_help_lists_option(pytester):
     pytester.runpytest("--help").stdout.fnmatch_lines(["*--validation-plots*"])
 
 
-@pytest.mark.parametrize("value", ["test_case.py", "test_case.py::test_case"])
-def test_test_path_taken_as_dir_is_refused(case, value):
+@pytest.mark.parametrize("value", ["test_case.py", "test_case.py::test_case", "."])
+def test_word_after_bare_option_is_refused(case, value):
     result = case.runpytest("--validation-plots", value)
     assert result.ret == pytest.ExitCode.USAGE_ERROR
-    result.stderr.fnmatch_lines(["*took the test path*--validation-plots=DIR*"])
+    result.stderr.fnmatch_lines(["*read*as its folder*--validation-plots=DIR*"])
     assert files(case.path) == []
 
 
-def test_map_kind_writes_avif(case):
-    case.runpytest("test_case.py::test_map", "--validation-plots").assert_outcomes(passed=1)
-    out = case.path / "docs/assets/validation"
-    assert sorted(p.name for p in out.iterdir()) == ["field.avif", "field_dark.avif"]
+def test_empty_dir_is_refused(case):
+    result = case.runpytest("test_case.py::test_case", "--validation-plots=")
+    assert result.ret == pytest.ExitCode.USAGE_ERROR
+    result.stderr.fnmatch_lines(["*--validation-plots=DIR needs a folder*"])
+    assert files(case.path) == []
 
 
-def test_relative_dir_resolves_against_rootdir(case):
-    case.makeini("[pytest]\n")
-    sub = case.mkdir("sub")
-    sub.joinpath("test_sub.py").write_text(CASE)
-    with pytest.MonkeyPatch.context() as mp:
-        mp.chdir(sub)
-        result = case.runpytest("test_sub.py::test_case", "--validation-plots")
+def test_equals_form_accepts_an_existing_folder(case):
+    case.mkdir("tests")
+    result = case.runpytest("test_case.py::test_case", "--validation-plots=tests")
     result.assert_outcomes(passed=1)
-    assert files(case.path) == [
-        "docs/assets/validation/case.svg",
-        "docs/assets/validation/case_dark.svg",
-    ]
+    assert files(case.path) == ["tests/case.svg", "tests/case_dark.svg"]
+
+
+def test_stamp_quotes_a_node_id_with_a_space(case):
+    case.runpytest("test_case.py::test_spaced_id", "--validation-plots").assert_outcomes(passed=1)
+    data = (case.path / "docs/assets/validation/spaced.svg").read_text()
+    assert "command: pytest 'test_case.py::test_spaced_id[a b]' --validation-plots" in data
+
+
+def test_same_name_twice_in_a_session_is_refused(case):
+    result = case.runpytest("test_case.py::test_same_name_twice", "--validation-plots")
+    result.assert_outcomes(failed=1)
+    result.stdout.fnmatch_lines(["*twice*written twice in this session*"])

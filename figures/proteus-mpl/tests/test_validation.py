@@ -62,6 +62,24 @@ def test_light_and_dark_files_differ(tmp_path, kind, factory):
     assert light.read_bytes() != dark.read_bytes()
 
 
+def four_series_figure():
+    """A 6 x 4.5 in line plot: 3 lines of 200 points, 20 markers, labels and a legend."""
+    fig, ax = plt.subplots(figsize=(6, 4.5))
+    x = np.linspace(0.0, 10.0, 200)
+    for k in range(3):
+        ax.plot(x, np.sin(x + k), label=f"case {k}")
+    ax.plot(x[::10], np.sin(x[::10]) + 0.05, "o", label="reference")
+    ax.set_xlabel("Time [Myr]")
+    ax.set_ylabel("Surface temperature [K]")
+    ax.legend()
+    return fig
+
+
+def test_four_series_line_plot_fits_the_cap(tmp_path):
+    for path in save(four_series_figure, "case", tmp_path):
+        assert 40_000 < path.stat().st_size <= MAX_BYTES
+
+
 def test_svg_carries_no_date(tmp_path):
     light, _ = save(line_figure, "case", tmp_path)
     assert b"<dc:date>" not in light.read_bytes()
@@ -78,7 +96,7 @@ def test_caller_rcparams_and_figures_unchanged(tmp_path):
 
 
 def test_vector_mesh_above_cap_is_refused(tmp_path):
-    with pytest.raises(ValueError, match=r"case\.svg: \d+ B, above the 40000 B cap") as err:
+    with pytest.raises(ValueError, match=r"case\.svg: \d+ B, above the 60000 B cap") as err:
         save(vector_mesh_figure, "case", tmp_path)
     size = int(str(err.value).split(": ")[1].split(" B")[0])
     assert size > 1_000_000
@@ -141,6 +159,7 @@ def test_outdir_is_created(tmp_path):
         ({"name": "a/b"}, ValueError, "plain file stem"),
         ({"name": ""}, ValueError, "plain file stem"),
         ({"name": ".."}, ValueError, "plain file stem"),
+        ({"name": "case_dark"}, ValueError, "must not end in '_dark'"),
         ({"fig_factory": None}, TypeError, "fig_factory must be callable"),
         ({"fig_factory": lambda: None}, TypeError, "returned NoneType"),
     ],
@@ -156,8 +175,9 @@ def test_invalid_arguments_are_refused(tmp_path, kwargs, error, match):
 def test_map_is_the_matplotlib_png_encoded_at_quality_80(tmp_path):
     import io
 
-    import proteus_mpl
     from PIL import Image
+
+    import proteus_mpl
 
     light, _ = save(map_figure, "case", tmp_path, kind="map")
     with matplotlib.rc_context():
@@ -167,5 +187,59 @@ def test_map_is_the_matplotlib_png_encoded_at_quality_80(tmp_path):
         fig.savefig(png, format="png", dpi=150)
         plt.close(fig)
     expected = io.BytesIO()
-    Image.open(png).convert("RGB").save(expected, "AVIF", quality=80)
+    Image.open(png).convert("RGB").save(
+        expected, "AVIF", quality=80, speed=6, max_threads=1, codec="aom", subsampling="4:2:0"
+    )
     assert light.read_bytes() == expected.getvalue()
+
+
+def test_svg_creator_carries_no_matplotlib_version(tmp_path):
+    light, _ = save(line_figure, "case", tmp_path)
+    data = light.read_bytes()
+    assert b"<dc:title>proteus-mpl</dc:title>" in data
+    assert matplotlib.__version__.encode() not in data
+
+
+def test_dark_files_are_drawn_on_void(tmp_path):
+    from PIL import Image
+
+    light, dark = save(line_figure, "case", tmp_path)
+    assert b"#05070b" in dark.read_bytes().lower()
+    assert b"#05070b" not in light.read_bytes().lower()
+    light, dark = save(map_figure, "map", tmp_path, kind="map")
+    assert max(Image.open(dark).convert("RGB").getpixel((0, 0))) < 20
+    assert min(Image.open(light).convert("RGB").getpixel((0, 0))) > 230
+
+
+def noisy_map_figure():
+    """A 200 x 200 random field: too large for the cap even as AVIF."""
+    fig, ax = plt.subplots(figsize=(6, 4.5))
+    ax.pcolormesh(np.random.default_rng(0).random((200, 200)))
+    return fig
+
+
+def test_map_above_cap_is_refused_with_a_map_hint(tmp_path):
+    with pytest.raises(ValueError, match=r"case\.avif: \d+ B, above the 60000 B cap") as err:
+        save(noisy_map_figure, "case", tmp_path, kind="map")
+    assert "kind='map'" not in str(err.value)
+    assert "smoother field" in str(err.value)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_line_cap_hint_names_rasterized(tmp_path):
+    with pytest.raises(ValueError, match="rasterized=True"):
+        save(vector_mesh_figure, "case", tmp_path)
+
+
+@pytest.mark.parametrize("returns_axes", [False, True])
+def test_failing_factory_leaves_no_open_figure(tmp_path, returns_axes):
+    def factory():
+        _fig, ax = plt.subplots()
+        if returns_axes:
+            return ax
+        raise RuntimeError("factory failed")
+
+    before = plt.get_fignums()
+    with pytest.raises((RuntimeError, TypeError)):
+        save(factory, "case", tmp_path)
+    assert plt.get_fignums() == before
