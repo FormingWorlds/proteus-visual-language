@@ -28,8 +28,8 @@ KINDS = {"line": "svg", "map": "avif"}
 _VARIANTS = (("light", ""), ("dark", "_dark"))
 _STEM = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 _HINTS = {
-    "line": "plot fewer points or a smaller figure, draw a dense element with "
-    "rasterized=True, or save a dense field with kind='map'",
+    "line": "plot fewer points or a smaller figure, save a dense field with "
+    "kind='map', or draw a small dense element with rasterized=True",
     "map": "use a smaller figure or a smoother field",
 }
 _XMP = (
@@ -47,7 +47,7 @@ def check_args(name, kind):
         raise ValueError(f"kind must be 'line' or 'map', got {kind!r}")
     if not isinstance(name, str) or not _STEM.fullmatch(name):
         raise ValueError(f"name must be a plain file stem such as 'case_1', got {name!r}")
-    if name.endswith("_dark"):
+    if name.lower().endswith("_dark"):
         raise ValueError(f"name must not end in '_dark', the dark file's suffix, got {name!r}")
 
 
@@ -137,11 +137,8 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
 
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
-    paths = []
     for fname, data in files:
-        target = outdir / fname
-        part = target.with_name(fname + ".part")
+        part = outdir / f"{fname}.part"
         part.write_bytes(data)
-        os.replace(part, target)
-        paths.append(target)
-    return paths
+        os.replace(part, outdir / fname)
+    return [outdir / fname for fname, _ in files]

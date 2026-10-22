@@ -6,13 +6,14 @@ test asserts its tolerance without writing files. ``pytest -m reference_pinned
 the pytest rootdir; ``--validation-plots=DIR`` writes to another folder.
 """
 
+import os
 import shlex
 from pathlib import Path
 
 import pytest
 
 DEFAULT_DIR = "docs/assets/validation"
-_WRITTEN = pytest.StashKey[set]()
+_SEEN = pytest.StashKey[set]()
 
 
 def pytest_addoption(parser):
@@ -33,16 +34,20 @@ def pytest_addoption(parser):
 def pytest_configure(config):
     """Refuse an empty folder and a word that the bare option has read as its folder."""
     outdir = config.getoption("validation_plots")
-    args = list(config.invocation_params.args)
     if outdir == "":
         raise pytest.UsageError("--validation-plots=DIR needs a folder")
-    for flag, word in zip(args, args[1:]):
-        if flag == "--validation-plots" and word == outdir:
-            raise pytest.UsageError(
-                f"--validation-plots read {word!r} as its folder; write "
-                "--validation-plots=DIR, or put the option after the test paths"
-            )
-    config.stash[_WRITTEN] = set()
+    # pytest parses ini addopts, then PYTEST_ADDOPTS, then the command line, as one list
+    args = [
+        *config.getini("addopts"),
+        *shlex.split(os.environ.get("PYTEST_ADDOPTS", "")),
+        *map(str, config.invocation_params.args),
+    ]
+    if ("--validation-plots", outdir) in zip(args, args[1:]):
+        raise pytest.UsageError(
+            f"--validation-plots read {outdir!r} as its folder; write "
+            "--validation-plots=DIR, or put the option after the test paths"
+        )
+    config.stash[_SEEN] = set()
 
 
 @pytest.fixture
@@ -50,32 +55,29 @@ def validation_plot(request):
     """Return ``plot(fig_factory, name, kind="line")``, which saves a validation plot pair.
 
     The call returns the written paths, or an empty list without
-    ``--validation-plots``; `fig_factory` is then not called. A file written
-    twice in one session raises ValueError.
+    ``--validation-plots``; `fig_factory` is then not called. A name used
+    twice for one kind in a session raises ValueError, with or without the option.
     """
-    from .validation import KINDS, check_args, save
+    from .validation import check_args, save
 
     config = request.config
     outdir = config.getoption("validation_plots")
 
     def plot(fig_factory, name, kind="line"):
         check_args(name, kind)
+        if (name.lower(), kind) in config.stash[_SEEN]:
+            raise ValueError(f"{name}: used twice in this session; give each plot its own name")
+        config.stash[_SEEN].add((name.lower(), kind))
         if outdir is None:
             return []
-        folder = Path(config.rootpath, outdir)
-        light = folder / f"{name}.{KINDS[kind]}"
-        if light in config.stash[_WRITTEN]:
-            raise ValueError(f"{name}: written twice in this session; give each plot its own name")
         nodeid = request.node.nodeid
-        paths = save(
+        return save(
             fig_factory,
             name,
-            folder,
+            Path(config.rootpath, outdir),
             kind,
             test_id=nodeid,
             command=f"pytest {shlex.quote(nodeid)} --validation-plots",
         )
-        config.stash[_WRITTEN].add(light)
-        return paths
 
     return plot
