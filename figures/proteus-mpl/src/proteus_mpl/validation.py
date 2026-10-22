@@ -43,7 +43,7 @@ _XMP = (
 
 def check_args(name, kind):
     """Raise ValueError for an unknown `kind` or a `name` that is not a plain file stem."""
-    if kind not in KINDS:
+    if not isinstance(kind, str) or kind not in KINDS:
         raise ValueError(f"kind must be 'line' or 'map', got {kind!r}")
     if not isinstance(name, str) or not _STEM.fullmatch(name):
         raise ValueError(f"name must be a plain file stem such as 'case_1', got {name!r}")

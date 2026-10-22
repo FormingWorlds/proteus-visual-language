@@ -27,7 +27,7 @@ Changelog = "https://github.com/FormingWorlds/proteus-visual-language/blob/main/
 
 [project.optional-dependencies]
 validation = ["pillow>=11.3"]
-test = ["pytest", "pillow>=11.3"]
+test = ["pytest", "pillow>=11.3", "hypothesis"]
 
 [project.entry-points.pytest11]
 proteus_mpl = "proteus_mpl.pytest_plugin"
