@@ -141,7 +141,7 @@ def test_outdir_is_created(tmp_path):
         ({"name": "a/b"}, ValueError, "plain file stem"),
         ({"name": ""}, ValueError, "plain file stem"),
         ({"name": ".."}, ValueError, "plain file stem"),
-        ({"fig_factory": None}, TypeError, "callable"),
+        ({"fig_factory": None}, TypeError, "fig_factory must be callable"),
         ({"fig_factory": lambda: None}, TypeError, "returned NoneType"),
     ],
 )
@@ -151,3 +151,21 @@ def test_invalid_arguments_are_refused(tmp_path, kwargs, error, match):
     with pytest.raises(error, match=match):
         save(**args)
     assert list(tmp_path.iterdir()) == []
+
+
+def test_map_is_the_matplotlib_png_encoded_at_quality_80(tmp_path):
+    import io
+
+    import proteus_mpl
+    from PIL import Image
+
+    light, _ = save(map_figure, "case", tmp_path, kind="map")
+    with matplotlib.rc_context():
+        proteus_mpl.use("light")
+        fig = map_figure()
+        png = io.BytesIO()
+        fig.savefig(png, format="png", dpi=150)
+        plt.close(fig)
+    expected = io.BytesIO()
+    Image.open(png).convert("RGB").save(expected, "AVIF", quality=80)
+    assert light.read_bytes() == expected.getvalue()

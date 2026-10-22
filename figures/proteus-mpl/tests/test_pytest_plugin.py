@@ -19,6 +19,10 @@ def test_case(validation_plot):
     print("WRITTEN", [p.name for p in written])
 
 
+def test_map(validation_plot):
+    validation_plot(factory, "field", kind="map")
+
+
 def test_factory_not_called_without_option(validation_plot, request):
     def boom():
         raise RuntimeError("factory called")
@@ -40,7 +44,7 @@ def files(root):
 
 def test_without_option_writes_nothing(case):
     result = case.runpytest("-s")
-    result.assert_outcomes(passed=2)
+    result.assert_outcomes(passed=3)
     result.stdout.fnmatch_lines(["*WRITTEN []*"])
     assert files(case.path) == []
 
@@ -85,3 +89,23 @@ def test_test_path_taken_as_dir_is_refused(case, value):
     assert result.ret == pytest.ExitCode.USAGE_ERROR
     result.stderr.fnmatch_lines(["*took the test path*--validation-plots=DIR*"])
     assert files(case.path) == []
+
+
+def test_map_kind_writes_avif(case):
+    case.runpytest("test_case.py::test_map", "--validation-plots").assert_outcomes(passed=1)
+    out = case.path / "docs/assets/validation"
+    assert sorted(p.name for p in out.iterdir()) == ["field.avif", "field_dark.avif"]
+
+
+def test_relative_dir_resolves_against_rootdir(case):
+    case.makeini("[pytest]\n")
+    sub = case.mkdir("sub")
+    sub.joinpath("test_sub.py").write_text(CASE)
+    with pytest.MonkeyPatch.context() as mp:
+        mp.chdir(sub)
+        result = case.runpytest("test_sub.py::test_case", "--validation-plots")
+    result.assert_outcomes(passed=1)
+    assert files(case.path) == [
+        "docs/assets/validation/case.svg",
+        "docs/assets/validation/case_dark.svg",
+    ]
