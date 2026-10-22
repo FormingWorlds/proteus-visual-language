@@ -305,17 +305,6 @@ def test_outdir_may_be_a_string(tmp_path):
     assert [p.name for p in paths] == ["case.svg", "case_dark.svg"]
 
 
-def test_failed_replace_leaves_no_final_file(tmp_path, monkeypatch):
-    def fail(src, dst):
-        raise OSError("disk full")
-
-    monkeypatch.setattr(validation.os, "replace", fail)
-    with pytest.raises(OSError, match="disk full"):
-        save(line_figure, "case", tmp_path)
-    assert not (tmp_path / "case.svg").exists()
-    assert not (tmp_path / "case_dark.svg").exists()
-
-
 def dark_only_mesh_figure():
     """A line plot under the light theme, a dense vector mesh under the dark theme."""
     dark = matplotlib.colors.to_hex(matplotlib.rcParams["figure.facecolor"]) == "#05070b"
@@ -383,22 +372,23 @@ def test_factory_returning_an_open_figure_is_refused(tmp_path):
         plt.close(caller)
 
 
-def failing_second_replace(monkeypatch):
-    """Make the second os.replace call in validation fail."""
+def failing_replace(monkeypatch, nth=2):
+    """Make the nth os.replace call in validation fail."""
     real = validation.os.replace
     calls = []
 
     def replace(src, dst):
         calls.append(dst)
-        if len(calls) == 2:
+        if len(calls) == nth:
             raise OSError("disk full")
         return real(src, dst)
 
     monkeypatch.setattr(validation.os, "replace", replace)
 
 
-def test_failed_second_replace_leaves_no_half_pair(tmp_path, monkeypatch):
-    failing_second_replace(monkeypatch)
+@pytest.mark.parametrize("nth", [1, 2])
+def test_failed_replace_leaves_no_file(tmp_path, monkeypatch, nth):
+    failing_replace(monkeypatch, nth)
     with pytest.raises(OSError, match="disk full"):
         save(line_figure, "case", tmp_path)
     assert list(tmp_path.iterdir()) == []
@@ -406,7 +396,7 @@ def test_failed_second_replace_leaves_no_half_pair(tmp_path, monkeypatch):
 
 def test_failed_second_replace_keeps_the_previous_pair(tmp_path, monkeypatch):
     before = {p.name: p.read_bytes() for p in save(map_figure, "case", tmp_path, kind="map")}
-    failing_second_replace(monkeypatch)
+    failing_replace(monkeypatch)
 
     def other():
         fig = map_figure()
@@ -427,10 +417,7 @@ def test_stamp_drops_characters_xml_cannot_hold(tmp_path, kind):
     from PIL import Image
 
     factory = line_figure if kind == "line" else map_figure
-    try:
-        light, _ = save(factory, "case", tmp_path, kind=kind, test_id="t\x00\x0b\x1b\ufffe\ud800x")
-    except UnicodeError as err:
-        pytest.fail(f"save raised {err!r}")
+    light, _ = save(factory, "case", tmp_path, kind=kind, test_id="t\x00\x0b\x1b\ufffe\ud800x")
     xml = light.read_bytes() if kind == "line" else Image.open(light).info["xmp"]
     ET.fromstring(xml)
     assert b"test: tx" in xml
@@ -499,7 +486,7 @@ def test_rollback_keeps_a_symlinked_target(tmp_path, monkeypatch):
     out.mkdir()
     for p in first:
         (out / p.name).symlink_to(p)
-    failing_second_replace(monkeypatch)
+    failing_replace(monkeypatch)
     with pytest.raises(OSError, match="disk full"):
         save(map_figure_as_line, "case", out)
     assert all((out / p.name).is_symlink() for p in first)

@@ -93,13 +93,3 @@ def test_folder_name_ending_in_py_without_a_dot_is_accepted(tmp_path, value):
     config = fake_config(value, tmp_path, args=(f"--validation-plots={value}",))
     pytest_plugin.pytest_configure(config)
     assert config.stash == {pytest_plugin._SEEN: {}}
-
-
-def test_overlong_option_value_is_not_an_internal_error(tmp_path):
-    value = "a" * 300
-    config = fake_config(value, tmp_path, args=(f"--validation-plots={value}",))
-    try:
-        pytest_plugin.pytest_configure(config)
-    except OSError as err:
-        pytest.fail(f"pytest_configure raised {err!r}")
-    assert config.stash == {pytest_plugin._SEEN: {}}

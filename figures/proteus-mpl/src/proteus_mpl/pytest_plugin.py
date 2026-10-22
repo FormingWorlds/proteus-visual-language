@@ -36,24 +36,10 @@ def _expand_argfiles(args, folder):
     out = []
     for arg in args:
         if arg.startswith("@"):
-            try:
-                lines = Path(folder, arg[1:]).read_text().splitlines()
-            except OSError:
-                lines = [arg]
-            else:
-                lines = _expand_argfiles(lines, folder)
-            out.extend(lines)
+            out.extend(_expand_argfiles(Path(folder, arg[1:]).read_text().splitlines(), folder))
         else:
             out.append(arg)
     return out
-
-
-def _is_file(path):
-    """Return True for an existing file; a path the system cannot stat is not one."""
-    try:
-        return path.is_file()
-    except OSError:
-        return False
 
 
 def pytest_configure(config):
@@ -62,20 +48,24 @@ def pytest_configure(config):
     if outdir == "":
         raise pytest.UsageError("--validation-plots=DIR needs a folder")
     # pytest parses ini addopts, then PYTEST_ADDOPTS, then the command line, as one list
-    args = [
-        *config.getini("addopts"),
-        *shlex.split(os.environ.get("PYTEST_ADDOPTS", "")),
-        *_expand_argfiles(map(str, config.invocation_params.args), config.invocation_params.dir),
-    ]
-    if ("--validation-plots", outdir) in zip(args, args[1:]):
-        raise pytest.UsageError(
-            f"--validation-plots read {outdir!r} as its folder; write --validation-plots=DIR, "
-            "also in addopts and PYTEST_ADDOPTS, or put the option after the test paths"
-        )
+    args = _expand_argfiles(
+        [
+            *config.getini("addopts"),
+            *shlex.split(os.environ.get("PYTEST_ADDOPTS", "")),
+            *map(str, config.invocation_params.args),
+        ],
+        config.invocation_params.dir,
+    )
+    for flag, word in zip(args, args[1:]):
+        if flag == "--validation-plots" and not word.startswith("-"):
+            raise pytest.UsageError(
+                f"--validation-plots read {word!r} as its folder; write --validation-plots=DIR, "
+                "also in addopts and PYTEST_ADDOPTS, or put the option after the test paths"
+            )
     if outdir and (
         "::" in outdir
         or outdir.endswith(".py")
-        or _is_file(Path(config.invocation_params.dir, outdir))
+        or os.path.isfile(Path(config.invocation_params.dir, outdir))
     ):
         raise pytest.UsageError(f"--validation-plots={outdir!r} is a test path, not a folder")
     config.stash[_SEEN] = {}

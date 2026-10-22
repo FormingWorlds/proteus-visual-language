@@ -262,21 +262,12 @@ def test_rerun_of_one_test_may_reuse_its_names(pytester, option):
     )
 
 
-@pytest.mark.parametrize("word", ["test_case.py", "test_case.py::test_case"])
+@pytest.mark.parametrize("word", ["test_case.py", "test_case.py::test_case", "tsub"])
 def test_argfile_with_bare_option_is_refused(case, word):
     case.path.joinpath("args.txt").write_text(f"--validation-plots\n{word}\n")
     result = case.runpytest("@args.txt")
     assert result.ret == pytest.ExitCode.USAGE_ERROR
     result.stderr.fnmatch_lines([f"*read {word!r} as its folder*"])
-    assert files(case.path) == ["args.txt"]
-
-
-def test_argfile_with_bare_option_before_a_folder_is_refused(case):
-    case.mkdir("tsub").joinpath("test_u.py").write_text(CASE)
-    case.path.joinpath("args.txt").write_text("--validation-plots\ntsub\n")
-    result = case.runpytest("@args.txt")
-    assert result.ret == pytest.ExitCode.USAGE_ERROR
-    result.stderr.fnmatch_lines(["*read 'tsub' as its folder*"])
     assert files(case.path) == ["args.txt"]
 
 

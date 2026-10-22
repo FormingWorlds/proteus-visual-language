@@ -15,6 +15,7 @@ must stay at or below `MAX_BYTES`.
 import io
 import os
 import re
+from contextlib import suppress
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -100,8 +101,11 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
     ------
     ValueError
         For an unknown `kind`, a `name` that is not a plain file stem, a figure
-        that was open before the call, or a file above `MAX_BYTES`. Nothing is
-        written then; a failed write leaves the folder as it was.
+        that was open before the call or is returned for both themes, or a file
+        above `MAX_BYTES`. Nothing is written then.
+    OSError
+        From a failed write. The previous files are moved back into place and
+        the first error is raised; a folder the call created stays.
     TypeError
         When `fig_factory` is not callable or returns no Figure.
     """
@@ -118,7 +122,7 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
         filter(None, (test_id and f"test: {test_id}", command and f"command: {command}"))
     )
     stamp = _NOT_XML.sub("", stamp)
-    files = []
+    files, figures = [], []
     for variant, tail in _VARIANTS:
         open_before = set(plt.get_fignums())
         with plt.rc_context({"svg.hashsalt": SVG_HASHSALT}):
@@ -134,6 +138,12 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
                         f"fig_factory returned figure {fig.number}, which was open before the "
                         "call; create a new figure inside the factory"
                     )
+                if any(fig is seen for seen in figures):
+                    raise ValueError(
+                        "fig_factory returned the same figure for both themes; create a new "
+                        "figure inside the factory"
+                    )
+                figures.append(fig)
                 files.append((f"{name}{tail}.{KINDS[kind]}", _render(fig, kind, stamp)))
             finally:
                 for num in set(plt.get_fignums()) - open_before:
@@ -147,22 +157,28 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
     outdir.mkdir(parents=True, exist_ok=True)
     targets = [outdir / fname for fname, _ in files]
     parts = [outdir / f"{fname}.part" for fname, _ in files]
-    previous = {t: t.read_bytes() for t in targets if t.is_file()}
-    replaced = []
+    backups = [outdir / f"{fname}.bak" for fname, _ in files]
+    moved, placed = [], []
     try:
         for part, (_, data) in zip(parts, files):
             part.write_bytes(data)
+        for target, backup in zip(targets, backups):
+            if os.path.lexists(target):
+                os.replace(target, backup)
+                moved.append((backup, target))
         for part, target in zip(parts, targets):
             os.replace(part, target)
-            replaced.append(target)
+            placed.append(target)
     except BaseException:
-        # Leave the folder as it was: no .part file and no mixed pair.
-        for part in parts:
-            part.unlink(missing_ok=True)
-        for target in replaced:
-            if target in previous:
-                target.write_bytes(previous[target])
-            else:
-                target.unlink()
+        # Put the previous files back; a failing cleanup step must not hide the first error.
+        for path in [*parts, *placed]:
+            with suppress(OSError):
+                path.unlink(missing_ok=True)
+        for backup, target in moved:
+            with suppress(OSError):
+                os.replace(backup, target)
         raise
+    for backup, _ in moved:
+        with suppress(OSError):
+            backup.unlink()
     return targets
