@@ -31,6 +31,31 @@ def pytest_addoption(parser):
     )
 
 
+def _expand_argfiles(args, folder):
+    """Replace each ``@file`` argument by the lines of that file, as argparse reads them."""
+    out = []
+    for arg in args:
+        if arg.startswith("@"):
+            try:
+                lines = Path(folder, arg[1:]).read_text().splitlines()
+            except OSError:
+                lines = [arg]
+            else:
+                lines = _expand_argfiles(lines, folder)
+            out.extend(lines)
+        else:
+            out.append(arg)
+    return out
+
+
+def _is_file(path):
+    """Return True for an existing file; a path the system cannot stat is not one."""
+    try:
+        return path.is_file()
+    except OSError:
+        return False
+
+
 def pytest_configure(config):
     """Refuse an empty folder and a word that the bare option has read as its folder."""
     outdir = config.getoption("validation_plots")
@@ -40,7 +65,7 @@ def pytest_configure(config):
     args = [
         *config.getini("addopts"),
         *shlex.split(os.environ.get("PYTEST_ADDOPTS", "")),
-        *map(str, config.invocation_params.args),
+        *_expand_argfiles(map(str, config.invocation_params.args), config.invocation_params.dir),
     ]
     if ("--validation-plots", outdir) in zip(args, args[1:]):
         raise pytest.UsageError(
@@ -50,7 +75,7 @@ def pytest_configure(config):
     if outdir and (
         "::" in outdir
         or outdir.endswith(".py")
-        or Path(config.invocation_params.dir, outdir).is_file()
+        or _is_file(Path(config.invocation_params.dir, outdir))
     ):
         raise pytest.UsageError(f"--validation-plots={outdir!r} is a test path, not a folder")
     config.stash[_SEEN] = {}
@@ -70,6 +95,9 @@ def validation_plot(request):
     config = request.config
     outdir = config.getoption("validation_plots")
     nodeid = request.node.nodeid
+    option = "--validation-plots"
+    if outdir not in (None, DEFAULT_DIR):
+        option = shlex.quote(f"{option}={outdir}")
     seen = config.stash[_SEEN]
     for key in [key for key, owner in seen.items() if owner == nodeid]:
         del seen[key]
@@ -91,7 +119,7 @@ def validation_plot(request):
             Path(config.rootpath, outdir),
             kind,
             test_id=nodeid,
-            command=f"pytest {shlex.quote(nodeid)} --validation-plots",
+            command=f"pytest {shlex.quote(nodeid)} {option}",
         )
 
     return plot

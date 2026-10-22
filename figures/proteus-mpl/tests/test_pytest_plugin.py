@@ -267,7 +267,7 @@ def test_argfile_with_bare_option_is_refused(case, word):
     case.path.joinpath("args.txt").write_text(f"--validation-plots\n{word}\n")
     result = case.runpytest("@args.txt")
     assert result.ret == pytest.ExitCode.USAGE_ERROR
-    result.stderr.fnmatch_lines(["*is a test path, not a folder*"])
+    result.stderr.fnmatch_lines([f"*read {word!r} as its folder*"])
     assert files(case.path) == ["args.txt"]
 
 

@@ -27,6 +27,7 @@ KINDS = {"line": "svg", "map": "avif"}
 
 _VARIANTS = (("light", ""), ("dark", "_dark"))
 _STEM = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+_NOT_XML = re.compile("[^\t\n\r\x20-\ud7ff\ue000-\ufffd\U00010000-\U0010ffff]")
 _HINTS = {
     "line": "plot fewer points or a smaller figure, save a dense field with "
     "kind='map', or draw a small dense element with rasterized=True",
@@ -98,8 +99,9 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
     Raises
     ------
     ValueError
-        For an unknown `kind`, a `name` that is not a plain file stem, or a
-        file above `MAX_BYTES`. Nothing is written when one file is too large.
+        For an unknown `kind`, a `name` that is not a plain file stem, a figure
+        that was open before the call, or a file above `MAX_BYTES`. Nothing is
+        written then; a failed write leaves the folder as it was.
     TypeError
         When `fig_factory` is not callable or returns no Figure.
     """
@@ -115,6 +117,7 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
     stamp = "; ".join(
         filter(None, (test_id and f"test: {test_id}", command and f"command: {command}"))
     )
+    stamp = _NOT_XML.sub("", stamp)
     files = []
     for variant, tail in _VARIANTS:
         open_before = set(plt.get_fignums())
@@ -125,6 +128,11 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
                 if not isinstance(fig, Figure):
                     raise TypeError(
                         f"fig_factory returned {type(fig).__name__}, not a matplotlib Figure"
+                    )
+                if getattr(fig, "number", None) in open_before:
+                    raise ValueError(
+                        f"fig_factory returned figure {fig.number}, which was open before the "
+                        "call; create a new figure inside the factory"
                     )
                 files.append((f"{name}{tail}.{KINDS[kind]}", _render(fig, kind, stamp)))
             finally:
@@ -137,8 +145,24 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
 
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
-    for fname, data in files:
-        part = outdir / f"{fname}.part"
-        part.write_bytes(data)
-        os.replace(part, outdir / fname)
-    return [outdir / fname for fname, _ in files]
+    targets = [outdir / fname for fname, _ in files]
+    parts = [outdir / f"{fname}.part" for fname, _ in files]
+    previous = {t: t.read_bytes() for t in targets if t.is_file()}
+    replaced = []
+    try:
+        for part, (_, data) in zip(parts, files):
+            part.write_bytes(data)
+        for part, target in zip(parts, targets):
+            os.replace(part, target)
+            replaced.append(target)
+    except BaseException:
+        # Leave the folder as it was: no .part file and no mixed pair.
+        for part in parts:
+            part.unlink(missing_ok=True)
+        for target in replaced:
+            if target in previous:
+                target.write_bytes(previous[target])
+            else:
+                target.unlink()
+        raise
+    return targets
