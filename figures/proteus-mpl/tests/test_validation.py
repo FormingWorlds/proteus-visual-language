@@ -416,6 +416,8 @@ def test_failed_second_replace_keeps_the_previous_pair(tmp_path, monkeypatch):
     with pytest.raises(OSError, match="disk full"):
         save(other, "case", tmp_path, kind="map")
     assert {p.name: p.read_bytes() for p in tmp_path.iterdir()} == before
+    new = save(other, "case", tmp_path / "check", kind="map")
+    assert new[0].read_bytes() != before["case.avif"]
 
 
 @pytest.mark.parametrize("kind", ["line", "map"])
@@ -432,3 +434,91 @@ def test_stamp_drops_characters_xml_cannot_hold(tmp_path, kind):
     xml = light.read_bytes() if kind == "line" else Image.open(light).info["xmp"]
     ET.fromstring(xml)
     assert b"test: tx" in xml
+
+
+@pytest.mark.parametrize("pyplot", [True, False])
+def test_factory_returning_one_figure_for_both_themes_is_refused(tmp_path, pyplot):
+    from matplotlib.figure import Figure
+
+    cache = []
+
+    def factory():
+        if not cache:
+            cache.append(plt.figure() if pyplot else Figure())
+        return cache[0]
+
+    with pytest.raises(ValueError, match="same figure for both themes"):
+        save(factory, "case", tmp_path)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_failed_second_part_write_keeps_the_previous_pair(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    before = {p.name: p.read_bytes() for p in save(line_figure, "case", tmp_path)}
+    real = Path.write_bytes
+
+    def write_bytes(self, data):
+        if self.name == "case_dark.svg.part":
+            raise OSError("disk full")
+        return real(self, data)
+
+    monkeypatch.setattr(Path, "write_bytes", write_bytes)
+    with pytest.raises(OSError, match="disk full"):
+        save(map_figure_as_line, "case", tmp_path)
+    assert {p.name: p.read_bytes() for p in tmp_path.iterdir()} == before
+
+
+def map_figure_as_line():
+    """A different small line plot, so a rewrite would change the bytes."""
+    fig, ax = plt.subplots(figsize=(4, 3))
+    ax.plot([0, 1, 2], [2, 0, 2])
+    return fig
+
+
+def test_interrupt_in_second_replace_keeps_the_previous_pair(tmp_path, monkeypatch):
+    before = {p.name: p.read_bytes() for p in save(line_figure, "case", tmp_path)}
+    real = validation.os.replace
+
+    def replace(src, dst):
+        if str(dst).endswith("case_dark.svg") and str(src).endswith(".part"):
+            raise KeyboardInterrupt
+        return real(src, dst)
+
+    monkeypatch.setattr(validation.os, "replace", replace)
+    with pytest.raises(KeyboardInterrupt):
+        save(map_figure_as_line, "case", tmp_path)
+    assert {p.name: p.read_bytes() for p in tmp_path.iterdir()} == before
+
+
+def test_rollback_keeps_a_symlinked_target(tmp_path, monkeypatch):
+    store = tmp_path / "store"
+    store.mkdir()
+    out = tmp_path / "out"
+    first = save(line_figure, "case", store)
+    out.mkdir()
+    for p in first:
+        (out / p.name).symlink_to(p)
+    failing_second_replace(monkeypatch)
+    with pytest.raises(OSError, match="disk full"):
+        save(map_figure_as_line, "case", out)
+    assert all((out / p.name).is_symlink() for p in first)
+    assert sorted(p.name for p in out.iterdir()) == ["case.svg", "case_dark.svg"]
+
+
+def test_failed_rollback_keeps_the_original_error_and_the_old_files(tmp_path, monkeypatch):
+    before = {p.name: p.read_bytes() for p in save(line_figure, "case", tmp_path)}
+    real = validation.os.replace
+
+    def replace(src, dst):
+        if str(src).endswith(".part") and str(dst).endswith("case_dark.svg"):
+            raise OSError("disk full")
+        if str(src).endswith(".bak"):
+            raise OSError("restore failed")
+        return real(src, dst)
+
+    monkeypatch.setattr(validation.os, "replace", replace)
+    with pytest.raises(OSError, match="disk full"):
+        save(map_figure_as_line, "case", tmp_path)
+    kept = {p.read_bytes() for p in tmp_path.iterdir()}
+    assert set(before.values()) <= kept

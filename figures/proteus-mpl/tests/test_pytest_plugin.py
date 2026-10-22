@@ -301,3 +301,54 @@ def test_stamp_names_a_custom_folder(case):
     )
     data = (case.path / "out/plots/case.svg").read_text()
     assert "command: pytest test_case.py::test_case --validation-plots=out/plots" in data
+
+
+@pytest.mark.parametrize("source", ["ini", "env"])
+def test_argfile_named_in_addopts_is_expanded(case, monkeypatch, source):
+    case.mkdir("tsub").joinpath("test_u.py").write_text(CASE)
+    case.path.joinpath("args.txt").write_text("--validation-plots\n")
+    if source == "ini":
+        case.makeini("[pytest]\naddopts = @args.txt\n")
+    else:
+        monkeypatch.setenv("PYTEST_ADDOPTS", "@args.txt")
+    result = case.runpytest("tsub")
+    assert result.ret == pytest.ExitCode.USAGE_ERROR
+    result.stderr.fnmatch_lines(["*read 'tsub' as its folder*"])
+    assert files(case.path) == ["args.txt"]
+
+
+def test_nested_argfile_is_expanded(case):
+    case.mkdir("tsub").joinpath("test_u.py").write_text(CASE)
+    case.path.joinpath("inner.txt").write_text("--validation-plots\ntsub\n")
+    case.path.joinpath("outer.txt").write_text("@inner.txt\n")
+    result = case.runpytest("@outer.txt")
+    assert result.ret == pytest.ExitCode.USAGE_ERROR
+    assert files(case.path) == ["inner.txt", "outer.txt"]
+
+
+def test_bare_option_overridden_by_a_later_dir_is_refused(case):
+    case.mkdir("tsub").joinpath("test_u.py").write_text(CASE)
+    result = case.runpytest("--validation-plots", "tsub", "--validation-plots=out", "test_case.py")
+    assert result.ret == pytest.ExitCode.USAGE_ERROR
+    result.stderr.fnmatch_lines(["*read 'tsub' as its folder*"])
+    assert files(case.path) == []
+
+
+def test_default_folder_stamp_has_no_dir(case):
+    case.runpytest("test_case.py::test_case", "--validation-plots").assert_outcomes(passed=1)
+    data = (case.path / "docs/assets/validation/case.svg").read_text()
+    assert "--validation-plots'" not in data
+    assert "--validation-plots=" not in data
+
+
+def test_entry_point_is_named_after_the_module():
+    import sys
+    from pathlib import Path
+
+    if sys.version_info < (3, 11):
+        pytest.skip("tomllib needs Python 3.11")
+    import tomllib
+
+    pyproject = Path(__file__).parents[1] / "pyproject.toml"
+    points = tomllib.loads(pyproject.read_text())["project"]["entry-points"]["pytest11"]
+    assert points == {"proteus_mpl.pytest_plugin": "proteus_mpl.pytest_plugin"}
