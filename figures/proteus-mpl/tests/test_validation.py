@@ -169,6 +169,8 @@ def test_outdir_is_created(tmp_path):
         ({"name": ".."}, ValueError, "plain file stem"),
         ({"name": "case_dark"}, ValueError, "must not end in '_dark'"),
         ({"name": "case_DARK"}, ValueError, "must not end in '_dark'"),
+        ({"name": "_x"}, ValueError, "plain file stem"),
+        ({"name": "-x"}, ValueError, "plain file stem"),
         ({"name": 3}, ValueError, "plain file stem"),
         ({"name": None}, ValueError, "plain file stem"),
         ({"fig_factory": None}, TypeError, "fig_factory must be callable"),
@@ -253,7 +255,7 @@ def test_failing_factory_leaves_no_open_figure(tmp_path, returns_axes):
     assert plt.get_fignums() == before
 
 
-@pytest.mark.parametrize("name", ["case-1", "v1.5"])
+@pytest.mark.parametrize("name", ["case-1", "v1.5", "dark"])
 def test_hyphen_and_dot_in_name_are_allowed(tmp_path, name):
     paths = save(line_figure, name, tmp_path)
     assert [p.name for p in paths] == [f"{name}.svg", f"{name}_dark.svg"]
@@ -312,3 +314,121 @@ def test_failed_replace_leaves_no_final_file(tmp_path, monkeypatch):
         save(line_figure, "case", tmp_path)
     assert not (tmp_path / "case.svg").exists()
     assert not (tmp_path / "case_dark.svg").exists()
+
+
+def dark_only_mesh_figure():
+    """A line plot under the light theme, a dense vector mesh under the dark theme."""
+    dark = matplotlib.colors.to_hex(matplotlib.rcParams["figure.facecolor"]) == "#05070b"
+    return vector_mesh_figure() if dark else line_figure()
+
+
+def test_dark_file_alone_over_cap_is_refused(tmp_path):
+    with pytest.raises(ValueError, match=r"case_dark\.svg: \d+ B, above the 60000 B cap"):
+        save(dark_only_mesh_figure, "case", tmp_path)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_svg_text_is_drawn_as_paths(tmp_path):
+    for path in save(line_figure, "case", tmp_path):
+        data = path.read_bytes()
+        assert b"<text" not in data
+        assert b"<path" in data
+
+
+SECOND_PROCESS = """
+import sys
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+sys.path.insert(0, sys.argv[2])
+from proteus_mpl.validation import save
+
+def figure():
+    fig, ax = plt.subplots(figsize=(3, 2))
+    ax.plot([0, 1, 2], [1, 0, 1], label="a")
+    ax.legend()
+    return fig
+
+save(figure, "case", sys.argv[1])
+"""
+
+
+def test_svg_bytes_match_across_processes(tmp_path):
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    src = str(Path(validation.__file__).parents[1])
+    outs = []
+    for seed in ("1", "2"):
+        out = tmp_path / seed
+        env = dict(os.environ, PYTHONHASHSEED=seed)
+        subprocess.run(
+            [sys.executable, "-c", SECOND_PROCESS, str(out), src], env=env, check=True, timeout=120
+        )
+        outs.append([p.read_bytes() for p in sorted(out.iterdir())])
+    assert len(outs[0]) == 2
+    assert outs[0] == outs[1]
+
+
+def test_factory_returning_an_open_figure_is_refused(tmp_path):
+    caller = plt.figure("case")
+    try:
+        with pytest.raises(ValueError, match="was open before"):
+            save(lambda: plt.figure("case"), "case", tmp_path)
+        assert caller.number in plt.get_fignums()
+        assert list(tmp_path.iterdir()) == []
+    finally:
+        plt.close(caller)
+
+
+def failing_second_replace(monkeypatch):
+    """Make the second os.replace call in validation fail."""
+    real = validation.os.replace
+    calls = []
+
+    def replace(src, dst):
+        calls.append(dst)
+        if len(calls) == 2:
+            raise OSError("disk full")
+        return real(src, dst)
+
+    monkeypatch.setattr(validation.os, "replace", replace)
+
+
+def test_failed_second_replace_leaves_no_half_pair(tmp_path, monkeypatch):
+    failing_second_replace(monkeypatch)
+    with pytest.raises(OSError, match="disk full"):
+        save(line_figure, "case", tmp_path)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_failed_second_replace_keeps_the_previous_pair(tmp_path, monkeypatch):
+    before = {p.name: p.read_bytes() for p in save(map_figure, "case", tmp_path, kind="map")}
+    failing_second_replace(monkeypatch)
+
+    def other():
+        fig = map_figure()
+        fig.axes[0].set_title("other")
+        return fig
+
+    with pytest.raises(OSError, match="disk full"):
+        save(other, "case", tmp_path, kind="map")
+    assert {p.name: p.read_bytes() for p in tmp_path.iterdir()} == before
+
+
+@pytest.mark.parametrize("kind", ["line", "map"])
+def test_stamp_drops_characters_xml_cannot_hold(tmp_path, kind):
+    import xml.etree.ElementTree as ET
+
+    from PIL import Image
+
+    factory = line_figure if kind == "line" else map_figure
+    try:
+        light, _ = save(factory, "case", tmp_path, kind=kind, test_id="t\x00\x0b\x1b\ufffe\ud800x")
+    except UnicodeError as err:
+        pytest.fail(f"save raised {err!r}")
+    xml = light.read_bytes() if kind == "line" else Image.open(light).info["xmp"]
+    ET.fromstring(xml)
+    assert b"test: tx" in xml

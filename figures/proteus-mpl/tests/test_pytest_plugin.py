@@ -269,3 +269,35 @@ def test_argfile_with_bare_option_is_refused(case, word):
     assert result.ret == pytest.ExitCode.USAGE_ERROR
     result.stderr.fnmatch_lines(["*is a test path, not a folder*"])
     assert files(case.path) == ["args.txt"]
+
+
+def test_argfile_with_bare_option_before_a_folder_is_refused(case):
+    case.mkdir("tsub").joinpath("test_u.py").write_text(CASE)
+    case.path.joinpath("args.txt").write_text("--validation-plots\ntsub\n")
+    result = case.runpytest("@args.txt")
+    assert result.ret == pytest.ExitCode.USAGE_ERROR
+    result.stderr.fnmatch_lines(["*read 'tsub' as its folder*"])
+    assert files(case.path) == ["args.txt"]
+
+
+@pytest.mark.parametrize("how", ["-p", "conftest"])
+def test_plugin_listed_by_module_name_loads_once(case, how):
+    args = ["test_case.py::test_case", "--validation-plots"]
+    if how == "-p":
+        args = ["-p", "proteus_mpl.pytest_plugin", *args]
+    else:
+        case.makeconftest('pytest_plugins = ["proteus_mpl.pytest_plugin"]\n')
+    result = case.runpytest(*args)
+    assert result.ret == pytest.ExitCode.OK, result.stderr.str()[-300:]
+    assert files(case.path) == [
+        "docs/assets/validation/case.svg",
+        "docs/assets/validation/case_dark.svg",
+    ]
+
+
+def test_stamp_names_a_custom_folder(case):
+    case.runpytest("test_case.py::test_case", "--validation-plots=out/plots").assert_outcomes(
+        passed=1
+    )
+    data = (case.path / "out/plots/case.svg").read_text()
+    assert "command: pytest test_case.py::test_case --validation-plots=out/plots" in data

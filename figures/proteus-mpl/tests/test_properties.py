@@ -60,6 +60,7 @@ def fake_config(value, tmp_path, args=()):
 @given(st.text().filter(lambda v: "\x00" not in v))
 @example("a:b")
 @example("C:/plots")
+@example("a" * 300)
 def test_option_value_is_refused_only_when_empty_or_a_test_path(tmp_path_factory, value):
     root = tmp_path_factory.mktemp("cwd")
     root.joinpath("test_a.py").write_text("")
@@ -91,4 +92,14 @@ def test_option_value_naming_a_file_is_refused(tmp_path, value):
 def test_folder_name_ending_in_py_without_a_dot_is_accepted(tmp_path, value):
     config = fake_config(value, tmp_path, args=(f"--validation-plots={value}",))
     pytest_plugin.pytest_configure(config)
+    assert config.stash == {pytest_plugin._SEEN: {}}
+
+
+def test_overlong_option_value_is_not_an_internal_error(tmp_path):
+    value = "a" * 300
+    config = fake_config(value, tmp_path, args=(f"--validation-plots={value}",))
+    try:
+        pytest_plugin.pytest_configure(config)
+    except OSError as err:
+        pytest.fail(f"pytest_configure raised {err!r}")
     assert config.stash == {pytest_plugin._SEEN: {}}
