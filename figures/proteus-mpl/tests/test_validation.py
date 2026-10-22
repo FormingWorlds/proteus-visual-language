@@ -113,7 +113,7 @@ def test_rasterized_element_in_svg_under_cap_passes(tmp_path):
 
 @pytest.mark.parametrize("kind, factory", [("line", line_figure), ("map", map_figure)])
 def test_stamp_is_written_and_stays_deterministic(tmp_path, kind, factory):
-    stamp = dict(test_id="tests/test_x.py::test_y", command="pytest tests/test_x.py::test_y")
+    stamp = {"test_id": "tests/test_x.py::test_y", "command": "pytest tests/test_x.py::test_y"}
     first = save(factory, "case", tmp_path / "a", kind=kind, **stamp)
     second = save(factory, "case", tmp_path / "b", kind=kind, **stamp)
     for a, b in zip(first, second):
@@ -137,16 +137,16 @@ def test_outdir_is_created(tmp_path):
 @pytest.mark.parametrize(
     "kwargs, error, match",
     [
-        (dict(kind="bar"), ValueError, "kind must be 'line' or 'map'"),
-        (dict(name="a/b"), ValueError, "plain file stem"),
-        (dict(name=""), ValueError, "plain file stem"),
-        (dict(name=".."), ValueError, "plain file stem"),
-        (dict(fig_factory=None), TypeError, "callable"),
-        (dict(fig_factory=lambda: None), TypeError, "returned NoneType"),
+        ({"kind": "bar"}, ValueError, "kind must be 'line' or 'map'"),
+        ({"name": "a/b"}, ValueError, "plain file stem"),
+        ({"name": ""}, ValueError, "plain file stem"),
+        ({"name": ".."}, ValueError, "plain file stem"),
+        ({"fig_factory": None}, TypeError, "callable"),
+        ({"fig_factory": lambda: None}, TypeError, "returned NoneType"),
     ],
 )
 def test_invalid_arguments_are_refused(tmp_path, kwargs, error, match):
-    args = dict(fig_factory=line_figure, name="case", outdir=tmp_path)
+    args = {"fig_factory": line_figure, "name": "case", "outdir": tmp_path}
     args.update(kwargs)
     with pytest.raises(error, match=match):
         save(**args)

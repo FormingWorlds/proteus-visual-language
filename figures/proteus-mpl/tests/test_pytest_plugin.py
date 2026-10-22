@@ -46,8 +46,8 @@ def test_without_option_writes_nothing(case):
 
 
 def test_option_alone_writes_to_default_dir(case):
-    result = case.runpytest("-s", "--validation-plots", "-k", "test_case")
-    result.assert_outcomes(passed=1, deselected=1)
+    result = case.runpytest("-s", "test_case.py::test_case", "--validation-plots")
+    result.assert_outcomes(passed=1)
     assert files(case.path) == [
         "docs/assets/validation/case.svg",
         "docs/assets/validation/case_dark.svg",
@@ -55,21 +55,21 @@ def test_option_alone_writes_to_default_dir(case):
 
 
 def test_option_with_relative_dir(case):
-    result = case.runpytest("--validation-plots=out/plots", "-k", "test_case")
-    result.assert_outcomes(passed=1, deselected=1)
+    result = case.runpytest("--validation-plots=out/plots", "test_case.py::test_case")
+    result.assert_outcomes(passed=1)
     assert files(case.path) == ["out/plots/case.svg", "out/plots/case_dark.svg"]
 
 
 def test_option_with_absolute_dir(case, tmp_path_factory):
     out = tmp_path_factory.mktemp("abs")
-    result = case.runpytest(f"--validation-plots={out}", "-k", "test_case")
-    result.assert_outcomes(passed=1, deselected=1)
+    result = case.runpytest(f"--validation-plots={out}", "test_case.py::test_case")
+    result.assert_outcomes(passed=1)
     assert files(out) == ["case.svg", "case_dark.svg"]
     assert files(case.path) == []
 
 
 def test_stamp_names_test_and_command(case):
-    case.runpytest("--validation-plots", "-k", "test_case").assert_outcomes(passed=1, deselected=1)
+    case.runpytest("test_case.py::test_case", "--validation-plots").assert_outcomes(passed=1)
     data = (case.path / "docs/assets/validation/case.svg").read_text()
     assert "test: test_case.py::test_case" in data
     assert "command: pytest test_case.py::test_case --validation-plots" in data
@@ -77,3 +77,11 @@ def test_stamp_names_test_and_command(case):
 
 def test_help_lists_option(pytester):
     pytester.runpytest("--help").stdout.fnmatch_lines(["*--validation-plots*"])
+
+
+@pytest.mark.parametrize("value", ["test_case.py", "test_case.py::test_case"])
+def test_test_path_taken_as_dir_is_refused(case, value):
+    result = case.runpytest("--validation-plots", value)
+    assert result.ret == pytest.ExitCode.USAGE_ERROR
+    result.stderr.fnmatch_lines(["*took the test path*--validation-plots=DIR*"])
+    assert files(case.path) == []
