@@ -72,3 +72,12 @@ def test_option_value_is_refused_only_when_empty_or_a_test_path(tmp_path_factory
         assert test_path or is_file
     else:
         assert not (test_path or is_file)
+
+
+@pytest.mark.parametrize("value", ["missing.py", "data.txt", "pkg/test_x.py::test_y"])
+def test_option_value_naming_a_file_is_refused(tmp_path, value):
+    tmp_path.joinpath("data.txt").write_text("")
+    with pytest.raises(pytest.UsageError, match="is a test path, not a folder"):
+        pytest_plugin.pytest_configure(
+            fake_config(value, tmp_path, args=(f"--validation-plots={value}",))
+        )

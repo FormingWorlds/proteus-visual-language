@@ -161,6 +161,8 @@ def test_outdir_is_created(tmp_path):
         ({"name": ".."}, ValueError, "plain file stem"),
         ({"name": "case_dark"}, ValueError, "must not end in '_dark'"),
         ({"name": "case_DARK"}, ValueError, "must not end in '_dark'"),
+        ({"name": 3}, ValueError, "plain file stem"),
+        ({"name": None}, ValueError, "plain file stem"),
         ({"fig_factory": None}, TypeError, "fig_factory must be callable"),
         ({"fig_factory": lambda: None}, TypeError, "returned NoneType"),
     ],
@@ -239,3 +241,47 @@ def test_failing_factory_leaves_no_open_figure(tmp_path, returns_axes):
     with pytest.raises((RuntimeError, TypeError)):
         save(factory, "case", tmp_path)
     assert plt.get_fignums() == before
+
+
+def test_hyphen_in_name_is_allowed(tmp_path):
+    paths = save(line_figure, "case-1", tmp_path)
+    assert [p.name for p in paths] == ["case-1.svg", "case-1_dark.svg"]
+
+
+def test_stamp_joins_test_and_command_with_a_semicolon(tmp_path):
+    light, _ = save(line_figure, "case", tmp_path, test_id="t::x", command="pytest t::x")
+    assert b"test: t::x; command: pytest t::x" in light.read_bytes()
+
+
+def test_figure_open_before_save_stays_open(tmp_path):
+    fig = plt.figure()
+    try:
+        save(line_figure, "case", tmp_path)
+        assert fig.number in plt.get_fignums()
+    finally:
+        plt.close(fig)
+
+
+def test_map_is_encoded_from_rgb_with_the_fixed_encoder_settings(tmp_path, monkeypatch):
+    from PIL import Image
+
+    calls = []
+    original = Image.Image.save
+
+    def spy(self, fp, format=None, **params):
+        calls.append((self.mode, format, params))
+        return original(self, fp, format, **params)
+
+    monkeypatch.setattr(Image.Image, "save", spy)
+    save(map_figure, "case", tmp_path, kind="map")
+    avif = [call for call in calls if call[1] == "AVIF"]
+    assert len(avif) == 2
+    for mode, _, params in avif:
+        assert mode == "RGB"
+        assert params["quality"] == 80
+        assert {k: params[k] for k in validation.AVIF_OPTIONS} == {
+            "speed": 6,
+            "max_threads": 1,
+            "codec": "aom",
+            "subsampling": "4:2:0",
+        }
