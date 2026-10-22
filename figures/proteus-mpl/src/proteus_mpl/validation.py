@@ -5,10 +5,11 @@ Usage:
     save(make_figure, "stefan_boltzmann", "docs/assets/validation")
 
 `make_figure` is called once under ``use("light")`` and once under
-``use("dark")``. A line plot (``kind="line"``) is written as SVG with no date
-and a fixed hash salt, so the same figure gives the same bytes; a map or
-heatmap (``kind="map"``) is written as AVIF at quality 80. Every file must stay
-at or below `MAX_BYTES`.
+``use("dark")``. A line plot (``kind="line"``) is written as SVG with no date,
+a fixed creator and a fixed hash salt; a map or heatmap (``kind="map"``) is
+written as AVIF at quality 80 with fixed encoder settings. With the same
+matplotlib and Pillow versions the same figure gives the same bytes. Every file
+must stay at or below `MAX_BYTES`.
 """
 
 import io
@@ -17,14 +18,20 @@ import re
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-MAX_BYTES = 40_000
+MAX_BYTES = 60_000
 SVG_HASHSALT = "proteus-validation"
 AVIF_QUALITY = 80
+AVIF_OPTIONS = {"speed": 6, "max_threads": 1, "codec": "aom", "subsampling": "4:2:0"}
 MAP_DPI = 150
 KINDS = {"line": "svg", "map": "avif"}
 
 _VARIANTS = (("light", ""), ("dark", "_dark"))
 _STEM = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+_HINTS = {
+    "line": "plot fewer points or a smaller figure, draw a dense element with "
+    "rasterized=True, or save a dense field with kind='map'",
+    "map": "use a smaller figure or a smoother field",
+}
 _XMP = (
     '<x:xmpmeta xmlns:x="adobe:ns:meta/">'
     '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
@@ -34,36 +41,30 @@ _XMP = (
 )
 
 
-def _stamp(test_id, command):
-    """Return the metadata text ``test: <id>; command: <cmd>`` from the given parts."""
-    parts = []
-    if test_id:
-        parts.append(f"test: {test_id}")
-    if command:
-        parts.append(f"command: {command}")
-    return "; ".join(parts)
+def check_args(name, kind):
+    """Raise ValueError for an unknown `kind` or a `name` that is not a plain file stem."""
+    if kind not in KINDS:
+        raise ValueError(f"kind must be 'line' or 'map', got {kind!r}")
+    if not isinstance(name, str) or not _STEM.fullmatch(name):
+        raise ValueError(f"name must be a plain file stem such as 'case_1', got {name!r}")
+    if name.endswith("_dark"):
+        raise ValueError(f"name must not end in '_dark', the dark file's suffix, got {name!r}")
 
 
 def _render(fig, kind, stamp):
     """Encode one figure as SVG (line) or AVIF (map) and return the bytes."""
-    import matplotlib
-
     buf = io.BytesIO()
     if kind == "line":
-        metadata = {"Date": None}
-        if stamp:
-            metadata["Description"] = stamp
-        with matplotlib.rc_context({"svg.hashsalt": SVG_HASHSALT}):
-            fig.savefig(buf, format="svg", metadata=metadata)
+        metadata = {"Date": None, "Creator": "proteus-mpl", "Description": stamp or None}
+        fig.savefig(buf, format="svg", metadata=metadata)
         return buf.getvalue()
 
     from PIL import Image
 
     fig.savefig(buf, format="png", dpi=MAP_DPI)
     out = io.BytesIO()
-    extra = {"xmp": _XMP.format(escape(stamp)).encode()} if stamp else {}
-    with Image.open(buf) as image:
-        image.convert("RGB").save(out, "AVIF", quality=AVIF_QUALITY, **extra)
+    xmp = _XMP.format(escape(stamp)).encode() if stamp else None
+    Image.open(buf).convert("RGB").save(out, "AVIF", quality=AVIF_QUALITY, xmp=xmp, **AVIF_OPTIONS)
     return out.getvalue()
 
 
@@ -78,7 +79,7 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
         create the figure itself rather than return one made earlier.
     name : str
         File stem: letters, digits, ``.``, ``_`` and ``-``, starting with a
-        letter or digit.
+        letter or digit and not ending in ``_dark``.
     outdir : str or path-like
         Folder for the files; created when missing.
     kind : {"line", "map"}, default "line"
@@ -102,40 +103,37 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
     TypeError
         When `fig_factory` is not callable or returns no Figure.
     """
-    if kind not in KINDS:
-        raise ValueError(f"kind must be 'line' or 'map', got {kind!r}")
-    if not isinstance(name, str) or not _STEM.fullmatch(name):
-        raise ValueError(f"name must be a plain file stem such as 'case_1', got {name!r}")
+    check_args(name, kind)
     if not callable(fig_factory):
         raise TypeError(f"fig_factory must be callable, got {type(fig_factory).__name__}")
 
-    import matplotlib
     import matplotlib.pyplot as plt
     from matplotlib.figure import Figure
 
     from . import use
 
-    stamp = _stamp(test_id, command)
+    stamp = "; ".join(
+        filter(None, (test_id and f"test: {test_id}", command and f"command: {command}"))
+    )
     files = []
     for variant, tail in _VARIANTS:
-        with matplotlib.rc_context():
+        open_before = set(plt.get_fignums())
+        with plt.rc_context({"svg.hashsalt": SVG_HASHSALT}):
             use(variant)
-            fig = fig_factory()
-            if not isinstance(fig, Figure):
-                raise TypeError(
-                    f"fig_factory returned {type(fig).__name__}, not a matplotlib Figure"
-                )
             try:
+                fig = fig_factory()
+                if not isinstance(fig, Figure):
+                    raise TypeError(
+                        f"fig_factory returned {type(fig).__name__}, not a matplotlib Figure"
+                    )
                 files.append((f"{name}{tail}.{KINDS[kind]}", _render(fig, kind, stamp)))
             finally:
-                plt.close(fig)
+                for num in set(plt.get_fignums()) - open_before:
+                    plt.close(num)
 
     for fname, data in files:
         if len(data) > MAX_BYTES:
-            raise ValueError(
-                f"{fname}: {len(data)} B, above the {MAX_BYTES} B cap; plot fewer "
-                "points or a smaller figure, or save a dense field with kind='map'"
-            )
+            raise ValueError(f"{fname}: {len(data)} B, above the {MAX_BYTES} B cap; {_HINTS[kind]}")
 
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)

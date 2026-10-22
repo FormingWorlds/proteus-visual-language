@@ -34,8 +34,19 @@ def test_bad_kind(validation_plot):
 
 
 def test_same_name_twice(validation_plot):
-    validation_plot(factory, "twice")
-    validation_plot(factory, "twice")
+    first = validation_plot(factory, "twice")
+    if not first:
+        return
+
+    def other():
+        fig = factory()
+        fig.axes[0].plot([0, 2], [0, 2])
+        return fig
+
+    before = first[0].read_bytes()
+    with pytest.raises(ValueError, match="written twice in this session"):
+        validation_plot(other, "twice")
+    assert first[0].read_bytes() == before
 
 
 def test_factory_not_called_without_option(validation_plot, request):
@@ -138,5 +149,4 @@ def test_stamp_quotes_a_node_id_with_a_space(case):
 
 def test_same_name_twice_in_a_session_is_refused(case):
     result = case.runpytest("test_case.py::test_same_name_twice", "--validation-plots")
-    result.assert_outcomes(failed=1)
-    result.stdout.fnmatch_lines(["*twice*written twice in this session*"])
+    result.assert_outcomes(passed=1)
