@@ -234,6 +234,8 @@ def test_line_cap_hint_names_map_before_rasterized(tmp_path):
     with pytest.raises(ValueError) as err:
         save(vector_mesh_figure, "case", tmp_path)
     message = str(err.value)
+    assert message.endswith(validation._HINTS["line"])
+    assert message.index("plot fewer points") < message.index("kind='map'")
     assert message.index("kind='map'") < message.index("rasterized=True")
 
 
@@ -294,3 +296,19 @@ def test_map_is_encoded_from_rgb_with_the_fixed_encoder_settings(tmp_path, monke
             "codec": "aom",
             "subsampling": "4:2:0",
         }
+
+
+def test_outdir_may_be_a_string(tmp_path):
+    paths = save(line_figure, "case", str(tmp_path / "out"))
+    assert [p.name for p in paths] == ["case.svg", "case_dark.svg"]
+
+
+def test_failed_replace_leaves_no_final_file(tmp_path, monkeypatch):
+    def fail(src, dst):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(validation.os, "replace", fail)
+    with pytest.raises(OSError, match="disk full"):
+        save(line_figure, "case", tmp_path)
+    assert not (tmp_path / "case.svg").exists()
+    assert not (tmp_path / "case_dark.svg").exists()

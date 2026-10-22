@@ -4,7 +4,7 @@ import re
 from types import SimpleNamespace
 
 import pytest
-from hypothesis import given
+from hypothesis import example, given
 from hypothesis import strategies as st
 
 from proteus_mpl import pytest_plugin
@@ -14,6 +14,8 @@ STEM = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
 
 @given(st.text())
+@example("1abc")
+@example("a.b-c_1")
 def test_name_is_accepted_only_as_a_plain_stem(name):
     plain = bool(STEM.fullmatch(name)) and not name.lower().endswith("_dark")
     try:
@@ -56,6 +58,8 @@ def fake_config(value, tmp_path, args=()):
 
 
 @given(st.text().filter(lambda v: "\x00" not in v))
+@example("a:b")
+@example("C:/plots")
 def test_option_value_is_refused_only_when_empty_or_a_test_path(tmp_path_factory, value):
     root = tmp_path_factory.mktemp("cwd")
     root.joinpath("test_a.py").write_text("")
