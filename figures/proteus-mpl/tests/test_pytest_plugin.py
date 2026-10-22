@@ -48,6 +48,11 @@ def test_same_name_twice(validation_plot):
         assert first[0].read_bytes() == before
 
 
+def test_same_name_for_line_and_map(validation_plot):
+    validation_plot(factory, "both")
+    validation_plot(factory, "both", kind="map")
+
+
 def test_factory_not_called_without_option(validation_plot, request):
     def boom():
         raise RuntimeError("factory called")
@@ -78,7 +83,7 @@ def files(root):
 
 def test_without_option_writes_nothing(case):
     result = case.runpytest("-s")
-    result.assert_outcomes(passed=5, failed=1)
+    result.assert_outcomes(passed=6, failed=1)
     result.stdout.fnmatch_lines(["*test_bad_kind*kind must be 'line' or 'map'*"])
     result.stdout.fnmatch_lines(["*WRITTEN []*"])
     assert files(case.path) == []
@@ -177,7 +182,7 @@ def test_bare_option_in_ini_addopts_is_checked(case):
     case.makeini("[pytest]\naddopts = --validation-plots\n")
     result = case.runpytest("test_case.py::test_case")
     assert result.ret == pytest.ExitCode.USAGE_ERROR
-    result.stderr.fnmatch_lines(["*read 'test_case.py::test_case' as its folder*"])
+    result.stderr.fnmatch_lines(["*read 'test_case.py::test_case' as its folder*addopts*"])
     assert files(case.path) == []
 
 
@@ -185,6 +190,7 @@ def test_bare_option_in_env_addopts_is_checked(case, monkeypatch):
     monkeypatch.setenv("PYTEST_ADDOPTS", "--validation-plots")
     result = case.runpytest("test_case.py::test_case")
     assert result.ret == pytest.ExitCode.USAGE_ERROR
+    result.stderr.fnmatch_lines(["*read 'test_case.py::test_case' as its folder*addopts*"])
     assert files(case.path) == []
 
 
@@ -195,3 +201,69 @@ def test_bare_option_in_addopts_before_an_option_writes_default(case):
         "docs/assets/validation/case.svg",
         "docs/assets/validation/case_dark.svg",
     ]
+
+
+def test_line_and_map_with_one_name_write_both_pairs(case):
+    case.runpytest(
+        "test_case.py::test_same_name_for_line_and_map", "--validation-plots"
+    ).assert_outcomes(passed=1)
+    assert files(case.path) == [
+        "docs/assets/validation/both.avif",
+        "docs/assets/validation/both.svg",
+        "docs/assets/validation/both_dark.avif",
+        "docs/assets/validation/both_dark.svg",
+    ]
+
+
+RERUN = """
+import pytest
+from _pytest.runner import runtestprotocol
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_protocol(item, nextitem):
+    item.ihook.pytest_runtest_logstart(nodeid=item.nodeid, location=item.location)
+    reports = runtestprotocol(item, nextitem=nextitem, log=False)
+    if any(r.failed for r in reports):
+        reports = runtestprotocol(item, nextitem=nextitem, log=False)
+    for report in reports:
+        item.ihook.pytest_runtest_logreport(report=report)
+    item.ihook.pytest_runtest_logfinish(nodeid=item.nodeid, location=item.location)
+    return True
+"""
+
+FLAKY = """
+import matplotlib.pyplot as plt
+
+CALLS = []
+
+
+def test_flaky(validation_plot):
+    validation_plot(lambda: plt.subplots()[0], "flaky")
+    CALLS.append(1)
+    assert len(CALLS) > 1
+
+
+def test_other_test_same_name(validation_plot):
+    validation_plot(lambda: plt.subplots()[0], "flaky")
+"""
+
+
+@pytest.mark.parametrize("option", [[], ["--validation-plots"]])
+def test_rerun_of_one_test_may_reuse_its_names(pytester, option):
+    pytester.makeconftest(RERUN)
+    pytester.makepyfile(test_flaky=FLAKY)
+    result = pytester.runpytest("test_flaky.py::test_flaky", *option)
+    result.assert_outcomes(passed=1)
+    result = pytester.runpytest("test_flaky.py", *option)
+    result.assert_outcomes(passed=1, failed=1)
+    result.stdout.fnmatch_lines(["*test_other_test_same_name*used twice*"])
+
+
+@pytest.mark.parametrize("word", ["test_case.py", "test_case.py::test_case"])
+def test_argfile_with_bare_option_is_refused(case, word):
+    case.path.joinpath("args.txt").write_text(f"--validation-plots\n{word}\n")
+    result = case.runpytest("@args.txt")
+    assert result.ret == pytest.ExitCode.USAGE_ERROR
+    result.stderr.fnmatch_lines(["*is a test path, not a folder*"])
+    assert files(case.path) == ["args.txt"]

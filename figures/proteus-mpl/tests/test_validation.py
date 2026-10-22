@@ -220,9 +220,11 @@ def test_map_above_cap_is_refused_with_a_map_hint(tmp_path):
     assert list(tmp_path.iterdir()) == []
 
 
-def test_line_cap_hint_names_rasterized(tmp_path):
-    with pytest.raises(ValueError, match="rasterized=True"):
+def test_line_cap_hint_names_map_before_rasterized(tmp_path):
+    with pytest.raises(ValueError) as err:
         save(vector_mesh_figure, "case", tmp_path)
+    message = str(err.value)
+    assert message.index("kind='map'") < message.index("rasterized=True")
 
 
 @pytest.mark.parametrize("returns_axes", [False, True])
