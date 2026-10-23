@@ -7,7 +7,9 @@ the pytest rootdir; ``--validation-plots=DIR`` writes to another folder.
 """
 
 import os
+import re
 import shlex
+import sys
 from pathlib import Path
 
 import pytest
@@ -32,14 +34,45 @@ def pytest_addoption(parser):
 
 
 def _expand_argfiles(args, folder):
-    """Replace each ``@file`` argument by the lines of that file, as argparse reads them."""
+    """Replace each ``@file`` argument by the lines of that file, read as argparse reads them.
+
+    A word whose file cannot be read stays as it is; argparse refuses such a
+    file before this runs, so the word only reaches here on a pytest that does
+    not read argfiles.
+    """
     out = []
     for arg in args:
-        if arg.startswith("@"):
-            out.extend(_expand_argfiles(Path(folder, arg[1:]).read_text().splitlines(), folder))
-        else:
+        if not arg.startswith("@"):
             out.append(arg)
+            continue
+        try:
+            with open(
+                Path(folder, arg[1:]),
+                encoding=sys.getfilesystemencoding(),
+                errors=sys.getfilesystemencodeerrors(),
+            ) as fh:
+                lines = fh.read().splitlines()
+        except OSError:
+            out.append(arg)
+        else:
+            out.extend(_expand_argfiles(lines, folder))
     return out
+
+
+# argparse takes a word like -1 or -.5 as a value, not an option
+_NEGATIVE_NUMBER = re.compile(r"-\d+$|-\d*\.\d+$")
+
+
+def _swallowed_word(args):
+    """Return the word a bare ``--validation-plots`` reads as its folder, or None."""
+    for flag, word in zip(args, args[1:]):
+        if flag == "--":
+            return None
+        if flag == "--validation-plots" and (
+            not word.startswith("-") or word == "-" or _NEGATIVE_NUMBER.match(word)
+        ):
+            return word
+    return None
 
 
 def pytest_configure(config):
@@ -47,6 +80,9 @@ def pytest_configure(config):
     outdir = config.getoption("validation_plots")
     if outdir == "":
         raise pytest.UsageError("--validation-plots=DIR needs a folder")
+    if outdir is None:
+        config.stash[_SEEN] = {}
+        return
     # pytest parses ini addopts, then PYTEST_ADDOPTS, then the command line, as one list
     args = _expand_argfiles(
         [
@@ -56,13 +92,13 @@ def pytest_configure(config):
         ],
         config.invocation_params.dir,
     )
-    for flag, word in zip(args, args[1:]):
-        if flag == "--validation-plots" and not word.startswith("-"):
-            raise pytest.UsageError(
-                f"--validation-plots read {word!r} as its folder; write --validation-plots=DIR, "
-                "also in addopts and PYTEST_ADDOPTS, or put the option after the test paths"
-            )
-    if outdir and (
+    word = _swallowed_word(args)
+    if word is not None:
+        raise pytest.UsageError(
+            f"--validation-plots read {word!r} as its folder; write --validation-plots=DIR, "
+            "also in addopts and PYTEST_ADDOPTS, or put the option after the test paths"
+        )
+    if (
         "::" in outdir
         or outdir.endswith(".py")
         or os.path.isfile(Path(config.invocation_params.dir, outdir))

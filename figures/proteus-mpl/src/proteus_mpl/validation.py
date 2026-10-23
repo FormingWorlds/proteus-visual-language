@@ -15,6 +15,7 @@ must stay at or below `MAX_BYTES`.
 import io
 import os
 import re
+import warnings
 from contextlib import suppress
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -103,9 +104,14 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
         For an unknown `kind`, a `name` that is not a plain file stem, a figure
         that was open before the call or is returned for both themes, or a file
         above `MAX_BYTES`. Nothing is written then.
+    IsADirectoryError, FileExistsError
+        When a target name is a folder, or ``<file>.bak`` exists from an
+        unfinished save. Nothing is written then.
     OSError
-        From a failed write. The previous files are moved back into place and
-        the first error is raised; a folder the call created stays.
+        From a failed write. The previous files, kept as hard links until the
+        new ones are in place, are moved back and the first error is raised; a
+        RuntimeWarning names any backup that could not be moved back. A folder
+        the call created stays.
     TypeError
         When `fig_factory` is not callable or returns no Figure.
     """
@@ -158,27 +164,52 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
     targets = [outdir / fname for fname, _ in files]
     parts = [outdir / f"{fname}.part" for fname, _ in files]
     backups = [outdir / f"{fname}.bak" for fname, _ in files]
-    moved, placed = [], []
+    for target, backup in zip(targets, backups):
+        if target.is_dir() and not target.is_symlink():
+            raise IsADirectoryError(f"{target}: a folder, not a plot file")
+        if os.path.lexists(backup):
+            raise FileExistsError(f"{backup} exists from an unfinished save; move it away first")
+    linked, placed = [], []
     try:
         for part, (_, data) in zip(parts, files):
             part.write_bytes(data)
         for target, backup in zip(targets, backups):
             if os.path.lexists(target):
-                os.replace(target, backup)
-                moved.append((backup, target))
+                os.link(target, backup, follow_symlinks=False)
+                linked.append((backup, target))
         for part, target in zip(parts, targets):
-            os.replace(part, target)
             placed.append(target)
+            os.replace(part, target)
     except BaseException:
         # Put the previous files back; a failing cleanup step must not hide the first error.
-        for path in [*parts, *placed]:
+        backup_of = {target: backup for backup, target in linked}
+        stranded = []
+        for path in parts:
             with suppress(OSError):
                 path.unlink(missing_ok=True)
-        for backup, target in moved:
+        for target in placed:
+            if target in backup_of:
+                backup = backup_of.pop(target)
+                try:
+                    # rename() between two links to one file does nothing, so unlink after it
+                    os.replace(backup, target)
+                    backup.unlink(missing_ok=True)
+                except OSError:
+                    stranded.append(str(backup))
+            else:
+                with suppress(OSError):
+                    target.unlink(missing_ok=True)
+        for backup in backup_of.values():
             with suppress(OSError):
-                os.replace(backup, target)
+                backup.unlink()
+        if stranded:
+            warnings.warn(
+                f"could not move {', '.join(stranded)} back; the previous files are kept there",
+                RuntimeWarning,
+                stacklevel=2,
+            )
         raise
-    for backup, _ in moved:
+    for backup, _ in linked:
         with suppress(OSError):
             backup.unlink()
     return targets
