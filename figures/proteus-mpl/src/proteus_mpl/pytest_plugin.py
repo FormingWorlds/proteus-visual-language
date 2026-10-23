@@ -36,26 +36,23 @@ def pytest_addoption(parser):
 def _expand_argfiles(args, folder):
     """Replace each ``@file`` argument by the lines of that file, read as argparse reads them.
 
-    A word whose file cannot be read stays as it is; argparse refuses such a
-    file before this runs, so the word only reaches here on a pytest that does
-    not read argfiles.
+    A word whose file cannot be read stays as it is.
     """
+    if sys.version_info >= (3, 12):
+        codec = {"encoding": sys.getfilesystemencoding(), "errors": sys.getfilesystemencodeerrors()}
+    else:
+        codec = {}
     out = []
     for arg in args:
         if not arg.startswith("@"):
             out.append(arg)
             continue
         try:
-            with open(
-                Path(folder, arg[1:]),
-                encoding=sys.getfilesystemencoding(),
-                errors=sys.getfilesystemencodeerrors(),
-            ) as fh:
-                lines = fh.read().splitlines()
+            text = Path(folder, arg[1:]).read_text(**codec)
         except OSError:
             out.append(arg)
         else:
-            out.extend(_expand_argfiles(lines, folder))
+            out.extend(_expand_argfiles(text.splitlines(), folder))
     return out
 
 
@@ -63,13 +60,20 @@ def _expand_argfiles(args, folder):
 _NEGATIVE_NUMBER = re.compile(r"-\d+$|-\d*\.\d+$")
 
 
-def _swallowed_word(args):
-    """Return the word a bare ``--validation-plots`` reads as its folder, or None."""
+def _swallowed_word(args, outdir):
+    """Return the word a bare ``--validation-plots`` reads as its folder, or None.
+
+    A word counts when argparse takes it as a value: no leading dash, a dash
+    alone, a negative number, a space in it, or the parsed folder itself.
+    """
     for flag, word in zip(args, args[1:]):
         if flag == "--":
             return None
         if flag == "--validation-plots" and (
-            not word.startswith("-") or word == "-" or _NEGATIVE_NUMBER.match(word)
+            not word.startswith("-")
+            or word in ("-", outdir)
+            or " " in word
+            or _NEGATIVE_NUMBER.match(word)
         ):
             return word
     return None
@@ -78,10 +82,10 @@ def _swallowed_word(args):
 def pytest_configure(config):
     """Refuse an empty folder and a word that the bare option has read as its folder."""
     outdir = config.getoption("validation_plots")
+    config.stash[_SEEN] = {}
     if outdir == "":
         raise pytest.UsageError("--validation-plots=DIR needs a folder")
     if outdir is None:
-        config.stash[_SEEN] = {}
         return
     # pytest parses ini addopts, then PYTEST_ADDOPTS, then the command line, as one list
     args = _expand_argfiles(
@@ -92,7 +96,7 @@ def pytest_configure(config):
         ],
         config.invocation_params.dir,
     )
-    word = _swallowed_word(args)
+    word = _swallowed_word(args, outdir)
     if word is not None:
         raise pytest.UsageError(
             f"--validation-plots read {word!r} as its folder; write --validation-plots=DIR, "
@@ -104,7 +108,6 @@ def pytest_configure(config):
         or os.path.isfile(Path(config.invocation_params.dir, outdir))
     ):
         raise pytest.UsageError(f"--validation-plots={outdir!r} is a test path, not a folder")
-    config.stash[_SEEN] = {}
 
 
 @pytest.fixture

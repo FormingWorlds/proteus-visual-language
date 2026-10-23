@@ -15,7 +15,6 @@ must stay at or below `MAX_BYTES`.
 import io
 import os
 import re
-import warnings
 from contextlib import suppress
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -104,16 +103,14 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
         For an unknown `kind`, a `name` that is not a plain file stem, a figure
         that was open before the call or is returned for both themes, or a file
         above `MAX_BYTES`. Nothing is written then.
-    IsADirectoryError, FileExistsError
-        When a target name is a folder, or ``<file>.bak`` exists from an
-        unfinished save. Nothing is written then.
+    IsADirectoryError
+        When a target name is a folder. Nothing is written then.
     OSError
-        From a failed write. The previous files, kept as hard links until the
-        new ones are in place, are moved back and the first error is raised; a
-        RuntimeWarning names any backup that could not be moved back. A folder
-        the call created stays.
-    TypeError
-        When `fig_factory` is not callable or returns no Figure.
+        From a failed write. Both files are written as ``.part`` files first
+        and then renamed into place one at a time; on any failure the ``.part``
+        files are removed and the first error is raised. A failure between the
+        two renames leaves the new light file beside the dark file of an
+        earlier save. A folder the call created stays.
     """
     check_args(name, kind)
     if not callable(fig_factory):
@@ -163,53 +160,17 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
     outdir.mkdir(parents=True, exist_ok=True)
     targets = [outdir / fname for fname, _ in files]
     parts = [outdir / f"{fname}.part" for fname, _ in files]
-    backups = [outdir / f"{fname}.bak" for fname, _ in files]
-    for target, backup in zip(targets, backups):
+    for target in targets:
         if target.is_dir() and not target.is_symlink():
             raise IsADirectoryError(f"{target}: a folder, not a plot file")
-        if os.path.lexists(backup):
-            raise FileExistsError(f"{backup} exists from an unfinished save; move it away first")
-    linked, placed = [], []
     try:
         for part, (_, data) in zip(parts, files):
             part.write_bytes(data)
-        for target, backup in zip(targets, backups):
-            if os.path.lexists(target):
-                os.link(target, backup, follow_symlinks=False)
-                linked.append((backup, target))
         for part, target in zip(parts, targets):
-            placed.append(target)
             os.replace(part, target)
     except BaseException:
-        # Put the previous files back; a failing cleanup step must not hide the first error.
-        backup_of = {target: backup for backup, target in linked}
-        stranded = []
-        for path in parts:
+        for part in parts:
             with suppress(OSError):
-                path.unlink(missing_ok=True)
-        for target in placed:
-            if target in backup_of:
-                backup = backup_of.pop(target)
-                try:
-                    # rename() between two links to one file does nothing, so unlink after it
-                    os.replace(backup, target)
-                    backup.unlink(missing_ok=True)
-                except OSError:
-                    stranded.append(str(backup))
-            else:
-                with suppress(OSError):
-                    target.unlink(missing_ok=True)
-        for backup in backup_of.values():
-            with suppress(OSError):
-                backup.unlink()
-        if stranded:
-            warnings.warn(
-                f"could not move {', '.join(stranded)} back; the previous files are kept there",
-                RuntimeWarning,
-                stacklevel=2,
-            )
+                part.unlink(missing_ok=True)
         raise
-    for backup, _ in linked:
-        with suppress(OSError):
-            backup.unlink()
     return targets
