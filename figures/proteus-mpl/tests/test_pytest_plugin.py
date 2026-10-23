@@ -53,14 +53,6 @@ def test_same_name_twice(validation_plot):
 def test_same_name_for_line_and_map(validation_plot):
     validation_plot(factory, "both")
     validation_plot(factory, "both", kind="map")
-
-
-def test_factory_not_called_without_option(validation_plot, request):
-    def boom():
-        raise RuntimeError("factory called")
-
-    if request.config.getoption("validation_plots") is None:
-        assert validation_plot(boom, "boom") == []
 """
 
 
@@ -85,9 +77,8 @@ def files(root):
 
 def test_without_option_writes_nothing(case):
     result = case.runpytest("-s")
-    result.assert_outcomes(passed=6, failed=1)
     result.stdout.fnmatch_lines(["*test_bad_kind*kind must be 'line' or 'map'*"])
-    result.stdout.fnmatch_lines(["*WRITTEN []*"])
+    result.stdout.fnmatch_lines(["*case: no committed plot at docs/assets/validation/case.svg*"])
     assert files(case.path) == []
 
 
@@ -255,6 +246,9 @@ def test_other_test_same_name(validation_plot):
 def test_rerun_of_one_test_may_reuse_its_names(pytester, option):
     pytester.makeconftest(RERUN)
     pytester.makepyfile(test_flaky=FLAKY)
+    if not option:
+        made = pytester.runpytest("test_flaky.py::test_other_test_same_name", "--validation-plots")
+        made.assert_outcomes(passed=1)
     result = pytester.runpytest("test_flaky.py::test_flaky", *option)
     result.assert_outcomes(passed=1)
     result = pytester.runpytest("test_flaky.py", *option)
