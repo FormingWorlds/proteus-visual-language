@@ -54,6 +54,11 @@ def test_summary_counts_scatter_points_and_image_pixels():
     assert image[:2] == [2, 3] and image[2:] == [0.0, 5.0, 2.5]
 
 
+def one_axes(*lines):
+    """Summary of one axes holding the given lines."""
+    return {"axes": [{"lines": [list(x) for x in lines], "collections": [], "images": []}]}
+
+
 def test_identical_summaries_compare_equal():
     fig = line_figure()
     try:
@@ -64,19 +69,17 @@ def test_identical_summaries_compare_equal():
 
 
 def test_a_change_below_the_tolerance_passes_and_above_it_fails():
-    base = {"axes": [{"lines": [[3, 0.0, 2.0, 1.0, 0.0, 1.0, 0.5]], "collections": [], "images": []}]}
-    small = {"axes": [{"lines": [[3, 0.0, 2.0, 1.0, 0.0, 1.0, 0.5 + 0.1 * v.SUMMARY_RTOL]]}]}
-    large = {"axes": [{"lines": [[3, 0.0, 2.0, 1.0, 0.0, 1.0, 0.5 + 10 * v.SUMMARY_RTOL]]}]}
-    for d in (small, large):
-        d["axes"][0].update(collections=[], images=[])
+    base = one_axes([3, 0.0, 2.0, 1.0, 0.0, 1.0, 0.5])
+    small = one_axes([3, 0.0, 2.0, 1.0, 0.0, 1.0, 0.5 + 0.1 * v.SUMMARY_RTOL])
+    large = one_axes([3, 0.0, 2.0, 1.0, 0.0, 1.0, 0.5 + 10 * v.SUMMARY_RTOL])
     assert v.compare_summaries(small, base) == []
     (diff,) = v.compare_summaries(large, base)
     assert "axes 0" in diff and "line 0" in diff
 
 
 def test_a_mean_near_zero_is_compared_on_the_scale_of_its_range():
-    base = {"axes": [{"lines": [[3, -1.0, 1.0, 0.0, -1.0, 1.0, 0.0]], "collections": [], "images": []}]}
-    near = {"axes": [{"lines": [[3, -1.0, 1.0, 1e-12, -1.0, 1.0, 0.0]], "collections": [], "images": []}]}
+    base = one_axes([3, -1.0, 1.0, 0.0, -1.0, 1.0, 0.0])
+    near = one_axes([3, -1.0, 1.0, 1e-12, -1.0, 1.0, 0.0])
     assert v.compare_summaries(near, base) == []
 
 
@@ -89,8 +92,8 @@ def test_a_mean_near_zero_is_compared_on_the_scale_of_its_range():
     ],
 )
 def test_a_changed_count_fails(change, word):
-    base = {"axes": [{"lines": [[3, 0.0, 2.0, 1.0, 0.0, 1.0, 0.5]], "collections": [], "images": []}]}
-    new = {"axes": [{"lines": [list(base["axes"][0]["lines"][0])], "collections": [], "images": []}]}
+    base = one_axes([3, 0.0, 2.0, 1.0, 0.0, 1.0, 0.5])
+    new = one_axes(base["axes"][0]["lines"][0])
     change(new)
     diffs = v.compare_summaries(new, base)
     assert diffs and word in diffs[0]
@@ -122,3 +125,9 @@ def test_summary_values_survive_the_file_to_full_precision(tmp_path):
     (light, _) = v.save(lambda: line_figure(y), "case", tmp_path)
     (line,) = v.read_summary(light)["axes"][0]["lines"]
     assert line[6] == pytest.approx(sum(y) / 3.0, rel=1e-12)
+
+
+def test_a_file_without_description_reads_as_none(tmp_path):
+    path = tmp_path / "plain.svg"
+    path.write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
+    assert v.read_summary(path) is None

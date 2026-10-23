@@ -10,6 +10,10 @@ it.
 
 ## [Unreleased]
 
+### Changed
+- Without `--validation-plots` the `validation_plot` fixture now calls the factory, renders both themes in memory and applies the 60 000 B cap, so a plot that raises or grows above the cap fails in every run that runs its test. It compares a data summary of the rendered figure with the committed light file in `docs/assets/validation` and fails when that file is missing or its summary differs; it writes nothing. The summary holds, per axes, the point count and the min, max and mean of each coordinate of every line, point set and image, over the points finite in all coordinates. Counts must match; a value must agree within `validation.SUMMARY_RTOL` (1e-6) times the larger magnitude of the committed min and max of that coordinate. A committed file without a summary passes with a warning. A test that takes the fixture and passes without calling it fails at teardown.
+- `validation.save` stores the summary in the SVG description and the AVIF XMP packet. `validation.render`, `validation.summarize`, `validation.read_summary` and `validation.compare_summaries` are public.
+
 ## [1.4.0] - 2026-10-23
 
 ### Added

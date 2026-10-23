@@ -103,8 +103,8 @@ def test_a_matching_committed_pair_passes_and_is_not_rewritten(case):
 
 def test_changed_data_fails_as_stale(case):
     make_pair(case)
-    case.makepyfile(test_case=CASE.replace("Y = [1.0, 0.0, 1.0]", "Y = [1.0, 0.0, 1.5]"))
-    result = case.runpytest("test_case.py::test_case")
+    case.makepyfile(test_changed=CASE.replace("Y = [1.0, 0.0, 1.0]", "Y = [1.0, 0.0, 1.5]"))
+    result = case.runpytest("test_changed.py::test_case")
     result.assert_outcomes(failed=1)
     result.stdout.fnmatch_lines(["*case: the committed plot is stale*--validation-plots*"])
 
@@ -130,6 +130,7 @@ def test_a_pair_without_summary_passes_with_a_warning(case):
 
 def test_the_option_writes_and_does_not_compare(case):
     make_pair(case)
-    case.makepyfile(test_case=CASE.replace("Y = [1.0, 0.0, 1.0]", "Y = [1.0, 0.0, 1.5]"))
-    case.runpytest("test_case.py::test_case", "--validation-plots").assert_outcomes(passed=1)
-    case.runpytest("test_case.py::test_case").assert_outcomes(passed=1)
+    case.makepyfile(test_changed=CASE.replace("Y = [1.0, 0.0, 1.0]", "Y = [1.0, 0.0, 1.5]"))
+    case.runpytest("test_changed.py::test_case", "--validation-plots").assert_outcomes(passed=1)
+    case.runpytest("test_changed.py::test_case").assert_outcomes(passed=1)
+    case.runpytest("test_case.py::test_case").assert_outcomes(failed=1)

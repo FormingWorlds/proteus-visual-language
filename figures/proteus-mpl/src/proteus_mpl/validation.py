@@ -12,14 +12,20 @@ matplotlib and Pillow versions the same figure gives the same bytes. Every file
 must stay at or below `MAX_BYTES`.
 """
 
+import html
 import io
+import json
 import os
 import re
 from contextlib import suppress
 from pathlib import Path
 from xml.sax.saxutils import escape
 
+import numpy as np
+
 MAX_BYTES = 60_000
+# Relative tolerance of the data summary, on the scale of each coordinate's range
+SUMMARY_RTOL = 1e-6
 SVG_HASHSALT = "proteus-validation"
 AVIF_QUALITY = 80
 AVIF_OPTIONS = {"speed": 6, "max_threads": 1, "codec": "aom", "subsampling": "4:2:0"}
@@ -115,6 +121,36 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
         two renames leaves the new light file beside the dark file of an
         earlier save. A folder the call created stays.
     """
+    files, _ = render(fig_factory, name, kind, test_id=test_id, command=command)
+
+    outdir = Path(outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+    targets = [outdir / fname for fname, _ in files]
+    parts = [outdir / f"{fname}.part" for fname, _ in files]
+    for target in targets:
+        if target.is_dir() and not target.is_symlink():
+            raise IsADirectoryError(f"{target}: a folder, not a plot file")
+    try:
+        for part, (_, data) in zip(parts, files):
+            part.write_bytes(data)
+        for part, target in zip(parts, targets):
+            os.replace(part, target)
+    except BaseException:
+        for part in parts:
+            with suppress(OSError):
+                part.unlink(missing_ok=True)
+        raise
+    return targets
+
+
+def render(fig_factory, name, kind="line", *, test_id=None, command=None):
+    """Make the light and the dark file of one validation plot in memory.
+
+    Takes the arguments of `save` except `outdir` and raises as it does, before
+    anything is written. Returns the list of ``(file name, bytes)`` pairs, light
+    then dark, and the data summary of the light figure (`summarize`), which
+    both files carry in their description after the test id and the command.
+    """
     check_args(name, kind)
     if not callable(fig_factory):
         raise TypeError(f"fig_factory must be callable, got {type(fig_factory).__name__}")
@@ -127,8 +163,7 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
     stamp = "; ".join(
         filter(None, (test_id and f"test: {test_id}", command and f"command: {command}"))
     )
-    stamp = _NOT_XML.sub("", stamp)
-    files, figures = [], []
+    files, figures, summary = [], [], None
     for variant, tail in _VARIANTS:
         open_before = set(plt.get_fignums())
         with plt.rc_context({"svg.hashsalt": SVG_HASHSALT}):
@@ -150,7 +185,11 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
                         "figure inside the factory"
                     )
                 figures.append(fig)
-                files.append((f"{name}{tail}.{KINDS[kind]}", _render(fig, kind, stamp)))
+                if summary is None:
+                    summary = summarize(fig)
+                full = "; ".join(filter(None, (stamp, f"summary: {json.dumps(summary)}")))
+                full = _NOT_XML.sub("", full)
+                files.append((f"{name}{tail}.{KINDS[kind]}", _render(fig, kind, full)))
             finally:
                 for num in set(plt.get_fignums()) - open_before:
                     plt.close(num)
@@ -158,22 +197,85 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
     for fname, data in files:
         if len(data) > MAX_BYTES:
             raise ValueError(f"{fname}: {len(data)} B, above the {MAX_BYTES} B cap; {_HINTS[kind]}")
+    return files, summary
 
-    outdir = Path(outdir)
-    outdir.mkdir(parents=True, exist_ok=True)
-    targets = [outdir / fname for fname, _ in files]
-    parts = [outdir / f"{fname}.part" for fname, _ in files]
-    for target in targets:
-        if target.is_dir() and not target.is_symlink():
-            raise IsADirectoryError(f"{target}: a folder, not a plot file")
-    try:
-        for part, (_, data) in zip(parts, files):
-            part.write_bytes(data)
-        for part, target in zip(parts, targets):
-            os.replace(part, target)
-    except BaseException:
-        for part in parts:
-            with suppress(OSError):
-                part.unlink(missing_ok=True)
-        raise
-    return targets
+
+def _stats(*coords):
+    """Point count and, per coordinate, min, max and mean over the points finite in all."""
+    arrays = [np.ravel(np.ma.filled(np.ma.asarray(c, dtype=float), np.nan)) for c in coords]
+    keep = np.logical_and.reduce([np.isfinite(a) for a in arrays])
+    out = [int(keep.sum())]
+    for a in arrays:
+        a = a[keep]
+        out += [float(a.min()), float(a.max()), float(a.mean())] if a.size else [None] * 3
+    return out
+
+
+def summarize(fig):
+    """Data summary of a figure, the part of a plot that does not depend on its renderer.
+
+    Per axes: each line as ``[n, xmin, xmax, xmean, ymin, ymax, ymean]`` over its
+    points finite in both coordinates; each collection (scatter points) the same
+    over its offsets; each image as ``[ny, nx, vmin, vmax, vmean]``.
+    """
+    axes = []
+    for ax in fig.axes:
+        images = []
+        for image in ax.get_images():
+            arr = np.ma.asarray(image.get_array())
+            images.append(list(arr.shape[:2]) + _stats(arr)[1:])
+        axes.append(
+            {
+                "lines": [_stats(line.get_xdata(), line.get_ydata()) for line in ax.get_lines()],
+                "collections": [
+                    _stats(*np.asarray(c.get_offsets(), dtype=float).reshape(-1, 2).T)
+                    for c in ax.collections
+                ],
+                "images": images,
+            }
+        )
+    return {"axes": axes}
+
+
+_DESCRIPTION = re.compile(rb"<dc:description>(.*?)</dc:description>", re.DOTALL)
+
+
+def read_summary(path):
+    """Return the data summary a validation plot file carries, or None when it has none."""
+    match = _DESCRIPTION.search(Path(path).read_bytes())
+    if not match:
+        return None
+    text = html.unescape(match.group(1).decode("utf-8", "replace"))
+    _, sep, tail = text.partition("summary: ")
+    return json.loads(tail) if sep else None
+
+
+def compare_summaries(new, old, rtol=SUMMARY_RTOL):
+    """List the differences between two data summaries; an empty list when they agree.
+
+    Counts must match; each min, max and mean must agree within `rtol` times the
+    larger magnitude of the committed min and max of that coordinate.
+    """
+    if len(new["axes"]) != len(old["axes"]):
+        return [f"axes count {len(new['axes'])}, committed {len(old['axes'])}"]
+    diffs = []
+    for i, (a, b) in enumerate(zip(new["axes"], old["axes"])):
+        for key, label, head in (("lines", "line", 1), ("collections", "collection", 1),
+                                 ("images", "image", 2)):
+            if len(a[key]) != len(b[key]):
+                diffs.append(f"axes {i}: {label} count {len(a[key])}, committed {len(b[key])}")
+                continue
+            for j, (x, y) in enumerate(zip(a[key], b[key])):
+                where = f"axes {i} {label} {j}"
+                if x[:head] != y[:head]:
+                    diffs.append(f"{where}: point count {x[:head]}, committed {y[:head]}")
+                    continue
+                for k in range(head, len(y), 3):
+                    lo, hi = y[k], y[k + 1]
+                    scale = 0.0 if lo is None else max(abs(lo), abs(hi))
+                    for got, want in zip(x[k : k + 3], y[k : k + 3]):
+                        if (got is None) != (want is None) or (
+                            want is not None and abs(got - want) > rtol * scale
+                        ):
+                            diffs.append(f"{where}: {got!r}, committed {want!r}")
+    return diffs
