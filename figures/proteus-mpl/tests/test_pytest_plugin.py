@@ -371,6 +371,7 @@ def test_unreadable_argfile_word_is_kept(tmp_path):
         (["--validation-plots", "-1.5"], None, "-1.5"),
         (["--validation-plots", "-a b"], None, "-a b"),
         (["--validation-plots", "-q"], None, None),
+        (["--validation-plots", "-1abc"], None, None),
         (["--validation-plots=out", "tsub"], None, None),
         (["--", "--validation-plots", "tsub"], None, None),
         (["tsub", "--validation-plots"], None, None),
