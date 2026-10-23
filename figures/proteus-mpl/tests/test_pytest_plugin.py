@@ -333,13 +333,41 @@ def test_default_folder_stamp_has_no_dir(case):
 
 
 def test_entry_point_is_named_after_the_module():
-    import sys
     from pathlib import Path
 
-    if sys.version_info < (3, 11):
-        pytest.skip("tomllib needs Python 3.11")
-    import tomllib
+    tomllib = pytest.importorskip("tomllib")
 
     pyproject = Path(__file__).parents[1] / "pyproject.toml"
     points = tomllib.loads(pyproject.read_text())["project"]["entry-points"]["pytest11"]
     assert points == {"proteus_mpl.pytest_plugin": "proteus_mpl.pytest_plugin"}
+
+
+def test_argfile_that_is_not_utf8_is_read_as_argparse_reads_it(case):
+    case.path.joinpath("args.txt").write_bytes(b"--validation-plots=out\n-k\ncaf\xe9\n")
+    result = case.runpytest("@args.txt")
+    assert result.ret != pytest.ExitCode.INTERNAL_ERROR
+    assert "UnicodeDecodeError" not in result.stdout.str() + result.stderr.str()
+
+
+def test_unreadable_argfile_word_is_kept(tmp_path):
+    from proteus_mpl.pytest_plugin import _expand_argfiles
+
+    assert _expand_argfiles(["@missing.txt", "-q"], tmp_path) == ["@missing.txt", "-q"]
+
+
+@pytest.mark.parametrize(
+    "args, word",
+    [
+        (["--validation-plots", "tsub"], "tsub"),
+        (["--validation-plots", "-1"], "-1"),
+        (["--validation-plots", "-"], "-"),
+        (["--validation-plots", "-q"], None),
+        (["--validation-plots=out", "tsub"], None),
+        (["--", "--validation-plots", "tsub"], None),
+        (["tsub", "--validation-plots"], None),
+    ],
+)
+def test_swallowed_word(args, word):
+    from proteus_mpl.pytest_plugin import _swallowed_word
+
+    assert _swallowed_word(args) == word

@@ -372,44 +372,6 @@ def test_factory_returning_an_open_figure_is_refused(tmp_path):
         plt.close(caller)
 
 
-def failing_replace(monkeypatch, nth=2):
-    """Make the nth os.replace call in validation fail."""
-    real = validation.os.replace
-    calls = []
-
-    def replace(src, dst):
-        calls.append(dst)
-        if len(calls) == nth:
-            raise OSError("disk full")
-        return real(src, dst)
-
-    monkeypatch.setattr(validation.os, "replace", replace)
-
-
-@pytest.mark.parametrize("nth", [1, 2])
-def test_failed_replace_leaves_no_file(tmp_path, monkeypatch, nth):
-    failing_replace(monkeypatch, nth)
-    with pytest.raises(OSError, match="disk full"):
-        save(line_figure, "case", tmp_path)
-    assert list(tmp_path.iterdir()) == []
-
-
-def test_failed_second_replace_keeps_the_previous_pair(tmp_path, monkeypatch):
-    before = {p.name: p.read_bytes() for p in save(map_figure, "case", tmp_path, kind="map")}
-    failing_replace(monkeypatch)
-
-    def other():
-        fig = map_figure()
-        fig.axes[0].set_title("other")
-        return fig
-
-    with pytest.raises(OSError, match="disk full"):
-        save(other, "case", tmp_path, kind="map")
-    assert {p.name: p.read_bytes() for p in tmp_path.iterdir()} == before
-    new = save(other, "case", tmp_path / "check", kind="map")
-    assert new[0].read_bytes() != before["case.avif"]
-
-
 @pytest.mark.parametrize("kind", ["line", "map"])
 def test_stamp_drops_characters_xml_cannot_hold(tmp_path, kind):
     import xml.etree.ElementTree as ET
@@ -463,38 +425,117 @@ def map_figure_as_line():
     return fig
 
 
-def test_interrupt_in_second_replace_keeps_the_previous_pair(tmp_path, monkeypatch):
-    before = {p.name: p.read_bytes() for p in save(line_figure, "case", tmp_path)}
+def failing_placement(monkeypatch, nth, exc=OSError):
+    """Make the nth move of a .part file into place fail with exc."""
     real = validation.os.replace
+    calls = []
 
     def replace(src, dst):
-        if str(dst).endswith("case_dark.svg") and str(src).endswith(".part"):
-            raise KeyboardInterrupt
+        if str(src).endswith(".part"):
+            calls.append(dst)
+            if len(calls) == nth:
+                raise exc("disk full")
         return real(src, dst)
 
     monkeypatch.setattr(validation.os, "replace", replace)
-    with pytest.raises(KeyboardInterrupt):
+
+
+def listing(folder):
+    return {p.name: p.read_bytes() for p in folder.iterdir()}
+
+
+@pytest.mark.parametrize("exc", [OSError, KeyboardInterrupt])
+@pytest.mark.parametrize("nth", [1, 2])
+def test_failed_placement_in_a_new_folder_leaves_no_file(tmp_path, monkeypatch, nth, exc):
+    failing_placement(monkeypatch, nth, exc)
+    with pytest.raises(exc, match="disk full"):
+        save(line_figure, "case", tmp_path)
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("exc", [OSError, KeyboardInterrupt])
+@pytest.mark.parametrize("nth", [1, 2])
+def test_failed_placement_keeps_the_previous_pair(tmp_path, monkeypatch, nth, exc):
+    save(line_figure, "case", tmp_path)
+    before = listing(tmp_path)
+    failing_placement(monkeypatch, nth, exc)
+    with pytest.raises(exc, match="disk full"):
         save(map_figure_as_line, "case", tmp_path)
-    assert {p.name: p.read_bytes() for p in tmp_path.iterdir()} == before
+    assert listing(tmp_path) == before
 
 
-def test_rollback_keeps_a_symlinked_target(tmp_path, monkeypatch):
-    store = tmp_path / "store"
-    store.mkdir()
-    out = tmp_path / "out"
+def test_targets_exist_during_every_placement(tmp_path, monkeypatch):
+    save(line_figure, "case", tmp_path)
+    real = validation.os.replace
+    seen = []
+
+    def replace(src, dst):
+        seen.append(sorted(p.name for p in tmp_path.iterdir() if p.suffix == ".svg"))
+        return real(src, dst)
+
+    monkeypatch.setattr(validation.os, "replace", replace)
+    save(map_figure_as_line, "case", tmp_path)
+    assert seen and all(names == ["case.svg", "case_dark.svg"] for names in seen)
+
+
+def test_success_leaves_no_backup_or_part(tmp_path):
+    save(line_figure, "case", tmp_path)
+    save(map_figure_as_line, "case", tmp_path)
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["case.svg", "case_dark.svg"]
+
+
+def test_rollback_restores_symlinks_and_their_targets(tmp_path, monkeypatch):
+    import os
+
+    store, out = tmp_path / "store", tmp_path / "out"
     first = save(line_figure, "case", store)
     out.mkdir()
     for p in first:
         (out / p.name).symlink_to(p)
-    failing_replace(monkeypatch)
+    failing_placement(monkeypatch, 2)
     with pytest.raises(OSError, match="disk full"):
         save(map_figure_as_line, "case", out)
-    assert all((out / p.name).is_symlink() for p in first)
     assert sorted(p.name for p in out.iterdir()) == ["case.svg", "case_dark.svg"]
+    for p in first:
+        assert os.readlink(out / p.name) == str(p)
 
 
-def test_failed_rollback_keeps_the_original_error_and_the_old_files(tmp_path, monkeypatch):
-    before = {p.name: p.read_bytes() for p in save(line_figure, "case", tmp_path)}
+def test_existing_backup_name_is_refused(tmp_path):
+    save(line_figure, "case", tmp_path)
+    (tmp_path / "case.svg.bak").write_text("keep")
+    before = listing(tmp_path)
+    with pytest.raises(FileExistsError, match=r"case\.svg\.bak"):
+        save(map_figure_as_line, "case", tmp_path)
+    assert listing(tmp_path) == before
+
+
+def test_folder_at_a_target_name_is_refused(tmp_path):
+    (tmp_path / "case.svg").mkdir()
+    (tmp_path / "case.svg" / "keep.txt").write_text("keep")
+    with pytest.raises(IsADirectoryError, match=r"case\.svg"):
+        save(line_figure, "case", tmp_path)
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["case.svg"]
+    assert (tmp_path / "case.svg" / "keep.txt").read_text() == "keep"
+
+
+def test_failed_link_leaves_the_folder_unchanged(tmp_path, monkeypatch):
+    save(line_figure, "case", tmp_path)
+    before = listing(tmp_path)
+
+    def link(*args, **kwargs):
+        raise OSError("no hard links here")
+
+    monkeypatch.setattr(validation.os, "link", link)
+    with pytest.raises(OSError, match="no hard links here"):
+        save(map_figure_as_line, "case", tmp_path)
+    assert listing(tmp_path) == before
+
+
+def test_failed_restore_warns_and_keeps_the_backups(tmp_path, monkeypatch):
+    import warnings
+
+    save(line_figure, "case", tmp_path)
+    before = listing(tmp_path)
     real = validation.os.replace
 
     def replace(src, dst):
@@ -505,7 +546,10 @@ def test_failed_rollback_keeps_the_original_error_and_the_old_files(tmp_path, mo
         return real(src, dst)
 
     monkeypatch.setattr(validation.os, "replace", replace)
-    with pytest.raises(OSError, match="disk full"):
-        save(map_figure_as_line, "case", tmp_path)
-    kept = {p.read_bytes() for p in tmp_path.iterdir()}
-    assert set(before.values()) <= kept
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with pytest.raises(OSError, match="disk full"):
+            save(map_figure_as_line, "case", tmp_path)
+    messages = [str(w.message) for w in caught if issubclass(w.category, RuntimeWarning)]
+    assert any("case.svg.bak" in m for m in messages)
+    assert (tmp_path / "case.svg.bak").read_bytes() == before["case.svg"]

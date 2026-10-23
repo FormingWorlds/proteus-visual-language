@@ -57,7 +57,8 @@ def fake_config(value, tmp_path, args=()):
     )
 
 
-@given(st.text().filter(lambda v: "\x00" not in v))
+@given(st.text())
+@example("a\x00b")
 @example("a:b")
 @example("C:/plots")
 @example("a" * 300)
