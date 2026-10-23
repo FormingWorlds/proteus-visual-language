@@ -1,5 +1,7 @@
 """Tests for the validation_plot fixture and the --validation-plots option."""
 
+import sys
+
 import pytest
 
 CASE = """
@@ -342,6 +344,10 @@ def test_entry_point_is_named_after_the_module():
     assert points == {"proteus_mpl.pytest_plugin": "proteus_mpl.pytest_plugin"}
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 12),
+    reason="argparse before 3.12 reads argfiles with the locale encoding",
+)
 def test_argfile_that_is_not_utf8_is_read_as_argparse_reads_it(case):
     case.path.joinpath("args.txt").write_bytes(b"--validation-plots=out\n-k\ncaf\xe9\n")
     result = case.runpytest("@args.txt")
@@ -356,18 +362,22 @@ def test_unreadable_argfile_word_is_kept(tmp_path):
 
 
 @pytest.mark.parametrize(
-    "args, word",
+    "args, outdir, word",
     [
-        (["--validation-plots", "tsub"], "tsub"),
-        (["--validation-plots", "-1"], "-1"),
-        (["--validation-plots", "-"], "-"),
-        (["--validation-plots", "-q"], None),
-        (["--validation-plots=out", "tsub"], None),
-        (["--", "--validation-plots", "tsub"], None),
-        (["tsub", "--validation-plots"], None),
+        (["--validation-plots", "tsub"], None, "tsub"),
+        (["--validation-plots", "-1"], None, "-1"),
+        (["--validation-plots", "-"], None, "-"),
+        (["--validation-plots", "-.5"], None, "-.5"),
+        (["--validation-plots", "-1.5"], None, "-1.5"),
+        (["--validation-plots", "-a b"], None, "-a b"),
+        (["--validation-plots", "-q"], None, None),
+        (["--validation-plots=out", "tsub"], None, None),
+        (["--", "--validation-plots", "tsub"], None, None),
+        (["tsub", "--validation-plots"], None, None),
+        (["--validation-plots", "-1e5"], "-1e5", "-1e5"),
     ],
 )
-def test_swallowed_word(args, word):
+def test_swallowed_word(args, outdir, word):
     from proteus_mpl.pytest_plugin import _swallowed_word
 
-    assert _swallowed_word(args) == word
+    assert _swallowed_word(args, outdir) == word

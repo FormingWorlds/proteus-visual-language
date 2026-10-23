@@ -553,3 +553,11 @@ def test_failed_restore_warns_and_keeps_the_backups(tmp_path, monkeypatch):
     messages = [str(w.message) for w in caught if issubclass(w.category, RuntimeWarning)]
     assert any("case.svg.bak" in m for m in messages)
     assert (tmp_path / "case.svg.bak").read_bytes() == before["case.svg"]
+
+
+def test_symlink_to_a_folder_at_a_target_name_is_replaced(tmp_path):
+    (tmp_path / "elsewhere").mkdir()
+    (tmp_path / "case.svg").symlink_to(tmp_path / "elsewhere")
+    save(line_figure, "case", tmp_path)
+    assert not (tmp_path / "case.svg").is_symlink()
+    assert (tmp_path / "case.svg").read_bytes().startswith(b"<?xml")
