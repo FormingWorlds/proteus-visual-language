@@ -58,6 +58,37 @@ proteus_mpl.use()           # light: Paper background — papers, light slides
 
 Regenerate with `python examples/cycle.py`.
 
+## Validation plots
+
+`proteus_mpl.validation.save` writes one validation plot as a light and a dark file. With the same matplotlib and Pillow versions the same figure gives the same bytes, so the files can be committed next to the docs:
+
+```python
+from proteus_mpl.validation import save
+
+def make_figure():
+    fig, ax = plt.subplots()
+    ax.plot(t, model, label="model")
+    ax.plot(t_ref, ref, "o", label="reference")
+    return fig
+
+save(make_figure, "melt_fraction", "docs/assets/validation")              # melt_fraction.svg, melt_fraction_dark.svg
+save(make_heatmap, "phase_map", "docs/assets/validation", kind="map")     # phase_map.avif, phase_map_dark.avif
+```
+
+`make_figure` is called once per theme, so it must create the figure itself. Line and point plots (`kind="line"`) are SVG with text as paths, no date, a fixed creator and a fixed hash salt; maps and heatmaps (`kind="map"`) are AVIF at quality 80 with fixed encoder settings and need Pillow with AVIF support (`pip install "proteus-mpl[validation]"`). A file above 60 000 B (`validation.MAX_BYTES`) is refused with its name and size, and nothing is written; a dense field belongs in `kind="map"`, while a small element drawn with `rasterized=True` can stay in an SVG as long as the file is under the cap. A name must not end in `_dark`, the suffix of the dark file. The test id and the command that makes the plot again go into the file metadata.
+
+The package registers a pytest plugin, `proteus_mpl.pytest_plugin`, which needs pytest 7 or newer and loads by itself; a conftest does not need to list it. A test asks for the `validation_plot` fixture and calls it with the factory and a name:
+
+```python
+@pytest.mark.reference_pinned
+def test_melt_fraction(validation_plot):
+    t, model = run_case()
+    assert np.allclose(model, ref, rtol=1e-3)
+    validation_plot(lambda: plot_case(t, model), "melt_fraction")
+```
+
+Without the option the fixture checks its arguments and writes nothing, so the test only asserts. `pytest -m reference_pinned --validation-plots` writes every plot to `docs/assets/validation` under the pytest rootdir; `--validation-plots=DIR` writes to another folder, relative to the rootdir. A bare `--validation-plots` followed by a word, which it would read as its folder, is refused, also from `addopts` or an `@argfile`, so write `--validation-plots=DIR` (always in `addopts` and `PYTEST_ADDOPTS`) or put the option after the test paths. A plot name used twice for one kind in a session is refused, with or without the option, so a parametrized test needs one name per parameter, such as `f"case_{param}"`; a rerun of the same test may use its names again. The `reference_pinned` marker belongs to the repository that runs the tests, which registers it in its pytest configuration. Under pytest-xdist each worker keeps its own list of names, so a name repeated in tests that run on different workers is not caught. The stamped command names a folder given with `--validation-plots=DIR`.
+
 ## Conventions
 
 - Size figures at final printed size (A&A column ≈ 3.5 in) and keep default
