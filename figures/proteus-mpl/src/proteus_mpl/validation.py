@@ -103,6 +103,9 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
         For an unknown `kind`, a `name` that is not a plain file stem, a figure
         that was open before the call or is returned for both themes, or a file
         above `MAX_BYTES`. Nothing is written then.
+    TypeError
+        When `fig_factory` is not callable or returns no Figure. Nothing is
+        written then.
     IsADirectoryError
         When a target name is a folder. Nothing is written then.
     OSError
