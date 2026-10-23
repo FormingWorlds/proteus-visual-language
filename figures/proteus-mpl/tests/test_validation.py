@@ -530,3 +530,13 @@ def test_failed_first_placement_keeps_symlinks(tmp_path, monkeypatch):
     for p in first:
         assert os.readlink(out / p.name) == str(p)
     assert sorted(p.name for p in out.iterdir()) == ["case.svg", "case_dark.svg"]
+
+
+def test_folder_at_the_dark_name_is_refused_before_any_write(tmp_path):
+    save(line_figure, "case", tmp_path)
+    (tmp_path / "case_dark.svg").unlink()
+    (tmp_path / "case_dark.svg").mkdir()
+    before = listing(tmp_path)
+    with pytest.raises(IsADirectoryError, match=r"case_dark\.svg: a folder"):
+        save(map_figure_as_line, "case", tmp_path)
+    assert listing(tmp_path) == before
