@@ -10,6 +10,14 @@ import pytest
 from proteus_mpl import validation as v
 
 
+def summary_of(fig):
+    """Data summary of a figure, which is then closed."""
+    try:
+        return v.summarize(fig)
+    finally:
+        plt.close(fig)
+
+
 def line_figure(y=(1.0, 0.0, 1.0)):
     fig, ax = plt.subplots(figsize=(3, 2))
     ax.plot([0.0, 1.0, 2.0], list(y))
@@ -18,12 +26,9 @@ def line_figure(y=(1.0, 0.0, 1.0)):
 
 def test_summary_of_a_line_holds_count_and_ranges():
     fig = line_figure()
-    try:
-        summary = v.summarize(fig)
-    finally:
-        plt.close(fig)
+    summary = summary_of(fig)
     (line,) = summary["axes"][0]["lines"]
-    n, xmin, xmax, xmean, ymin, ymax, ymean = line
+    n, xmin, xmax, xmean, _, ymin, ymax, ymean, _ = line
     assert n == 3
     assert (xmin, xmax, xmean) == (0.0, 2.0, 1.0)
     assert (ymin, ymax) == (0.0, 1.0)
@@ -33,54 +38,45 @@ def test_summary_of_a_line_holds_count_and_ranges():
 def test_summary_skips_points_that_are_not_finite():
     fig, ax = plt.subplots()
     ax.plot([0.0, 1.0, 2.0, 3.0], [1.0, np.nan, 3.0, np.inf])
-    try:
-        (line,) = v.summarize(fig)["axes"][0]["lines"]
-    finally:
-        plt.close(fig)
+    (line,) = summary_of(fig)["axes"][0]["lines"]
     assert line[0] == 2
-    assert line[4:6] == [1.0, 3.0]
+    assert line[5:7] == [1.0, 3.0]
 
 
 def test_summary_counts_scatter_points_and_image_pixels():
     fig, (a, b) = plt.subplots(1, 2)
     a.scatter([0.0, 1.0], [2.0, 4.0])
     b.imshow(np.arange(6.0).reshape(2, 3))
-    try:
-        summary = v.summarize(fig)
-    finally:
-        plt.close(fig)
+    summary = summary_of(fig)
     (coll,) = summary["axes"][0]["collections"]
-    assert coll[0] == 2 and coll[4:7] == [2.0, 4.0, 3.0]
+    assert coll[0] == 2 and coll[5:8] == [2.0, 4.0, 3.0]
     (image,) = summary["axes"][1]["images"]
-    assert image[:2] == [2, 3] and image[2:] == [0.0, 5.0, 2.5]
+    assert image[:2] == [2, 3] and image[2:5] == [0.0, 5.0, 2.5]
 
 
 def one_axes(*lines):
     """Summary of one axes holding the given lines."""
-    return {"axes": [{"lines": [list(x) for x in lines], "collections": [], "images": []}]}
+    return {"v": 1, "axes": [{"lines": [list(x) for x in lines]}]}
 
 
 def test_identical_summaries_compare_equal():
     fig = line_figure()
-    try:
-        s = v.summarize(fig)
-    finally:
-        plt.close(fig)
+    s = summary_of(fig)
     assert v.compare_summaries(s, s) == []
 
 
 def test_a_change_below_the_tolerance_passes_and_above_it_fails():
-    base = one_axes([3, 0.0, 2.0, 1.0, 0.0, 1.0, 0.5])
-    small = one_axes([3, 0.0, 2.0, 1.0, 0.0, 1.0, 0.5 + 0.1 * v.SUMMARY_RTOL])
-    large = one_axes([3, 0.0, 2.0, 1.0, 0.0, 1.0, 0.5 + 10 * v.SUMMARY_RTOL])
+    base = one_axes([3, 0.0, 2.0, 1.0, 0.0, 0.0, 1.0, 0.5, 0.0])
+    small = one_axes([3, 0.0, 2.0, 1.0, 0.0, 0.0, 1.0, 0.5 + 0.1 * v.SUMMARY_RTOL, 0.0])
+    large = one_axes([3, 0.0, 2.0, 1.0, 0.0, 0.0, 1.0, 0.5 + 10 * v.SUMMARY_RTOL, 0.0])
     assert v.compare_summaries(small, base) == []
     (diff,) = v.compare_summaries(large, base)
     assert "axes 0" in diff and "line 0" in diff
 
 
 def test_a_mean_near_zero_is_compared_on_the_scale_of_its_range():
-    base = one_axes([3, -1.0, 1.0, 0.0, -1.0, 1.0, 0.0])
-    near = one_axes([3, -1.0, 1.0, 1e-12, -1.0, 1.0, 0.0])
+    base = one_axes([3, -1.0, 1.0, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0])
+    near = one_axes([3, -1.0, 1.0, 1e-12, 0.0, -1.0, 1.0, 0.0, 0.0])
     assert v.compare_summaries(near, base) == []
 
 
@@ -93,7 +89,7 @@ def test_a_mean_near_zero_is_compared_on_the_scale_of_its_range():
     ],
 )
 def test_a_changed_count_fails(change, word):
-    base = one_axes([3, 0.0, 2.0, 1.0, 0.0, 1.0, 0.5])
+    base = one_axes([3, 0.0, 2.0, 1.0, 0.0, 0.0, 1.0, 0.5, 0.0])
     new = one_axes(base["axes"][0]["lines"][0])
     change(new)
     diffs = v.compare_summaries(new, base)
@@ -104,10 +100,7 @@ def test_a_changed_count_fails(change, word):
 def test_saved_files_carry_the_summary(tmp_path, kind):
     light, dark = v.save(line_figure, "case", tmp_path, kind, test_id="t", command="c")
     fig = line_figure()
-    try:
-        expected = v.summarize(fig)
-    finally:
-        plt.close(fig)
+    expected = summary_of(fig)
     assert v.read_summary(light) == expected
     assert v.read_summary(dark) == expected
 
@@ -125,21 +118,13 @@ def test_summary_values_survive_the_file_to_full_precision(tmp_path):
     y = (math.pi, math.e, 1.0 / 3.0)
     (light, _) = v.save(lambda: line_figure(y), "case", tmp_path)
     (line,) = v.read_summary(light)["axes"][0]["lines"]
-    assert line[6] == pytest.approx(sum(y) / 3.0, rel=1e-12)
+    assert line[7] == pytest.approx(sum(y) / 3.0, rel=1e-12)
 
 
 def test_a_file_without_description_reads_as_none(tmp_path):
     path = tmp_path / "plain.svg"
     path.write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
     assert v.read_summary(path) is None
-
-
-def summary_of(fig):
-    """Data summary of a figure, which is then closed."""
-    try:
-        return v.summarize(fig)
-    finally:
-        plt.close(fig)
 
 
 def two_figures(draw, a, b):
@@ -191,11 +176,20 @@ def test_the_tolerance_follows_the_range_of_an_offset_coordinate():
     assert v.compare_summaries(new, old)
 
 
-@pytest.mark.parametrize("offset", [0.0, 1e6])
-@pytest.mark.parametrize("step, stale", [(5e-7, False), (4e-6, True)])
-def test_a_shift_is_compared_to_1e_6_of_the_range(step, stale, offset):
-    y = offset + np.array([0.0, 1e-3, 2e-3])
-    new, old = two_figures(lambda ax, d: ax.plot([0.0, 1.0, 2.0], d), y + step * 1e-3, y)
+@pytest.mark.parametrize(
+    "y, shift, stale",
+    [
+        ([0.0, 1e-3, 2e-3], 1e-9, False),
+        ([0.0, 1e-3, 2e-3], 4e-9, True),
+        ([10.0, 11.0, 12.0], 1e-6, False),
+        ([10.0, 11.0, 12.0], 8e-6, True),
+        ([1e6, 1e6 + 1.0, 1e6 + 2.0], 0.05, False),
+        ([1e6, 1e6 + 1.0, 1e6 + 2.0], 0.2, True),
+    ],
+)
+def test_a_shift_is_compared_to_1e_6_of_the_range_or_a_tenth_of_the_magnitude(y, shift, stale):
+    y = np.array(y)
+    new, old = two_figures(lambda ax, d: ax.plot([0.0, 1.0, 2.0], d), y + shift, y)
     assert bool(v.compare_summaries(new, old)) is stale
 
 
@@ -248,3 +242,13 @@ def test_compare_finds_changed_images_missing_values_and_short_rows():
 def test_the_stale_message_names_the_quantity():
     new, old = two_figures(lambda ax, d: ax.plot([0.0, 1.0, 2.0], d), [0.0, 1.0, 3.0], [0.0, 1.0, 2.0])
     assert any("y max" in d for d in v.compare_summaries(new, old))
+
+
+def test_a_line_without_finite_points_has_no_statistics():
+    fig, ax = plt.subplots()
+    ax.plot([np.nan, np.nan], [1.0, 2.0])
+    assert summary_of(fig)["axes"][0]["lines"] == [[0] + [None] * 8]
+
+
+def test_summaries_of_two_formats_differ():
+    assert v.compare_summaries({"v": 2, "axes": []}, {"v": 1, "axes": []}) == ["summary format 2, committed 1"]

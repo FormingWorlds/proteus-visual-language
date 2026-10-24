@@ -1,12 +1,11 @@
 """pytest plugin: the `validation_plot` fixture and the ``--validation-plots`` option.
 
 Without the option the fixture renders both themes in memory, applies the size
-cap and compares the data summary with the committed pair in
+cap and compares the data summary with both files of the committed pair in
 ``docs/assets/validation`` under the pytest rootdir; it writes nothing, and a
-missing or stale pair fails the test. ``pytest -m reference_pinned
+missing or stale file fails the test. ``pytest -m reference_pinned
 --validation-plots`` makes every plot again in that folder;
-``--validation-plots=DIR`` writes to another folder and compares nothing. A test
-that takes the fixture and passes without making a plot fails at teardown.
+``--validation-plots=DIR`` writes to another folder and compares nothing.
 """
 
 import os
@@ -20,16 +19,15 @@ import pytest
 
 DEFAULT_DIR = "docs/assets/validation"
 _SEEN = pytest.StashKey[dict]()
-_CALL = pytest.StashKey[object]()
+_PASSED = pytest.StashKey[bool]()
 
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item, call):
-    """Keep the report of the call phase, which the fixture reads at teardown."""
-    outcome = yield
-    report = outcome.get_result()
+    """Keep whether the call phase passed, not as an xpass, for the fixture's teardown."""
+    report = (yield).get_result()
     if report.when == "call":
-        item.stash[_CALL] = report
+        item.stash[_PASSED] = report.passed and not hasattr(report, "wasxfail")
 
 
 def pytest_addoption(parser):
@@ -130,21 +128,14 @@ def validation_plot(request):
 
     With ``--validation-plots`` the call writes the pair and returns the written
     paths. Without it the call renders both themes in memory (the size cap
-    applies), compares the data summary with the committed light file and returns
-    an empty list; a missing or stale committed file fails the test, a committed
-    file without a summary gives a warning. A name used twice for one kind in a
+    applies), compares the data summary with both committed files and returns an
+    empty list; a missing or stale committed file fails the test, a committed file
+    without a summary of this version gives a warning. A name used twice for one kind in a
     session raises ValueError, with or without the option; a rerun of the same
     test may use its names again. A test that takes the fixture and passes
     without calling it fails at teardown.
     """
-    from .validation import (
-        KINDS,
-        check_args,
-        compare_summaries,
-        read_summary,
-        render,
-        save,
-    )
+    from .validation import check_args, render, save
 
     config = request.config
     outdir = config.getoption("validation_plots")
@@ -158,8 +149,8 @@ def validation_plot(request):
     calls = []
 
     def plot(fig_factory, name, kind="line"):
-        check_args(name, kind)
         calls.append(name)
+        check_args(name, kind)
         key = (name.lower(), kind)
         if key in seen:
             raise ValueError(
@@ -176,33 +167,47 @@ def validation_plot(request):
                 test_id=nodeid,
                 command=f"pytest {shlex.quote(nodeid)} {option}",
             )
-        _, summary = render(fig_factory, name, kind)
-        rel = f"{DEFAULT_DIR}/{name}.{KINDS[kind]}"
-        path = Path(config.rootpath, rel)
-        if not path.is_file():
-            pytest.fail(
-                f"{name}: no committed plot at {rel}; make it with --validation-plots "
-                "and commit it",
-                pytrace=False,
-            )
-        committed = read_summary(path)
-        if committed is None:
-            warnings.warn(
-                f"{name}: the committed plot carries no data summary; make it again "
-                "with --validation-plots so that it can be compared",
-                stacklevel=2,
-            )
-        else:
-            diffs = compare_summaries(summary, committed)
-            if diffs:
-                pytest.fail(
-                    f"{name}: the committed plot is stale ({diffs[0]}); make it again "
-                    "with --validation-plots and commit it",
-                    pytrace=False,
-                )
+        files, summary = render(fig_factory, name, kind)
+        for fname, _ in files:
+            _check_committed(name, Path(config.rootpath, DEFAULT_DIR, fname), summary)
         return []
 
     yield plot
-    report = request.node.stash.get(_CALL, None)
-    if not calls and report is not None and report.passed:
+    if not calls and request.node.stash.get(_PASSED, False):
         pytest.fail(f"{nodeid} took validation_plot but made no plot", pytrace=False)
+
+
+def _check_committed(name, path, summary):
+    """Fail when the committed file `path` is missing, unreadable or stale for `summary`."""
+    from .validation import compare_summaries, read_summary
+
+    again = "make it again with --validation-plots"
+    if not path.is_file() or path.name not in os.listdir(path.parent):
+        pytest.fail(
+            f"{name}: no committed plot at {path}; make it with --validation-plots and commit it",
+            pytrace=False,
+        )
+    try:
+        committed = read_summary(path)
+        same = committed is not None and committed.get("v") == summary["v"]
+        diffs = compare_summaries(summary, committed) if same else []
+    except (ValueError, TypeError, KeyError, AttributeError) as err:
+        pytest.fail(
+            f"{name}: {path.name} carries an unreadable data summary ({err}); {again} and "
+            "commit it",
+            pytrace=False,
+        )
+    if not same:
+        version = "" if committed is None else " of this version"
+        warnings.warn(
+            f"{name}: {path.name} carries no data summary{version}; {again} so that it can "
+            "be compared",
+            stacklevel=3,
+        )
+    elif diffs:
+        more = f" and {len(diffs) - 1} more" if len(diffs) > 1 else ""
+        pytest.fail(
+            f"{name}: the committed plot {path.name} is stale ({diffs[0]}{more}); {again} "
+            "and commit it",
+            pytrace=False,
+        )

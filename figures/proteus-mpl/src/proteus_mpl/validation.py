@@ -12,7 +12,6 @@ matplotlib and Pillow versions the same figure gives the same bytes. Every file
 must stay at or below `MAX_BYTES`.
 """
 
-import html
 import io
 import json
 import os
@@ -24,8 +23,9 @@ from xml.sax.saxutils import escape
 import numpy as np
 
 MAX_BYTES = 60_000
-# Relative tolerance of the data summary, on the scale of each coordinate's range
+# Tolerance of the data summary, relative to the range of each committed coordinate
 SUMMARY_RTOL = 1e-6
+SUMMARY_VERSION = 1
 SVG_HASHSALT = "proteus-validation"
 AVIF_QUALITY = 80
 AVIF_OPTIONS = {"speed": 6, "max_threads": 1, "codec": "aom", "subsampling": "4:2:0"}
@@ -187,9 +187,9 @@ def render(fig_factory, name, kind="line", *, test_id=None, command=None):
                 figures.append(fig)
                 if summary is None:
                     summary = summarize(fig)
-                full = "; ".join(filter(None, (stamp, f"summary: {json.dumps(summary)}")))
-                full = _NOT_XML.sub("", full)
-                files.append((f"{name}{tail}.{KINDS[kind]}", _render(fig, kind, full)))
+                    stamp = "; ".join(filter(None, (stamp, f"summary: {json.dumps(summary)}")))
+                    stamp = _NOT_XML.sub("", stamp)
+                files.append((f"{name}{tail}.{KINDS[kind]}", _render(fig, kind, stamp)))
             finally:
                 for num in set(plt.get_fignums()) - open_before:
                     plt.close(num)
@@ -201,81 +201,133 @@ def render(fig_factory, name, kind="line", *, test_id=None, command=None):
 
 
 def _stats(*coords):
-    """Point count and, per coordinate, min, max and mean over the points finite in all."""
+    """Point count and, per coordinate, min, max, mean and ramp over the points finite in all.
+
+    The ramp is the mean of the values weighted by a line from -1 at the first point to
+    1 at the last, so a reversed or reordered series changes it. Means are taken on
+    values divided by their largest magnitude, which keeps them finite.
+    """
     arrays = [np.ravel(np.ma.filled(np.ma.asarray(c, dtype=float), np.nan)) for c in coords]
     keep = np.logical_and.reduce([np.isfinite(a) for a in arrays])
-    out = [int(keep.sum())]
+    n = int(keep.sum())
+    ramp = np.linspace(-1.0, 1.0, n) if n > 1 else np.zeros(n)
+    out = [n]
     for a in arrays:
         a = a[keep]
-        out += [float(a.min()), float(a.max()), float(a.mean())] if a.size else [None] * 3
+        if not a.size:
+            out += [None] * 4
+            continue
+        s = float(np.max(np.abs(a))) or 1.0
+        out += [float(a.min()), float(a.max()), float(np.mean(a / s)) * s,
+                float(np.mean(ramp * (a / s))) * s]
     return out
+
+
+def _points(c):
+    """Data points of a collection: the offsets of scatter points, else the path vertices."""
+    from matplotlib.collections import PathCollection
+
+    if isinstance(c, PathCollection):
+        return np.ma.asarray(c.get_offsets(), dtype=float).reshape(-1, 2)
+    if hasattr(c, "get_coordinates"):
+        return np.asarray(c.get_coordinates(), dtype=float).reshape(-1, 2)
+    paths = [path.vertices for path in c.get_paths()]
+    return np.concatenate(paths).reshape(-1, 2) if paths else np.empty((0, 2))
 
 
 def summarize(fig):
     """Data summary of a figure, the part of a plot that does not depend on its renderer.
 
-    Per axes: each line as ``[n, xmin, xmax, xmean, ymin, ymax, ymean]`` over its
-    points finite in both coordinates; each collection (scatter points) the same
-    over its offsets; each image as ``[ny, nx, vmin, vmax, vmean]``.
+    Per axes: each line as ``[n, x stats, y stats]`` over its points finite in both
+    coordinates, in the axis units, so categorical and date axes are numbers; each
+    collection the same over its points (`_points`); the colour values of each
+    collection that has them as ``[n, value stats]``; the corners of all patches (bars,
+    histograms) as one ``[n, x stats, y stats]``; each image as
+    ``[ny, nx, value stats]``. The stats of a coordinate are min, max, mean and ramp
+    (`_stats`). Axis labels, scales, limits, text and colours are not part of it.
     """
     axes = []
     for ax in fig.axes:
-        images = []
-        for image in ax.get_images():
-            arr = np.ma.asarray(image.get_array())
-            images.append(list(arr.shape[:2]) + _stats(arr)[1:])
+        corners = [p.get_patch_transform().transform(p.get_path().vertices) for p in ax.patches]
         axes.append(
             {
-                "lines": [_stats(line.get_xdata(), line.get_ydata()) for line in ax.get_lines()],
-                "collections": [
-                    _stats(*np.asarray(c.get_offsets(), dtype=float).reshape(-1, 2).T)
-                    for c in ax.collections
+                "lines": [_stats(*line.get_xydata().T) for line in ax.get_lines()],
+                "collections": [_stats(*_points(c).T) for c in ax.collections],
+                "values": [
+                    _stats(c.get_array()) for c in ax.collections if c.get_array() is not None
                 ],
-                "images": images,
+                "patches": [_stats(*np.concatenate(corners).T)] if corners else [],
+                "images": [
+                    list(np.shape(image.get_array())[:2]) + _stats(image.get_array())[1:]
+                    for image in ax.get_images()
+                ],
             }
         )
-    return {"axes": axes}
+    return {"v": SUMMARY_VERSION, "axes": axes}
 
 
 _DESCRIPTION = re.compile(rb"<dc:description>(.*?)</dc:description>", re.DOTALL)
 
 
 def read_summary(path):
-    """Return the data summary a validation plot file carries, or None when it has none."""
+    """Return the data summary a validation plot file carries, or None when it has none.
+
+    Raises ValueError when the text after the last ``summary: `` is not JSON.
+    """
     match = _DESCRIPTION.search(Path(path).read_bytes())
     if not match:
         return None
-    text = html.unescape(match.group(1).decode("utf-8", "replace"))
-    _, sep, tail = text.partition("summary: ")
-    return json.loads(tail) if sep else None
+    _, sep, tail = match.group(1).decode("utf-8", "replace").rpartition("summary: ")
+    if not sep:
+        return None
+    return json.loads(tail)
+
+
+_HEADS = {"lines": 1, "collections": 1, "values": 1, "patches": 1, "images": 2}
+_LABELS = {"lines": "line", "collections": "collection", "values": "value set",
+           "patches": "patch set", "images": "image"}
+_COORDS = {"lines": "xy", "collections": "xy", "patches": "xy"}
+_STATS = ("min", "max", "mean", "ramp")
 
 
 def compare_summaries(new, old, rtol=SUMMARY_RTOL):
     """List the differences between two data summaries; an empty list when they agree.
 
-    Counts must match; each min, max and mean must agree within `rtol` times the
-    larger magnitude of the committed min and max of that coordinate.
+    Formats and counts must match. Each statistic of a coordinate must agree within
+    `rtol` times the range of the committed coordinate, or a tenth of its largest
+    magnitude when that is larger, so round-off of the order of 1e-10 of the values
+    passes, a constant coordinate is compared to 1e-7 of its value and a coordinate that
+    is zero everywhere exactly.
     """
+    if new.get("v") != old.get("v"):
+        return [f"summary format {new.get('v')}, committed {old.get('v')}"]
     if len(new["axes"]) != len(old["axes"]):
         return [f"axes count {len(new['axes'])}, committed {len(old['axes'])}"]
     diffs = []
     for i, (a, b) in enumerate(zip(new["axes"], old["axes"])):
-        for key, label, head in (("lines", "line", 1), ("collections", "collection", 1),
-                                 ("images", "image", 2)):
-            if len(a[key]) != len(b[key]):
-                diffs.append(f"axes {i}: {label} count {len(a[key])}, committed {len(b[key])}")
+        for key, head in _HEADS.items():
+            label, rows, committed = _LABELS[key], a.get(key, []), b.get(key, [])
+            if len(rows) != len(committed):
+                diffs.append(f"axes {i}: {label} count {len(rows)}, committed {len(committed)}")
                 continue
-            for j, (x, y) in enumerate(zip(a[key], b[key])):
+            for j, (x, y) in enumerate(zip(rows, committed)):
                 where = f"axes {i} {label} {j}"
-                if x[:head] != y[:head]:
+                if len(x) != len(y) or (len(y) - head) % 4:
+                    diffs.append(f"{where}: {len(x)} entries, committed {len(y)}")
+                elif x[:head] != y[:head]:
                     diffs.append(f"{where}: point count {x[:head]}, committed {y[:head]}")
-                    continue
-                for k in range(head, len(y), 3):
-                    lo, hi = y[k], y[k + 1]
-                    scale = 0.0 if lo is None else max(abs(lo), abs(hi))
-                    for got, want in zip(x[k : k + 3], y[k : k + 3]):
-                        if (got is None) != (want is None) or (
-                            want is not None and abs(got - want) > rtol * scale
-                        ):
-                            diffs.append(f"{where}: {got!r}, committed {want!r}")
+                else:
+                    diffs += _compare_stats(where, x[head:], y[head:], _COORDS.get(key, "v"), rtol)
+    return diffs
+
+
+def _compare_stats(where, got, want, coords, rtol):
+    """Differences between the statistics of the coordinates `coords` of one entry."""
+    diffs = []
+    for c, k in zip(coords, range(0, len(want), 4)):
+        lo, hi = want[k], want[k + 1]
+        scale = 0.0 if lo is None else max(hi - lo, 0.1 * max(abs(lo), abs(hi)))
+        for stat, g, w in zip(_STATS, got[k : k + 4], want[k : k + 4]):
+            if g != w and (None in (g, w) or not abs(g - w) <= rtol * scale):
+                diffs.append(f"{where} {c} {stat}: {g!r}, committed {w!r}")
     return diffs

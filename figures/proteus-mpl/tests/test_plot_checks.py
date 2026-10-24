@@ -109,11 +109,10 @@ def test_a_missing_committed_pair_fails(case):
 
 
 def test_a_matching_committed_pair_passes_and_is_not_rewritten(case):
-    light = make_pair(case)
+    make_pair(case)
     before = {p.name: p.read_bytes() for p in committed(case).iterdir()}
     case.runpytest("test_case.py::test_case").assert_outcomes(passed=1)
     assert {p.name: p.read_bytes() for p in committed(case).iterdir()} == before
-    assert light.exists()
 
 
 def test_changed_data_fails_as_stale(case):
