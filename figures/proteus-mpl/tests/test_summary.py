@@ -25,8 +25,7 @@ def line_figure(y=(1.0, 0.0, 1.0)):
 
 
 def test_summary_of_a_line_holds_count_and_ranges():
-    fig = line_figure()
-    summary = summary_of(fig)
+    summary = summary_of(line_figure())
     (line,) = summary["axes"][0]["lines"]
     n, xmin, xmax, xmean, _, ymin, ymax, ymean, _ = line
     assert n == 3
@@ -60,8 +59,7 @@ def one_axes(*lines):
 
 
 def test_identical_summaries_compare_equal():
-    fig = line_figure()
-    s = summary_of(fig)
+    s = summary_of(line_figure())
     assert v.compare_summaries(s, s) == []
 
 
@@ -99,8 +97,7 @@ def test_a_changed_count_fails(change, word):
 @pytest.mark.parametrize("kind", ["line", "map"])
 def test_saved_files_carry_the_summary(tmp_path, kind):
     light, dark = v.save(line_figure, "case", tmp_path, kind, test_id="t", command="c")
-    fig = line_figure()
-    expected = summary_of(fig)
+    expected = summary_of(line_figure())
     assert v.read_summary(light) == expected
     assert v.read_summary(dark) == expected
 
@@ -215,8 +212,7 @@ def test_the_summary_names_its_format():
 
 def test_a_test_id_with_the_summary_label_reads_back(tmp_path):
     light, _ = v.save(line_figure, "case", tmp_path, test_id="t.py::test_x[summary: a<b&c]")
-    fig = line_figure()
-    assert v.read_summary(light) == summary_of(fig)
+    assert v.read_summary(light) == summary_of(line_figure())
 
 
 def test_an_unreadable_summary_raises_value_error(tmp_path):

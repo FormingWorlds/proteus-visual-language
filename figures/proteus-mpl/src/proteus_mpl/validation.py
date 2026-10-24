@@ -147,9 +147,10 @@ def render(fig_factory, name, kind="line", *, test_id=None, command=None):
     """Make the light and the dark file of one validation plot in memory.
 
     Takes the arguments of `save` except `outdir` and raises as it does, before
-    anything is written. Returns the list of ``(file name, bytes)`` pairs, light
-    then dark, and the data summary of the light figure (`summarize`), which
-    both files carry in their description after the test id and the command.
+    anything is written, and raises ValueError when the light and dark figures hold
+    different data. Returns the list of ``(file name, bytes)`` pairs, light then dark,
+    and the data summary of the light figure (`summarize`), which both files carry in
+    their description after the test id and the command.
     """
     check_args(name, kind)
     if not callable(fig_factory):
@@ -163,7 +164,7 @@ def render(fig_factory, name, kind="line", *, test_id=None, command=None):
     stamp = "; ".join(
         filter(None, (test_id and f"test: {test_id}", command and f"command: {command}"))
     )
-    files, figures, summary = [], [], None
+    files, figures, summary, diffs = [], [], None, []
     for variant, tail in _VARIANTS:
         open_before = set(plt.get_fignums())
         with plt.rc_context({"svg.hashsalt": SVG_HASHSALT}):
@@ -189,6 +190,8 @@ def render(fig_factory, name, kind="line", *, test_id=None, command=None):
                     summary = summarize(fig)
                     stamp = "; ".join(filter(None, (stamp, f"summary: {json.dumps(summary)}")))
                     stamp = _NOT_XML.sub("", stamp)
+                else:
+                    diffs = compare_summaries(summarize(fig), summary)
                 files.append((f"{name}{tail}.{KINDS[kind]}", _render(fig, kind, stamp)))
             finally:
                 for num in set(plt.get_fignums()) - open_before:
@@ -197,6 +200,11 @@ def render(fig_factory, name, kind="line", *, test_id=None, command=None):
     for fname, data in files:
         if len(data) > MAX_BYTES:
             raise ValueError(f"{fname}: {len(data)} B, above the {MAX_BYTES} B cap; {_HINTS[kind]}")
+    if diffs:
+        raise ValueError(
+            f"{name}: the light and dark figures hold different data ({diffs[0]}); draw the "
+            "same data under both themes"
+        )
     return files, summary
 
 
@@ -204,19 +212,18 @@ def _stats(*coords):
     """Point count and, per coordinate, min, max, mean and ramp over the points finite in all.
 
     The ramp is the mean of the values weighted by a line from -1 at the first point to
-    1 at the last, so a reversed or reordered series changes it. Means are taken on
-    values divided by their largest magnitude, which keeps them finite.
+    1 at the last, so a reversed series changes it. Means are taken on values divided by
+    their largest magnitude, which keeps them finite.
     """
     arrays = [np.ravel(np.ma.filled(np.ma.asarray(c, dtype=float), np.nan)) for c in coords]
     keep = np.logical_and.reduce([np.isfinite(a) for a in arrays])
     n = int(keep.sum())
-    ramp = np.linspace(-1.0, 1.0, n) if n > 1 else np.zeros(n)
+    if not n:
+        return [0] + [None] * 4 * len(arrays)
+    ramp = np.linspace(-1.0, 1.0, n) if n > 1 else np.zeros(1)
     out = [n]
     for a in arrays:
         a = a[keep]
-        if not a.size:
-            out += [None] * 4
-            continue
         s = float(np.max(np.abs(a))) or 1.0
         out += [float(a.min()), float(a.max()), float(np.mean(a / s)) * s,
                 float(np.mean(ramp * (a / s))) * s]
@@ -224,42 +231,63 @@ def _stats(*coords):
 
 
 def _points(c):
-    """Data points of a collection: the offsets of scatter points, else the path vertices."""
-    from matplotlib.collections import PathCollection
-
-    if isinstance(c, PathCollection):
-        return np.ma.asarray(c.get_offsets(), dtype=float).reshape(-1, 2)
+    """Data points of a collection: its offsets, else the mesh coordinates or path vertices."""
+    offsets = np.ma.asarray(c.get_offsets(), dtype=float).reshape(-1, 2)
+    if len(offsets) != 1 or offsets.any():
+        return offsets
     if hasattr(c, "get_coordinates"):
         return np.asarray(c.get_coordinates(), dtype=float).reshape(-1, 2)
     paths = [path.vertices for path in c.get_paths()]
     return np.concatenate(paths).reshape(-1, 2) if paths else np.empty((0, 2))
 
 
+def _values(c):
+    """Statistic rows of the data a collection carries besides its points."""
+    rows = [_stats(a)] if (a := c.get_array()) is not None else []
+    return rows + [_stats(c.U), _stats(c.V)] if hasattr(c, "U") and hasattr(c, "V") else rows
+
+
+def _all_axes(axes):
+    """The axes and, depth first, their inset axes."""
+    for ax in axes:
+        yield ax
+        yield from _all_axes(ax.child_axes)
+
+
 def summarize(fig):
     """Data summary of a figure, the part of a plot that does not depend on its renderer.
 
-    Per axes: each line as ``[n, x stats, y stats]`` over its points finite in both
-    coordinates, in the axis units, so categorical and date axes are numbers; each
-    collection the same over its points (`_points`); the colour values of each
-    collection that has them as ``[n, value stats]``; the corners of all patches (bars,
-    histograms) as one ``[n, x stats, y stats]``; each image as
-    ``[ny, nx, value stats]``. The stats of a coordinate are min, max, mean and ramp
-    (`_stats`). Axis labels, scales, limits, text and colours are not part of it.
+    Per axes, inset axes included: each line as ``[n, x stats, y stats]`` over its
+    points finite in both coordinates, in the axis units, so categorical and date axes
+    are numbers; each collection the same over its points (`_points`); the colour
+    values, and the U and V of quivers, as ``[n, value stats]``; the corners of all
+    patches except arrows (bars, histograms) as one ``[n, x stats, y stats]``; each image
+    as ``[ny, nx, value stats]`` and its extent as ``[2, x stats, y stats]``. The stats
+    of a coordinate are min, max, mean and ramp (`_stats`). Not part of it: axis
+    labels, scales, limits, text, colours, arrows, the z of 3D axes and the shapes of
+    offset markers. The artists a plot type makes depend on the matplotlib version.
     """
+    from matplotlib.patches import FancyArrowPatch
+
     axes = []
-    for ax in fig.axes:
-        corners = [p.get_patch_transform().transform(p.get_path().vertices) for p in ax.patches]
+    for ax in _all_axes(fig.axes):
+        patches = [p for p in ax.patches if not isinstance(p, FancyArrowPatch)]
+        corners = [p.get_patch_transform().transform(p.get_path().vertices) for p in patches]
+        images = ax.get_images()
         axes.append(
             {
                 "lines": [_stats(*line.get_xydata().T) for line in ax.get_lines()],
                 "collections": [_stats(*_points(c).T) for c in ax.collections],
-                "values": [
-                    _stats(c.get_array()) for c in ax.collections if c.get_array() is not None
-                ],
+                "values": [row for c in ax.collections for row in _values(c)],
                 "patches": [_stats(*np.concatenate(corners).T)] if corners else [],
                 "images": [
-                    list(np.shape(image.get_array())[:2]) + _stats(image.get_array())[1:]
-                    for image in ax.get_images()
+                    (list(np.shape(im.get_array())[:2]) + [0, 0])[:2] + _stats(im.get_array())[1:]
+                    for im in images
+                ],
+                "extents": [
+                    _stats(*np.reshape(im.get_extent(), (2, 2)))
+                    for im in images
+                    if im.get_array() is not None
                 ],
             }
         )
@@ -278,15 +306,12 @@ def read_summary(path):
     if not match:
         return None
     _, sep, tail = match.group(1).decode("utf-8", "replace").rpartition("summary: ")
-    if not sep:
-        return None
-    return json.loads(tail)
+    return json.loads(tail) if sep else None
 
 
-_HEADS = {"lines": 1, "collections": 1, "values": 1, "patches": 1, "images": 2}
+_HEADS = {"lines": 1, "collections": 1, "values": 1, "patches": 1, "images": 2, "extents": 1}
 _LABELS = {"lines": "line", "collections": "collection", "values": "value set",
-           "patches": "patch set", "images": "image"}
-_COORDS = {"lines": "xy", "collections": "xy", "patches": "xy"}
+           "patches": "patch set", "images": "image", "extents": "image extent"}
 _STATS = ("min", "max", "mean", "ramp")
 
 
@@ -295,9 +320,7 @@ def compare_summaries(new, old, rtol=SUMMARY_RTOL):
 
     Formats and counts must match. Each statistic of a coordinate must agree within
     `rtol` times the range of the committed coordinate, or a tenth of its largest
-    magnitude when that is larger, so round-off of the order of 1e-10 of the values
-    passes, a constant coordinate is compared to 1e-7 of its value and a coordinate that
-    is zero everywhere exactly.
+    magnitude when that is larger.
     """
     if new.get("v") != old.get("v"):
         return [f"summary format {new.get('v')}, committed {old.get('v')}"]
@@ -311,23 +334,27 @@ def compare_summaries(new, old, rtol=SUMMARY_RTOL):
                 diffs.append(f"axes {i}: {label} count {len(rows)}, committed {len(committed)}")
                 continue
             for j, (x, y) in enumerate(zip(rows, committed)):
-                where = f"axes {i} {label} {j}"
+                where, count = f"axes {i} {label} {j}", "shape" if head == 2 else "point count"
                 if len(x) != len(y) or (len(y) - head) % 4:
                     diffs.append(f"{where}: {len(x)} entries, committed {len(y)}")
                 elif x[:head] != y[:head]:
-                    diffs.append(f"{where}: point count {x[:head]}, committed {y[:head]}")
+                    diffs.append(f"{where}: {count} {x[:head]}, committed {y[:head]}")
                 else:
-                    diffs += _compare_stats(where, x[head:], y[head:], _COORDS.get(key, "v"), rtol)
+                    diffs += _compare_stats(where, x[head:], y[head:], rtol)
     return diffs
 
 
-def _compare_stats(where, got, want, coords, rtol):
-    """Differences between the statistics of the coordinates `coords` of one entry."""
+def _compare_stats(where, got, want, rtol):
+    """Differences between the statistics of the coordinates of one entry.
+
+    Values are halved before they are subtracted, so a range near the largest float
+    does not overflow.
+    """
     diffs = []
-    for c, k in zip(coords, range(0, len(want), 4)):
+    for c, k in zip("xy" if len(want) > 4 else "v", range(0, len(want), 4)):
         lo, hi = want[k], want[k + 1]
-        scale = 0.0 if lo is None else max(hi - lo, 0.1 * max(abs(lo), abs(hi)))
+        half = 0.0 if lo is None else max(hi / 2 - lo / 2, 0.05 * max(abs(lo), abs(hi)))
         for stat, g, w in zip(_STATS, got[k : k + 4], want[k : k + 4]):
-            if g != w and (None in (g, w) or not abs(g - w) <= rtol * scale):
+            if g != w and (None in (g, w) or not abs(g / 2 - w / 2) <= rtol * half):
                 diffs.append(f"{where} {c} {stat}: {g!r}, committed {w!r}")
     return diffs

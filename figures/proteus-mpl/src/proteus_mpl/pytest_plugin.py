@@ -191,7 +191,7 @@ def _check_committed(name, path, summary):
         committed = read_summary(path)
         same = committed is not None and committed.get("v") == summary["v"]
         diffs = compare_summaries(summary, committed) if same else []
-    except (ValueError, TypeError, KeyError, AttributeError) as err:
+    except (OSError, ValueError, TypeError, KeyError, AttributeError) as err:
         pytest.fail(
             f"{name}: {path.name} carries an unreadable data summary ({err}); {again} and "
             "commit it",
