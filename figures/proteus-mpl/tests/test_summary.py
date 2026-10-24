@@ -467,6 +467,90 @@ def test_labelled_contours_find_a_field_or_level_change(a, b):
     assert v.compare_summaries(*two_figures(lambda ax, kw: labelled(ax, **kw), a, b))
 
 
+def contours(ax, kind, label, generator=True):
+    x = np.linspace(-1.0, 1.0, 40)
+    X, Y = np.meshgrid(x, x)
+    Z = X**2 + Y**2
+    if kind == "contour":
+        c = ax.contour(X, Y, Z, levels=6)
+    else:
+        c = ax.tricontour(X.ravel(), Y.ravel(), Z.ravel(), levels=6)
+    if not generator:
+        c._contour_generator = object()
+    if label:
+        ax.clabel(c, inline=True)
+
+
+@pytest.mark.parametrize("generator", [True, False], ids=["generator", "no_create_contour"])
+@pytest.mark.parametrize("kind", ["contour", "tricontour"])
+def test_labelled_and_unlabelled_contours_agree(kind, generator):
+    try:
+        new, old = two_figures(lambda ax, lab: contours(ax, kind, lab, generator), True, False)
+    except Exception as err:
+        pytest.fail(f"summarize raised {err!r}")
+    assert v.compare_summaries(new, old) == []
+
+
+def test_labelled_contours_built_from_segments_keep_their_points():
+    from matplotlib.contour import ContourSet
+
+    t = np.linspace(0.0, 2.0 * np.pi, 75)
+    ring = np.column_stack([np.cos(t), np.sin(t)])
+
+    def draw(ax, label):
+        c = ContourSet(ax, [0.5, 1.0], [[0.5 * ring], [ring]])
+        if label:
+            ax.clabel(c, inline=False)
+
+    new, old = two_figures(draw, True, False)
+    assert old["axes"][0]["collections"][0][0] == 150
+    assert v.compare_summaries(new, old) == []
+
+
+LOGV = np.logspace(-12.0, 0.0, 100)
+LOG_NORM_DRAWS = {
+    "imshow": lambda ax, w, norm: ax.imshow(w.reshape(10, 10), norm=norm),
+    "pcolormesh": lambda ax, w, norm: ax.pcolormesh(w.reshape(10, 10), norm=norm),
+    "scatter": lambda ax, w, norm: ax.scatter(np.arange(100.0), np.arange(100.0), c=w, norm=norm),
+}
+
+
+def log_norm():
+    from matplotlib.colors import LogNorm
+
+    return LogNorm(1e-12, 1.0)
+
+
+@pytest.mark.parametrize("norm", [log_norm, lambda: "log"], ids=["LogNorm", "log_string"])
+@pytest.mark.parametrize("draw", LOG_NORM_DRAWS.values(), ids=LOG_NORM_DRAWS.keys())
+def test_a_change_under_a_log_norm_is_found(draw, norm):
+    w = LOGV.copy()
+    w[:20] *= 1000.0
+    assert v.compare_summaries(*two_figures(lambda ax, d: draw(ax, d, norm()), w, LOGV))
+
+
+@pytest.mark.parametrize("draw", LOG_NORM_DRAWS.values(), ids=LOG_NORM_DRAWS.keys())
+def test_a_norm_change_is_a_difference(draw):
+    from matplotlib.colors import Normalize
+
+    diffs = v.compare_summaries(*two_figures(lambda ax, n: draw(ax, LOGV, n), log_norm(), Normalize(1e-12, 1.0)))
+    assert any("scales" in d for d in diffs)
+
+
+@pytest.mark.parametrize("draw", LOG_NORM_DRAWS.values(), ids=LOG_NORM_DRAWS.keys())
+def test_values_near_one_under_a_log_norm_pass_round_off(draw):
+    pair = [np.full(100, c) for c in (1.0, 1.0 + 1e-12)]
+    assert v.compare_summaries(*two_figures(lambda ax, w: draw(ax, w, log_norm()), *pair)) == []
+
+
+@pytest.mark.parametrize("delta, found", [(1e-12, False), (1e-5, True)])
+@pytest.mark.parametrize("scale", ["log", "linear"])
+def test_a_constant_near_one_on_a_log_axis_has_a_floor_in_decades(scale, delta, found):
+    draw = lambda ax, c: (ax.plot([0.0, 1.0, 2.0], [c] * 3), ax.set_yscale(scale))
+    diffs = v.compare_summaries(*two_figures(draw, 1.0 + delta, 1.0))
+    assert bool(diffs) == found
+
+
 def test_category_names_are_compared():
     diffs = v.compare_summaries(*two_figures(lambda ax, c: ax.bar(c, [1.0, 2.0, 3.0]), ["a", "b", "c"], ["c", "b", "a"]))
     assert any("categor" in d for d in diffs)
