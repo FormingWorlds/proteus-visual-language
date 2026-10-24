@@ -515,11 +515,11 @@ def test_save_leaves_a_file_in_other_case_alone(tmp_path):
 
 
 @pytest.mark.parametrize("kind", ["line", "map"])
-@pytest.mark.parametrize("cut", ["empty", "head", "half", "lfs", "garbage"])
+@pytest.mark.parametrize("cut", ["empty", "head", "half", "tail", "lfs", "garbage"])
 def test_a_broken_file_is_refused(tmp_path, kind, cut):
     light, _ = v.save(line_figure, "case", tmp_path, kind=kind)
     data = light.read_bytes()
-    broken = {"empty": b"", "head": data[:100], "half": data[: len(data) // 2],
+    broken = {"empty": b"", "head": data[:100], "half": data[: len(data) // 2], "tail": data[:-200],
               "lfs": b"version https://git-lfs.github.com/spec/v1\noid sha256:00\nsize 1\n",
               "garbage": bytes(range(256)) * 4}[cut]
     light.write_bytes(broken)
@@ -532,3 +532,14 @@ def test_an_xml_file_that_is_not_an_svg_is_refused(tmp_path):
     path.write_text('<html><dc:description xmlns:dc="d">summary: {"v": 1, "axes": []}</dc:description></html>')
     with pytest.raises(ValueError, match="not an SVG file"):
         v.read_summary(path)
+
+
+def test_a_summary_label_only_inside_the_test_id_is_no_summary(tmp_path):
+    path = tmp_path / "case.svg"
+    path.write_text('<svg xmlns="http://www.w3.org/2000/svg" xmlns:dc="d"><dc:description>'
+                    "test: t[summary: 1]; command: x</dc:description></svg>")
+    try:
+        summary = v.read_summary(path)
+    except ValueError as err:
+        summary = f"unreadable: {err}"
+    assert summary is None
