@@ -7,10 +7,10 @@ name = "proteus-mpl"
 version = "1.4.0"
 description = "PROTEUS Thermocline matplotlib theme: brand color cycles, phase colormaps, light + dark variants."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = { text = "Apache-2.0" }
 authors = [{ name = "PROTEUS collaboration", email = "dev@proteus-framework.org" }]
-dependencies = ["matplotlib>=3.5"]
+dependencies = ["matplotlib>=3.8"]
 keywords = ["matplotlib", "style", "theme", "PROTEUS", "planetary-science"]
 classifiers = [
     "Framework :: Matplotlib",
@@ -27,7 +27,7 @@ Changelog = "https://github.com/FormingWorlds/proteus-visual-language/blob/main/
 
 [project.optional-dependencies]
 validation = ["pillow>=11.3"]
-test = ["pytest", "pillow>=11.3", "hypothesis"]
+test = ["pytest>=7.0", "pillow>=11.3", "hypothesis"]
 
 [project.entry-points.pytest11]
 "proteus_mpl.pytest_plugin" = "proteus_mpl.pytest_plugin"

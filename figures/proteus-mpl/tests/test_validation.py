@@ -146,7 +146,7 @@ def test_avif_stamp_is_the_xmp_description(tmp_path):
 
     light, _ = save(map_figure, "case", tmp_path, kind="map", test_id="t::x", command="c")
     xmp = Image.open(light).info["xmp"]
-    assert b"<dc:description>test: t::x; command: c</dc:description>" in xmp
+    assert b"<dc:description>test: t::x; command: c; summary: {" in xmp
 
 
 def test_stamp_escapes_markup(tmp_path):
@@ -187,10 +187,13 @@ def test_invalid_arguments_are_refused(tmp_path, kwargs, error, match):
 
 def test_map_is_the_matplotlib_png_encoded_at_quality_80(tmp_path):
     import io
+    import json
+    from xml.sax.saxutils import escape
 
     from PIL import Image
 
     import proteus_mpl
+    from proteus_mpl.validation import _XMP, summarize
 
     light, _ = save(map_figure, "case", tmp_path, kind="map")
     with matplotlib.rc_context():
@@ -198,10 +201,18 @@ def test_map_is_the_matplotlib_png_encoded_at_quality_80(tmp_path):
         fig = map_figure()
         png = io.BytesIO()
         fig.savefig(png, format="png", dpi=150)
+        xmp = _XMP.format(escape(f"summary: {json.dumps(summarize(fig))}")).encode()
         plt.close(fig)
     expected = io.BytesIO()
     Image.open(png).convert("RGB").save(
-        expected, "AVIF", quality=80, speed=6, max_threads=1, codec="aom", subsampling="4:2:0"
+        expected,
+        "AVIF",
+        quality=80,
+        xmp=xmp,
+        speed=6,
+        max_threads=1,
+        codec="aom",
+        subsampling="4:2:0",
     )
     assert light.read_bytes() == expected.getvalue()
 
