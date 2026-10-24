@@ -556,6 +556,15 @@ def test_a_constant_near_one_on_a_log_axis_has_a_floor_in_decades(scale, delta, 
     assert bool(diffs) == found
 
 
+@pytest.mark.parametrize("decades, found", [(9e-8, False), (1.1e-7, True)])
+def test_log_floor_tolerance_is_1e_7_decade(decades, found):
+    def draw(ax, c):
+        ax.plot([0.0, 1.0, 2.0], [c] * 3)
+        ax.set_yscale("log")
+
+    assert bool(v.compare_summaries(*two_figures(draw, 10.0**decades, 1.0))) == found
+
+
 @given(st.floats(-300.0, 300.0))
 @example(0.0)
 def test_log_floor_is_in_decades_at_any_magnitude(exponent):
