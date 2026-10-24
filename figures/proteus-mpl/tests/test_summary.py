@@ -252,3 +252,92 @@ def test_a_line_without_finite_points_has_no_statistics():
 
 def test_summaries_of_two_formats_differ():
     assert v.compare_summaries({"v": 2, "axes": []}, {"v": 1, "axes": []}) == ["summary format 2, committed 1"]
+
+
+@pytest.mark.parametrize(
+    "draw",
+    [
+        lambda ax, k: (ax.plot([0.0, 1.0]), ax.inset_axes([0.5, 0.5, 0.4, 0.4]).plot([0.0, k])),
+        lambda ax, k: ax.hexbin(np.arange(20.0) % 7 + k, np.arange(20.0) % 5, gridsize=4),
+        lambda ax, k: ax.quiver([0.0, 1.0], [0.0, 1.0], [1.0, k], [1.0, 1.0]),
+        lambda ax, k: ax.imshow(np.eye(3), extent=(0.0, k, 0.0, 1.0)),
+        lambda ax, k: ax.pcolormesh(k * np.arange(4.0), np.arange(3.0), np.ones((2, 3))),
+    ],
+    ids=["inset", "hexbin", "quiver", "extent", "mesh_coordinates"],
+)
+def test_changed_placement_is_found(draw):
+    new, old = two_figures(draw, 3.0, 1.0)
+    assert v.compare_summaries(new, old)
+
+
+def test_changed_mesh_coordinates_are_named_as_a_collection():
+    draw = lambda ax, k: ax.pcolormesh(k * np.arange(4.0), np.arange(3.0), np.ones((2, 3)))
+    new, old = two_figures(draw, 2.0, 1.0)
+    assert all("collection" in d for d in v.compare_summaries(new, old))
+
+
+def test_offsets_of_a_collection_without_marker_paths_are_found():
+    from matplotlib.collections import EllipseCollection
+
+    def draw(ax, k):
+        ax.add_collection(
+            EllipseCollection([1.0, 1.0], [1.0, 1.0], [0.0, 0.0], offsets=[[0.0, 0.0], [k, 1.0]],
+                              offset_transform=ax.transData)
+        )
+
+    new, old = two_figures(draw, 2.0, 1.0)
+    assert v.compare_summaries(new, old)
+
+
+def test_an_arrow_patch_is_left_out():
+    from matplotlib.patches import FancyArrowPatch
+
+    fig, ax = plt.subplots()
+    ax.add_patch(FancyArrowPatch((0.0, 0.0), (1.0, 1.0)))
+    assert summary_of(fig)["axes"][0]["patches"] == []
+
+
+def test_a_range_too_large_for_a_float_is_still_compared():
+    row = [2, 0.0, 1.0, 0.5, 0.0, -1e308, 1e308, 0.0, 0.0]
+    changed = [2, 0.0, 1.0, 0.5, 0.0, -1e308, 0.0, -5e307, 0.0]
+    assert v.compare_summaries(one_axes(changed), one_axes(row))
+
+
+def test_an_image_without_data_compares_equal_to_itself():
+    from matplotlib.image import AxesImage
+
+    fig, ax = plt.subplots()
+    ax.add_image(AxesImage(ax))
+    s = summary_of(fig)
+    assert v.compare_summaries(s, json.loads(json.dumps(s))) == []
+
+
+def test_empty_rows_compare_equal_to_themselves():
+    fig, ax = plt.subplots()
+    ax.plot([], [])
+    ax.scatter([], [])
+    s = summary_of(fig)
+    assert v.compare_summaries(s, json.loads(json.dumps(s))) == []
+
+
+def test_rows_with_a_wrong_number_of_stats_differ():
+    row = [2, 0.0, 1.0, 0.5, 0.0, 0.0, 1.0]
+    assert v.compare_summaries(one_axes(row), one_axes(row))
+
+
+def test_a_changed_image_shape_is_named_as_a_shape():
+    new, old = two_figures(lambda ax, n: ax.imshow(np.eye(n)), 3, 2)
+    assert any("shape" in d for d in v.compare_summaries(new, old))
+
+
+def test_render_refuses_a_factory_whose_themes_draw_other_data():
+    calls = []
+
+    def factory():
+        calls.append(1)
+        fig, ax = plt.subplots()
+        ax.plot([0.0, 1.0, 2.0], [1.0, 0.0, 1.0 if len(calls) == 1 else 9.0])
+        return fig
+
+    with pytest.raises(ValueError, match="light and dark figures hold different data"):
+        v.render(factory, "case")

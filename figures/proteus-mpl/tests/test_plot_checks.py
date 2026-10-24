@@ -207,3 +207,33 @@ def test_the_pair_is_found_under_the_rootdir_from_a_subfolder(case):
     with pytest.MonkeyPatch.context() as mp:
         mp.chdir(sub)
         case.runpytest("test_sub.py::test_case").assert_outcomes(passed=1)
+
+
+def test_a_summary_of_the_wrong_shape_fails_as_unreadable(case):
+    light = make_pair(case)
+    text = light.read_text()
+    start = text.index("summary: ") + len("summary: ")
+    end = text.index("</dc:description>", start)
+    light.write_text(text[:start] + '{"v": 1, "axes": [null]}' + text[end:])
+    result = case.runpytest("test_case.py::test_case")
+    result.assert_outcomes(failed=1)
+    result.stdout.fnmatch_lines(["*case.svg carries an unreadable data summary*"])
+
+
+def test_a_file_that_cannot_be_read_fails_as_unreadable(case):
+    light = make_pair(case)
+    light.chmod(0)
+    try:
+        result = case.runpytest("test_case.py::test_case")
+    finally:
+        light.chmod(0o644)
+    result.assert_outcomes(failed=1)
+    result.stdout.fnmatch_lines(["*case.svg carries an unreadable data summary*"])
+
+
+def test_the_stale_message_counts_the_other_differences(case):
+    make_pair(case)
+    case.makepyfile(test_changed=CASE.replace("Y = [1.0, 0.0, 1.0]", "Y = [2.0, 0.5, 3.0]"))
+    result = case.runpytest("test_changed.py::test_case")
+    result.assert_outcomes(failed=1)
+    result.stdout.fnmatch_lines(["*is stale (axes 0 line 0 y * and * more)*"])
