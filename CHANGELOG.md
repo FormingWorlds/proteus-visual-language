@@ -10,6 +10,8 @@ it.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-24
+
 ### Changed
 - proteus-mpl needs matplotlib 3.8 or newer (was 3.5) and Python 3.9 or newer (was 3.8); the tests run in CI on the newest matplotlib and on matplotlib 3.8.0 with Python 3.9 and 3.11. The test extra needs pytest 7 or newer.
 - Without `--validation-plots` the `validation_plot` fixture now calls the factory, renders both themes in memory and applies the 60 000 B cap, so a plot that raises or grows above the cap fails in every run that runs its test. It compares a data summary of the rendered figure with both committed files in `docs/assets/validation` and fails when a file is missing, is committed under a name that differs only in case, is not a whole SVG or AVIF, or its summary cannot be read or differs; it writes nothing. With the option, on a case-insensitive file system, a committed file whose name differs only in case is renamed. A committed file without a summary of the current format passes with a warning. A test that takes the fixture and passes without calling it fails at teardown; a test that expects an argument error from the fixture, or an xpass, does not.
@@ -109,7 +111,8 @@ First public release of the **Thermocline** visual language.
   identity badges, the coupler diagram language, and a sticker sheet.
 - **Brand guide**: interactive (`site/`) + per-topic Markdown (`docs/`).
 
-[Unreleased]: https://github.com/FormingWorlds/proteus-visual-language/compare/v1.4.0...main
+[Unreleased]: https://github.com/FormingWorlds/proteus-visual-language/compare/v1.5.0...main
+[1.5.0]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.5.0
 [1.4.0]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.4.0
 [1.3.0]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.3.0
 [1.2.0]: https://github.com/FormingWorlds/proteus-visual-language/releases/tag/v1.2.0
