@@ -298,16 +298,18 @@ def _all_axes(axes):
 def summarize(fig):
     """Data summary of a figure, the part of a plot that does not depend on its renderer.
 
-    Per axes, inset and parasite axes included: each line as ``[n, x stats, y stats]``
-    over its points finite in both coordinates, in the axis units, so categorical and
-    date axes are numbers; each collection the same over its points (`_points`); its
-    other data (`_values`) as ``[n, value stats]``; the corners of all patches except
-    annotation arrows (bars, histograms) as one ``[n, x stats, y stats]``; each image as
+    Per axes, inset and parasite axes included: the axis scales and the category names
+    of categorical axes; each line as ``[n, x stats, y stats]`` over its points finite in
+    both coordinates, in the axis units, so categorical and date axes are numbers, and in
+    log10 on a log axis (`_scaled`); each collection the same over its points
+    (`_points`, labelled line contours from their contour generator); its other data
+    (`_values`) as ``[n, value stats]``; the corners of all patches except annotation
+    arrows (bars, histograms) as one ``[n, x stats, y stats]``; each image as
     ``[ny, nx, origin is upper, value stats]`` and its extent as ``[2, x stats, y stats]``.
     The stats of a coordinate are min, max, mean and ramp (`_stats`). Not part of it:
-    3D and secondary axes, axis labels, scales, limits, text, colours, artist
-    transforms, annotation arrows, the shapes of offset markers and the interior cell
-    edges of images. The artists a plot type makes depend on the matplotlib version.
+    3D and secondary axes, axis labels, limits, text, colours, artist transforms,
+    annotation arrows, the shapes of offset markers and the interior cell edges of
+    images. The artists a plot type makes depend on the matplotlib version.
     """
     from matplotlib.patches import FancyArrowPatch
 
