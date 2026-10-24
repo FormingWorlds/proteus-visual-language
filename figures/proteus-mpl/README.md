@@ -12,6 +12,8 @@ pip install proteus-mpl
 From a checkout of the repository: `pip install figures/proteus-mpl` (or cd
 into the folder and `pip install .`).
 
+The package needs Python 3.9 and matplotlib 3.8 or newer; CI runs the tests on the newest matplotlib and on 3.8.0.
+
 ## Use
 
 ```python

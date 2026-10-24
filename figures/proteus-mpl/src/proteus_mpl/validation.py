@@ -263,10 +263,8 @@ def _values(c):
 
 def _all_axes(axes):
     """The axes and, depth first, their inset and parasite axes; secondary and 3D axes are left out."""
-    from matplotlib.axes._secondary_axes import SecondaryAxis
-
     for ax in axes:
-        if isinstance(ax, SecondaryAxis) or ax.name == "3d":
+        if type(ax).__name__ == "SecondaryAxis" or ax.name == "3d":
             continue
         yield ax
         yield from _all_axes([*ax.child_axes, *getattr(ax, "parasites", [])])
