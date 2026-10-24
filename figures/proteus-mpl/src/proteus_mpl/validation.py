@@ -107,8 +107,9 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
     ------
     ValueError
         For an unknown `kind`, a `name` that is not a plain file stem, a figure
-        that was open before the call or is returned for both themes, or a file
-        above `MAX_BYTES`. Nothing is written then.
+        that was open before the call or is returned for both themes, a file
+        above `MAX_BYTES`, or light and dark figures that hold different data.
+        Nothing is written then.
     TypeError
         When `fig_factory` is not callable or returns no Figure. Nothing is
         written then.
@@ -191,7 +192,7 @@ def render(fig_factory, name, kind="line", *, test_id=None, command=None):
                     stamp = "; ".join(filter(None, (stamp, f"summary: {json.dumps(summary)}")))
                     stamp = _NOT_XML.sub("", stamp)
                 else:
-                    diffs = compare_summaries(summarize(fig), summary)
+                    diffs += compare_summaries(summarize(fig), summary)
                 files.append((f"{name}{tail}.{KINDS[kind]}", _render(fig, kind, stamp)))
             finally:
                 for num in set(plt.get_fignums()) - open_before:
@@ -231,9 +232,15 @@ def _stats(*coords):
 
 
 def _points(c):
-    """Data points of a collection: its offsets, else the mesh coordinates or path vertices."""
+    """Data points of a collection: its offsets, else the mesh coordinates or path vertices.
+
+    The offsets are the default, not data, when they are one (0, 0) in an identity transform.
+    """
+    from matplotlib.transforms import IdentityTransform
+
     offsets = np.ma.asarray(c.get_offsets(), dtype=float).reshape(-1, 2)
-    if len(offsets) != 1 or offsets.any():
+    default = isinstance(c.get_offset_transform(), IdentityTransform)
+    if len(offsets) != 1 or offsets.any() or not default:
         return offsets
     if hasattr(c, "get_coordinates"):
         return np.asarray(c.get_coordinates(), dtype=float).reshape(-1, 2)
@@ -242,30 +249,42 @@ def _points(c):
 
 
 def _values(c):
-    """Statistic rows of the data a collection carries besides its points."""
+    """Statistic rows of the data a collection carries besides its points.
+
+    The colour values, the masked U and V of a quiver and the u and v of barbs.
+    """
     rows = [_stats(a)] if (a := c.get_array()) is not None else []
-    return rows + [_stats(c.U), _stats(c.V)] if hasattr(c, "U") and hasattr(c, "V") else rows
+    if hasattr(c, "Umask"):
+        rows += [_stats(np.ma.masked_array(c.U, c.Umask)), _stats(np.ma.masked_array(c.V, c.Umask))]
+    elif hasattr(c, "u") and hasattr(c, "v"):
+        rows += [_stats(c.u), _stats(c.v)]
+    return rows
 
 
 def _all_axes(axes):
-    """The axes and, depth first, their inset axes."""
+    """The axes and, depth first, their inset and parasite axes; secondary and 3D axes are left out."""
+    from matplotlib.axes._secondary_axes import SecondaryAxis
+
     for ax in axes:
+        if isinstance(ax, SecondaryAxis) or ax.name == "3d":
+            continue
         yield ax
-        yield from _all_axes(ax.child_axes)
+        yield from _all_axes([*ax.child_axes, *getattr(ax, "parasites", [])])
 
 
 def summarize(fig):
     """Data summary of a figure, the part of a plot that does not depend on its renderer.
 
-    Per axes, inset axes included: each line as ``[n, x stats, y stats]`` over its
-    points finite in both coordinates, in the axis units, so categorical and date axes
-    are numbers; each collection the same over its points (`_points`); the colour
-    values, and the U and V of quivers, as ``[n, value stats]``; the corners of all
-    patches except arrows (bars, histograms) as one ``[n, x stats, y stats]``; each image
-    as ``[ny, nx, value stats]`` and its extent as ``[2, x stats, y stats]``. The stats
-    of a coordinate are min, max, mean and ramp (`_stats`). Not part of it: axis
-    labels, scales, limits, text, colours, arrows, the z of 3D axes and the shapes of
-    offset markers. The artists a plot type makes depend on the matplotlib version.
+    Per axes, inset and parasite axes included: each line as ``[n, x stats, y stats]``
+    over its points finite in both coordinates, in the axis units, so categorical and
+    date axes are numbers; each collection the same over its points (`_points`); its
+    other data (`_values`) as ``[n, value stats]``; the corners of all patches except
+    annotation arrows (bars, histograms) as one ``[n, x stats, y stats]``; each image as
+    ``[ny, nx, origin is upper, value stats]`` and its extent as ``[2, x stats, y stats]``.
+    The stats of a coordinate are min, max, mean and ramp (`_stats`). Not part of it:
+    3D and secondary axes, axis labels, scales, limits, text, colours, artist
+    transforms, annotation arrows, the shapes of offset markers and the interior cell
+    edges of images. The artists a plot type makes depend on the matplotlib version.
     """
     from matplotlib.patches import FancyArrowPatch
 
@@ -281,7 +300,8 @@ def summarize(fig):
                 "values": [row for c in ax.collections for row in _values(c)],
                 "patches": [_stats(*np.concatenate(corners).T)] if corners else [],
                 "images": [
-                    (list(np.shape(im.get_array())[:2]) + [0, 0])[:2] + _stats(im.get_array())[1:]
+                    [*np.shape(im.get_array()), 0, 0][:2] + [int(im.origin == "upper")]
+                    + _stats(im.get_array())[1:]
                     for im in images
                 ],
                 "extents": [
@@ -309,7 +329,7 @@ def read_summary(path):
     return json.loads(tail) if sep else None
 
 
-_HEADS = {"lines": 1, "collections": 1, "values": 1, "patches": 1, "images": 2, "extents": 1}
+_HEADS = {"lines": 1, "collections": 1, "values": 1, "patches": 1, "images": 3, "extents": 1}
 _LABELS = {"lines": "line", "collections": "collection", "values": "value set",
            "patches": "patch set", "images": "image", "extents": "image extent"}
 _STATS = ("min", "max", "mean", "ramp")
@@ -334,7 +354,7 @@ def compare_summaries(new, old, rtol=SUMMARY_RTOL):
                 diffs.append(f"axes {i}: {label} count {len(rows)}, committed {len(committed)}")
                 continue
             for j, (x, y) in enumerate(zip(rows, committed)):
-                where, count = f"axes {i} {label} {j}", "shape" if head == 2 else "point count"
+                where, count = f"axes {i} {label} {j}", "shape" if head > 1 else "point count"
                 if len(x) != len(y) or (len(y) - head) % 4:
                     diffs.append(f"{where}: {len(x)} entries, committed {len(y)}")
                 elif x[:head] != y[:head]:

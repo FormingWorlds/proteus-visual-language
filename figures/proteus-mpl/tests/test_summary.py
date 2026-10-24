@@ -50,7 +50,7 @@ def test_summary_counts_scatter_points_and_image_pixels():
     (coll,) = summary["axes"][0]["collections"]
     assert coll[0] == 2 and coll[5:8] == [2.0, 4.0, 3.0]
     (image,) = summary["axes"][1]["images"]
-    assert image[:2] == [2, 3] and image[2:5] == [0.0, 5.0, 2.5]
+    assert image[:3] == [2, 3, 1] and image[3:6] == [0.0, 5.0, 2.5]
 
 
 def one_axes(*lines):
