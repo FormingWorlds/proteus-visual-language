@@ -7,6 +7,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
+from hypothesis import example, given
+from hypothesis import strategies as st
 
 from proteus_mpl import validation as v
 
@@ -478,7 +480,7 @@ def contours(ax, kind, label, generator=True):
     if not generator:
         c._contour_generator = object()
     if label:
-        ax.clabel(c, inline=True)
+        ax.clabel(c, inline=generator)
 
 
 @pytest.mark.parametrize("generator", [True, False], ids=["generator", "no_create_contour"])
@@ -546,9 +548,24 @@ def test_values_near_one_under_a_log_norm_pass_round_off(draw):
 @pytest.mark.parametrize("delta, found", [(1e-12, False), (1e-5, True)])
 @pytest.mark.parametrize("scale", ["log", "linear"])
 def test_a_constant_near_one_on_a_log_axis_has_a_floor_in_decades(scale, delta, found):
-    draw = lambda ax, c: (ax.plot([0.0, 1.0, 2.0], [c] * 3), ax.set_yscale(scale))
+    def draw(ax, c):
+        ax.plot([0.0, 1.0, 2.0], [c] * 3)
+        ax.set_yscale(scale)
+
     diffs = v.compare_summaries(*two_figures(draw, 1.0 + delta, 1.0))
     assert bool(diffs) == found
+
+
+@given(st.floats(-300.0, 300.0))
+@example(0.0)
+def test_log_floor_is_in_decades_at_any_magnitude(exponent):
+    def draw(ax, c):
+        ax.plot([0.0, 1.0, 2.0], [c] * 3)
+        ax.set_yscale("log")
+
+    c = 10.0**exponent
+    assert v.compare_summaries(*two_figures(draw, c * (1.0 + 1e-12), c)) == []
+    assert v.compare_summaries(*two_figures(draw, c * (1.0 + 1e-5), c))
 
 
 def test_category_names_are_compared():

@@ -243,9 +243,8 @@ def _points(c):
     from matplotlib.transforms import IdentityTransform
 
     gen = getattr(c, "_contour_generator", None)
-    if getattr(c, "labelTexts", None) and not getattr(c, "filled", True):
-        lines = [gen.lines(level) for level in c.levels] if gen is not None else []
-        pts = [p for res in lines for p in (res[0] if isinstance(res, tuple) else res)]
+    if getattr(c, "labelTexts", None) and not getattr(c, "filled", True) and hasattr(gen, "create_contour"):
+        pts = [p for level in c.levels for p in gen.create_contour(level)[0]]
         return np.concatenate(pts).reshape(-1, 2) if pts else np.empty((0, 2))
     offsets = np.ma.asarray(c.get_offsets(), dtype=float).reshape(-1, 2)
     default = isinstance(c.get_offset_transform(), IdentityTransform)
@@ -257,26 +256,45 @@ def _points(c):
     return np.concatenate(paths).reshape(-1, 2) if paths else np.empty((0, 2))
 
 
-def _values(c):
-    """Statistic rows of the data a collection carries besides its points.
+def _norm_scale(artist):
+    """"log" when the colour norm of an artist is logarithmic, else "linear"."""
+    from matplotlib.scale import LogScale
 
-    The colour values, the masked U and V of a quiver and the u and v of barbs.
+    return "log" if isinstance(getattr(artist.norm, "_scale", None), LogScale) else "linear"
+
+
+def _log10(a):
+    """Float copy of `a` in log10, NaN where it is masked or at or below zero."""
+    a = np.ma.filled(np.ma.asarray(a, dtype=float), np.nan)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return np.where(a > 0, np.log10(a), np.nan)
+
+
+def _colours(artist):
+    """The colour values of an artist, in log10 under a log norm."""
+    a = artist.get_array()
+    return _log10(a) if a is not None and _norm_scale(artist) == "log" else a
+
+
+def _values(c):
+    """Statistic rows, each with its scale, of the data a collection carries besides its points.
+
+    The colour values (`_colours`), the masked U and V of a quiver and the u and v of barbs.
     """
-    rows = [_stats(a)] if (a := c.get_array()) is not None else []
+    rows = [(_stats(_colours(c)), _norm_scale(c))] if c.get_array() is not None else []
     if hasattr(c, "Umask"):
-        rows += [_stats(np.ma.masked_array(c.U, c.Umask)), _stats(np.ma.masked_array(c.V, c.Umask))]
+        rows += [(_stats(np.ma.masked_array(u, c.Umask)), "linear") for u in (c.U, c.V)]
     elif hasattr(c, "u") and hasattr(c, "v"):
-        rows += [_stats(c.u), _stats(c.v)]
+        rows += [(_stats(c.u), "linear"), (_stats(c.v), "linear")]
     return rows
 
 
 def _scaled(ax, points):
-    """Points as an (n, 2) float array, each coordinate in log10 on a log axis (<= 0 is NaN)."""
+    """Points as an (n, 2) float array, each coordinate in log10 on a log axis (`_log10`)."""
     out = np.ma.filled(np.ma.asarray(points, dtype=float), np.nan).reshape(-1, 2).copy()
     for i, scale in enumerate((ax.get_xscale(), ax.get_yscale())):
         if scale == "log":
-            with np.errstate(divide="ignore", invalid="ignore"):
-                out[:, i] = np.where(out[:, i] > 0, np.log10(out[:, i]), np.nan)
+            out[:, i] = _log10(out[:, i])
     return out
 
 
@@ -306,6 +324,8 @@ def summarize(fig):
     (`_values`) as ``[n, value stats]``; the corners of all patches except annotation
     arrows (bars, histograms) as one ``[n, x stats, y stats]``; each image as
     ``[ny, nx, origin is upper, value stats]`` and its extent as ``[2, x stats, y stats]``.
+    Colour values and images under a log norm are in log10, and the scale of each value
+    row and image is kept.
     The stats of a coordinate are min, max, mean and ramp (`_stats`). Not part of it:
     3D and secondary axes, axis labels, limits, text, colours, artist transforms,
     annotation arrows, the shapes of offset markers and the interior cell edges of
@@ -318,19 +338,22 @@ def summarize(fig):
         patches = [p for p in ax.patches if not isinstance(p, FancyArrowPatch)]
         corners = [p.get_patch_transform().transform(p.get_path().vertices) for p in patches]
         images = ax.get_images()
+        values = [row for c in ax.collections for row in _values(c)]
         axes.append(
             {
                 "scales": [ax.get_xscale(), ax.get_yscale()],
                 "categories": [_categories(ax.xaxis), _categories(ax.yaxis)],
                 "lines": [_stats(*_scaled(ax, line.get_xydata()).T) for line in ax.get_lines()],
                 "collections": [_stats(*_scaled(ax, _points(c)).T) for c in ax.collections],
-                "values": [row for c in ax.collections for row in _values(c)],
+                "values": [row for row, _ in values],
+                "value_scales": [scale for _, scale in values],
                 "patches": [_stats(*_scaled(ax, np.concatenate(corners)).T)] if corners else [],
                 "images": [
                     [*np.shape(im.get_array()), 0, 0][:2] + [int(im.origin == "upper")]
-                    + _stats(im.get_array())[1:]
+                    + _stats(_colours(im))[1:]
                     for im in images
                 ],
+                "image_scales": [_norm_scale(im) for im in images],
                 "extents": [
                     _stats(*np.reshape(im.get_extent(), (2, 2)))
                     for im in images
@@ -396,9 +419,9 @@ _STATS = ("min", "max", "mean", "ramp")
 def compare_summaries(new, old, rtol=SUMMARY_RTOL):
     """List the differences between two data summaries; an empty list when they agree.
 
-    Formats and counts must match. Each statistic of a coordinate must agree within
-    `rtol` times the range of the committed coordinate, or a tenth of its largest
-    magnitude when that is larger.
+    Formats, counts and scales must match. Each statistic of a coordinate must agree
+    within `rtol` times the range of the committed coordinate, or a tenth of its largest
+    magnitude when that is larger; 0.1 decade in place of the magnitude in log10.
     """
     if new.get("v") != old.get("v"):
         return [f"summary format {new.get('v')}, committed {old.get('v')}"]
@@ -406,7 +429,7 @@ def compare_summaries(new, old, rtol=SUMMARY_RTOL):
         return [f"axes count {len(new['axes'])}, committed {len(old['axes'])}"]
     diffs = []
     for i, (a, b) in enumerate(zip(new["axes"], old["axes"])):
-        for key in ("scales", "categories"):
+        for key in ("scales", "categories", "value_scales", "image_scales"):
             if a.get(key) != b.get(key):
                 diffs.append(f"axes {i}: {key} {a.get(key)}, committed {b.get(key)}")
         for key, head in _HEADS.items():
@@ -421,20 +444,30 @@ def compare_summaries(new, old, rtol=SUMMARY_RTOL):
                 elif x[:head] != y[:head]:
                     diffs.append(f"{where}: {count} {x[:head]}, committed {y[:head]}")
                 else:
-                    diffs += _compare_stats(where, x[head:], y[head:], rtol)
+                    diffs += _compare_stats(where, x[head:], y[head:], rtol, _logs(b, key, j))
     return diffs
 
 
-def _compare_stats(where, got, want, rtol):
+def _logs(axes, key, j):
+    """Per coordinate of row `j` of `key` in a committed axes summary, whether it is in log10."""
+    if key in ("lines", "collections", "patches"):
+        return [s == "log" for s in axes.get("scales", [])]
+    scales = axes.get({"values": "value_scales", "images": "image_scales"}.get(key), [])
+    return [j < len(scales) and scales[j] == "log"]
+
+
+def _compare_stats(where, got, want, rtol, logs=()):
     """Differences between the statistics of the coordinates of one entry.
 
     Values are halved before they are subtracted, so a range near the largest float
-    does not overflow.
+    does not overflow. A coordinate in log10 (`logs`) has a floor of 0.1 decade in place of
+    a tenth of its largest magnitude.
     """
     diffs = []
-    for c, k in zip("xy" if len(want) > 4 else "v", range(0, len(want), 4)):
+    for i, (c, k) in enumerate(zip("xy" if len(want) > 4 else "v", range(0, len(want), 4))):
         lo, hi = want[k], want[k + 1]
-        half = 0.0 if lo is None else max(hi / 2 - lo / 2, 0.05 * max(abs(lo), abs(hi)))
+        floor = 0.05 if i < len(logs) and logs[i] else 0.05 * max(abs(lo or 0.0), abs(hi or 0.0))
+        half = 0.0 if lo is None else max(hi / 2 - lo / 2, floor)
         for stat, g, w in zip(_STATS, got[k : k + 4], want[k : k + 4]):
             if g != w and (None in (g, w) or not abs(g / 2 - w / 2) <= rtol * half):
                 diffs.append(f"{where} {c} {stat}: {g!r}, committed {w!r}")
