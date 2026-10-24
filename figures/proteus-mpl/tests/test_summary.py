@@ -525,3 +525,10 @@ def test_a_broken_file_is_refused(tmp_path, kind, cut):
     light.write_bytes(broken)
     with pytest.raises(ValueError):
         v.read_summary(light)
+
+
+def test_an_xml_file_that_is_not_an_svg_is_refused(tmp_path):
+    path = tmp_path / "case.svg"
+    path.write_text('<html><dc:description xmlns:dc="d">summary: {"v": 1, "axes": []}</dc:description></html>')
+    with pytest.raises(ValueError, match="not an SVG file"):
+        v.read_summary(path)
