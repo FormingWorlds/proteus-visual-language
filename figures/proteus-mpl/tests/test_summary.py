@@ -2,6 +2,7 @@
 
 import json
 import math
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -389,3 +390,138 @@ def test_3d_axes_are_left_out():
     fig = plt.figure()
     fig.add_subplot(projection="3d").plot([0.0, 1.0], [0.0, 1.0], [0.0, 1.0])
     assert summary_of(fig)["axes"] == []
+
+
+LOGX = np.logspace(-10.0, 0.0, 300)
+
+
+def boost(n, factor):
+    y = LOGX.copy()
+    y[:n] *= factor
+    return y
+
+
+@pytest.mark.parametrize(
+    "draw",
+    [
+        lambda ax, y: ax.loglog(LOGX, y),
+        lambda ax, y: ax.semilogy(np.arange(300.0), y),
+        lambda ax, y: ax.semilogx(y, np.arange(300.0)),
+        lambda ax, y: (ax.set_yscale("log"), ax.scatter(LOGX, y)),
+    ],
+    ids=["loglog", "semilogy", "semilogx", "log_scatter"],
+)
+@pytest.mark.parametrize("n, factor", [(150, 3.0), (50, 1000.0)])
+def test_a_change_on_a_log_axis_is_found(draw, n, factor):
+    assert v.compare_summaries(*two_figures(draw, boost(n, factor), LOGX))
+
+
+def test_a_scale_change_is_a_difference():
+    draw = lambda ax, s: (ax.plot([1.0, 10.0, 100.0]), ax.set_yscale(s))
+    diffs = v.compare_summaries(*two_figures(draw, "log", "linear"))
+    assert any("scale" in d for d in diffs)
+
+
+def test_log_values_are_compared_in_decades():
+    fig, ax = plt.subplots()
+    ax.loglog([1.0, 10.0, 100.0], [1e-3, 1e-2, 1e-1])
+    (line,) = summary_of(fig)["axes"][0]["lines"]
+    assert line[1:3] == [0.0, 2.0] and line[5:7] == [-3.0, -1.0]
+
+
+def labelled(ax, fig_size=None, fontsize=10, field=1.0, levels=6):
+    x = np.linspace(-1.0, 1.0, 40)
+    X, Y = np.meshgrid(x, x)
+    if fig_size:
+        ax.figure.set_size_inches(*fig_size)
+    c = ax.contour(field * (X**2 + Y**2), levels=levels)
+    ax.clabel(c, inline=True, fontsize=fontsize)
+
+
+@pytest.mark.parametrize(
+    "a, b",
+    [({"fig_size": (4, 3)}, {"fig_size": (8, 6)}), ({"fontsize": 10}, {"fontsize": 14})],
+    ids=["figsize", "fontsize"],
+)
+def test_labelled_contours_do_not_depend_on_the_layout(a, b):
+    new, old = two_figures(lambda ax, kw: labelled(ax, **kw), a, b)
+    assert v.compare_summaries(new, old) == []
+
+
+def test_labelled_contours_do_not_depend_on_the_dpi():
+    out = []
+    for dpi in (72, 200):
+        fig, ax = plt.subplots(dpi=dpi)
+        labelled(ax)
+        out.append(summary_of(fig))
+    assert v.compare_summaries(*out) == []
+
+
+@pytest.mark.parametrize(
+    "a, b",
+    [({"field": 1.3, "levels": [0.2, 0.5, 1.0]}, {"levels": [0.2, 0.5, 1.0]}),
+     ({"levels": [0.2, 0.5, 1.0]}, {"levels": [0.2, 0.6, 1.0]})],
+    ids=["field", "levels"],
+)
+def test_labelled_contours_find_a_field_or_level_change(a, b):
+    assert v.compare_summaries(*two_figures(lambda ax, kw: labelled(ax, **kw), a, b))
+
+
+def test_category_names_are_compared():
+    diffs = v.compare_summaries(*two_figures(lambda ax, c: ax.bar(c, [1.0, 2.0, 3.0]), ["a", "b", "c"], ["c", "b", "a"]))
+    assert any("categor" in d for d in diffs)
+
+
+def test_category_names_with_xml_characters_read_back(tmp_path):
+    def factory():
+        fig, ax = plt.subplots()
+        ax.bar(["a&b", "<c>"], [1.0, 2.0])
+        return fig
+
+    light, _ = v.save(factory, "case", tmp_path, test_id="t")
+    assert v.compare_summaries(summary_of(factory()), v.read_summary(light)) == []
+
+
+def test_a_summary_label_inside_the_test_id_is_not_the_summary(tmp_path):
+    light, _ = v.save(line_figure, "case", tmp_path, test_id="t[summary: 1]")
+    assert v.read_summary(light) == summary_of(line_figure())
+
+
+def case_insensitive(path):
+    probe = path / "Probe"
+    probe.write_text("")
+    try:
+        return (path / "probe").exists()
+    finally:
+        probe.unlink()
+
+
+def test_save_renames_a_committed_pair_in_other_case(tmp_path):
+    if not case_insensitive(tmp_path):
+        pytest.skip("needs a case-insensitive file system")
+    v.save(line_figure, "Case", tmp_path)
+    v.save(line_figure, "case", tmp_path)
+    assert sorted(os.listdir(tmp_path)) == ["case.svg", "case_dark.svg"]
+
+
+def test_save_leaves_a_file_in_other_case_alone(tmp_path):
+    if case_insensitive(tmp_path):
+        pytest.skip("needs a case-sensitive file system")
+    v.save(line_figure, "Case", tmp_path)
+    before = (tmp_path / "Case.svg").read_bytes()
+    v.save(line_figure, "case", tmp_path)
+    assert sorted(os.listdir(tmp_path)) == ["Case.svg", "Case_dark.svg", "case.svg", "case_dark.svg"]
+    assert (tmp_path / "Case.svg").read_bytes() == before
+
+
+@pytest.mark.parametrize("kind", ["line", "map"])
+@pytest.mark.parametrize("cut", ["empty", "head", "half", "lfs", "garbage"])
+def test_a_broken_file_is_refused(tmp_path, kind, cut):
+    light, _ = v.save(line_figure, "case", tmp_path, kind=kind)
+    data = light.read_bytes()
+    broken = {"empty": b"", "head": data[:100], "half": data[: len(data) // 2],
+              "lfs": b"version https://git-lfs.github.com/spec/v1\noid sha256:00\nsize 1\n",
+              "garbage": bytes(range(256)) * 4}[cut]
+    light.write_bytes(broken)
+    with pytest.raises(ValueError):
+        v.read_summary(light)

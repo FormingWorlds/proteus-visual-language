@@ -241,3 +241,20 @@ def test_the_stale_message_counts_the_other_differences(case):
     result = case.runpytest("test_changed.py::test_case")
     result.assert_outcomes(failed=1)
     result.stdout.fnmatch_lines(["*is stale (axes 0 line 0 y * and * more)*"])
+
+
+def test_an_empty_committed_file_fails_as_unreadable(case):
+    light = make_pair(case)
+    light.write_bytes(b"")
+    result = case.runpytest("test_case.py::test_case")
+    result.assert_outcomes(failed=1)
+    result.stdout.fnmatch_lines(["*case.svg carries an unreadable data summary*"])
+
+
+def test_a_pair_committed_in_other_case_names_the_committed_file(case):
+    make_pair(case)
+    for name in ("case.svg", "case_dark.svg"):
+        (committed(case) / name).rename(committed(case) / name.replace("case", "Case"))
+    result = case.runpytest("test_case.py::test_case")
+    result.assert_outcomes(failed=1)
+    result.stdout.fnmatch_lines(["*case: the plot is committed as Case.svg*git mv*"])
