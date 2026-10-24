@@ -182,7 +182,13 @@ def _check_committed(name, path, summary):
     from .validation import compare_summaries, read_summary
 
     again = "make it again with --validation-plots"
-    if not path.is_file() or path.name not in os.listdir(path.parent):
+    others = [n for n in os.listdir(path.parent) if n.lower() == path.name.lower()] if path.parent.is_dir() else []
+    if others and path.name not in others:
+        pytest.fail(
+            f"{name}: the plot is committed as {others[0]}, not {path.name}; git mv it to {path.name}",
+            pytrace=False,
+        )
+    if not path.is_file():
         pytest.fail(
             f"{name}: no committed plot at {path}; make it with --validation-plots and commit it",
             pytrace=False,

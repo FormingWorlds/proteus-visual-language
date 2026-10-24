@@ -12,6 +12,7 @@ matplotlib and Pillow versions the same figure gives the same bytes. Every file
 must stay at or below `MAX_BYTES`.
 """
 
+import html
 import io
 import json
 import os
@@ -135,6 +136,9 @@ def save(fig_factory, name, outdir, kind="line", *, test_id=None, command=None):
         for part, (_, data) in zip(parts, files):
             part.write_bytes(data)
         for part, target in zip(parts, targets):
+            if target.exists() and target.name not in os.listdir(outdir):
+                other = next(n for n in os.listdir(outdir) if n.lower() == target.name.lower())
+                os.rename(outdir / other, target)
             os.replace(part, target)
     except BaseException:
         for part in parts:
@@ -238,6 +242,11 @@ def _points(c):
     """
     from matplotlib.transforms import IdentityTransform
 
+    gen = getattr(c, "_contour_generator", None)
+    if getattr(c, "labelTexts", None) and not getattr(c, "filled", True):
+        lines = [gen.lines(level) for level in c.levels] if gen is not None else []
+        pts = [p for res in lines for p in (res[0] if isinstance(res, tuple) else res)]
+        return np.concatenate(pts).reshape(-1, 2) if pts else np.empty((0, 2))
     offsets = np.ma.asarray(c.get_offsets(), dtype=float).reshape(-1, 2)
     default = isinstance(c.get_offset_transform(), IdentityTransform)
     if len(offsets) != 1 or offsets.any() or not default:
@@ -259,6 +268,22 @@ def _values(c):
     elif hasattr(c, "u") and hasattr(c, "v"):
         rows += [_stats(c.u), _stats(c.v)]
     return rows
+
+
+def _scaled(ax, points):
+    """Points as an (n, 2) float array, each coordinate in log10 on a log axis (<= 0 is NaN)."""
+    out = np.ma.filled(np.ma.asarray(points, dtype=float), np.nan).reshape(-1, 2).copy()
+    for i, scale in enumerate((ax.get_xscale(), ax.get_yscale())):
+        if scale == "log":
+            with np.errstate(divide="ignore", invalid="ignore"):
+                out[:, i] = np.where(out[:, i] > 0, np.log10(out[:, i]), np.nan)
+    return out
+
+
+def _categories(axis):
+    """The category names of a categorical axis, in axis order, else None."""
+    mapping = getattr(axis.get_units(), "_mapping", None)
+    return list(mapping) if isinstance(mapping, dict) else None
 
 
 def _all_axes(axes):
@@ -293,10 +318,12 @@ def summarize(fig):
         images = ax.get_images()
         axes.append(
             {
-                "lines": [_stats(*line.get_xydata().T) for line in ax.get_lines()],
-                "collections": [_stats(*_points(c).T) for c in ax.collections],
+                "scales": [ax.get_xscale(), ax.get_yscale()],
+                "categories": [_categories(ax.xaxis), _categories(ax.yaxis)],
+                "lines": [_stats(*_scaled(ax, line.get_xydata()).T) for line in ax.get_lines()],
+                "collections": [_stats(*_scaled(ax, _points(c)).T) for c in ax.collections],
                 "values": [row for c in ax.collections for row in _values(c)],
-                "patches": [_stats(*np.concatenate(corners).T)] if corners else [],
+                "patches": [_stats(*_scaled(ax, np.concatenate(corners)).T)] if corners else [],
                 "images": [
                     [*np.shape(im.get_array()), 0, 0][:2] + [int(im.origin == "upper")]
                     + _stats(im.get_array())[1:]
@@ -315,16 +342,47 @@ def summarize(fig):
 _DESCRIPTION = re.compile(rb"<dc:description>(.*?)</dc:description>", re.DOTALL)
 
 
+def _check_container(path, data):
+    """Raise ValueError unless `data` is a whole SVG or AVIF file."""
+    if path.suffix == ".svg":
+        from xml.etree import ElementTree
+
+        try:
+            root = ElementTree.fromstring(data)
+        except ElementTree.ParseError as err:
+            raise ValueError(f"not a whole SVG file ({err})") from None
+        if not root.tag.endswith("svg"):
+            raise ValueError(f"not an SVG file (root {root.tag})")
+    elif path.suffix == ".avif":
+        if data[4:8] != b"ftyp" or b"avif" not in data[8:32]:
+            raise ValueError("not an AVIF file")
+        from PIL import Image
+
+        try:
+            Image.open(io.BytesIO(data)).load()
+        except (OSError, SyntaxError) as err:
+            raise ValueError(f"not a whole AVIF file ({err})") from None
+
+
 def read_summary(path):
     """Return the data summary a validation plot file carries, or None when it has none.
 
-    Raises ValueError when the text after the last ``summary: `` is not JSON.
+    Raises ValueError for a file that is not a whole SVG or AVIF, and when the text after
+    the summary label is not JSON. The label opens the description or follows "; ".
     """
-    match = _DESCRIPTION.search(Path(path).read_bytes())
+    path = Path(path)
+    data = path.read_bytes()
+    _check_container(path, data)
+    match = _DESCRIPTION.search(data)
     if not match:
         return None
-    _, sep, tail = match.group(1).decode("utf-8", "replace").rpartition("summary: ")
-    return json.loads(tail) if sep else None
+    text = match.group(1).decode("utf-8", "replace")
+    _, sep, tail = text.rpartition("; summary: ")
+    if not sep:
+        if not text.startswith("summary: "):
+            return None
+        tail = text[len("summary: "):]
+    return json.loads(html.unescape(tail))
 
 
 _HEADS = {"lines": 1, "collections": 1, "values": 1, "patches": 1, "images": 3, "extents": 1}
@@ -346,6 +404,9 @@ def compare_summaries(new, old, rtol=SUMMARY_RTOL):
         return [f"axes count {len(new['axes'])}, committed {len(old['axes'])}"]
     diffs = []
     for i, (a, b) in enumerate(zip(new["axes"], old["axes"])):
+        for key in ("scales", "categories"):
+            if a.get(key) != b.get(key):
+                diffs.append(f"axes {i}: {key} {a.get(key)}, committed {b.get(key)}")
         for key, head in _HEADS.items():
             label, rows, committed = _LABELS[key], a.get(key, []), b.get(key, [])
             if len(rows) != len(committed):

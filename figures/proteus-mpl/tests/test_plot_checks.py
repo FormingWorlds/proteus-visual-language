@@ -180,7 +180,7 @@ def test_a_name_in_other_case_is_not_the_committed_plot(case):
     make_pair(case)
     result = case.runpytest("test_case.py::test_upper")
     result.assert_outcomes(failed=1)
-    result.stdout.fnmatch_lines(["*Case: no committed plot at */Case.svg*"])
+    result.stdout.fnmatch_lines(["*Case: the plot is committed as case.svg, not Case.svg*"])
 
 
 def test_an_unreadable_summary_fails(case):
