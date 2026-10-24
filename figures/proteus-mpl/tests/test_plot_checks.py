@@ -221,9 +221,13 @@ def test_a_summary_of_the_wrong_shape_fails_as_unreadable(case):
 
 
 def test_a_file_that_cannot_be_read_fails_as_unreadable(case):
+    import os
+
     light = make_pair(case)
     light.chmod(0)
     try:
+        if os.access(light, os.R_OK):
+            pytest.skip("the file stays readable for this user")
         result = case.runpytest("test_case.py::test_case")
     finally:
         light.chmod(0o644)

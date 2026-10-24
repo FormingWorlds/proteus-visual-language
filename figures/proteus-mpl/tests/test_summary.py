@@ -268,8 +268,8 @@ def test_changed_placement_is_found(draw):
 
 def test_changed_mesh_coordinates_are_named_as_a_collection():
     draw = lambda ax, k: ax.pcolormesh(k * np.arange(4.0), np.arange(3.0), np.ones((2, 3)))
-    new, old = two_figures(draw, 2.0, 1.0)
-    assert all("collection" in d for d in v.compare_summaries(new, old))
+    diffs = v.compare_summaries(*two_figures(draw, 2.0, 1.0))
+    assert diffs and all("collection" in d for d in diffs)
 
 
 def test_offsets_of_a_collection_without_marker_paths_are_found():
@@ -299,19 +299,13 @@ def test_a_range_too_large_for_a_float_is_still_compared():
     assert v.compare_summaries(one_axes(changed), one_axes(row))
 
 
-def test_an_image_without_data_compares_equal_to_itself():
+def test_empty_artists_compare_equal_to_themselves():
     from matplotlib.image import AxesImage
 
     fig, ax = plt.subplots()
-    ax.add_image(AxesImage(ax))
-    s = summary_of(fig)
-    assert v.compare_summaries(s, json.loads(json.dumps(s))) == []
-
-
-def test_empty_rows_compare_equal_to_themselves():
-    fig, ax = plt.subplots()
     ax.plot([], [])
     ax.scatter([], [])
+    ax.add_image(AxesImage(ax))
     s = summary_of(fig)
     assert v.compare_summaries(s, json.loads(json.dumps(s))) == []
 
@@ -337,3 +331,61 @@ def test_render_refuses_a_factory_whose_themes_draw_other_data():
 
     with pytest.raises(ValueError, match="light and dark figures hold different data"):
         v.render(factory, "case")
+
+
+def nested_inset(ax, k):
+    ax.plot([0.0, 1.0])
+    ax.inset_axes([0.5, 0.5, 0.4, 0.4]).inset_axes([0.5, 0.5, 0.4, 0.4]).plot([0.0, k])
+
+
+def parasite(ax, k):
+    from mpl_toolkits.axes_grid1 import host_subplot
+
+    fig = ax.figure
+    ax.remove()
+    host = host_subplot(111, figure=fig)
+    host.plot([0.0, 1.0])
+    host.twinx().plot([0.0, k])
+
+
+@pytest.mark.parametrize(
+    "draw",
+    [
+        lambda ax, k: ax.barbs([0.0, 1.0], [0.0, 1.0], [10.0, 10.0 * k], [5.0, 5.0]),
+        lambda ax, k: ax.scatter([3.0], [k]),
+        lambda ax, k: ax.quiver([0.0, k], [0.0, 1.0], [1.0, 1.0], [1.0, 1.0]),
+        lambda ax, k: ax.quiver([0.0, 1.0], [0.0, 1.0], np.ma.masked_array([1.0, 1.0], [0, k > 2]), [1.0, 1.0]),
+        lambda ax, k: ax.imshow(np.arange(4.0).reshape(2, 2), origin="lower" if k > 2 else "upper", extent=(0, 2, 0, 2)),
+        nested_inset,
+        parasite,
+    ],
+    ids=["barbs", "single_point", "quiver_positions", "masked_quiver", "image_origin", "nested_inset", "parasite"],
+)
+def test_more_changed_data_is_found(draw):
+    assert v.compare_summaries(*two_figures(draw, 3.0, 1.0))
+
+
+@pytest.mark.parametrize(
+    "draw",
+    [
+        lambda ax, k: ax.scatter([0.0], [0.0], marker="o" if k > 2 else "s"),
+        lambda ax, k: (ax.plot([0.0, 1.0]), k > 2 and ax.secondary_xaxis("top")),
+    ],
+    ids=["marker_at_origin", "secondary_axis"],
+)
+def test_changes_that_are_not_data_pass(draw):
+    assert v.compare_summaries(*two_figures(draw, 3.0, 1.0)) == []
+
+
+def test_a_single_point_at_the_origin_is_one_point():
+    fig, ax = plt.subplots()
+    ax.scatter([0.0], [0.0])
+    ax.quiver([0.0], [0.0], [1.0], [1.0])
+    rows = summary_of(fig)["axes"][0]["collections"]
+    assert [row[0] for row in rows] == [1, 1]
+
+
+def test_3d_axes_are_left_out():
+    fig = plt.figure()
+    fig.add_subplot(projection="3d").plot([0.0, 1.0], [0.0, 1.0], [0.0, 1.0])
+    assert summary_of(fig)["axes"] == []
