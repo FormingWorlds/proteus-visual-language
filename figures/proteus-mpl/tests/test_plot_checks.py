@@ -3,6 +3,7 @@
 import pytest
 
 CASE = """
+import pytest
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -44,6 +45,20 @@ def test_too_big(validation_plot):
         return fig
 
     validation_plot(big, "big")
+
+
+def test_bad_name_is_caught(validation_plot):
+    with pytest.raises(ValueError):
+        validation_plot(factory, "bad name")
+
+
+@pytest.mark.xfail(reason="passes")
+def test_xpass_without_plot(validation_plot):
+    assert True
+
+
+def test_upper(validation_plot):
+    validation_plot(factory, "Case")
 """
 
 
@@ -90,7 +105,7 @@ def test_the_size_cap_applies_without_the_option(case):
 def test_a_missing_committed_pair_fails(case):
     result = case.runpytest("test_case.py::test_case")
     result.assert_outcomes(failed=1)
-    result.stdout.fnmatch_lines(["*case: no committed plot at docs/assets/validation/case.svg*"])
+    result.stdout.fnmatch_lines(["*case: no committed plot at */docs/assets/validation/case.svg*"])
 
 
 def test_a_matching_committed_pair_passes_and_is_not_rewritten(case):
@@ -106,7 +121,7 @@ def test_changed_data_fails_as_stale(case):
     case.makepyfile(test_changed=CASE.replace("Y = [1.0, 0.0, 1.0]", "Y = [1.0, 0.0, 1.5]"))
     result = case.runpytest("test_changed.py::test_case")
     result.assert_outcomes(failed=1)
-    result.stdout.fnmatch_lines(["*case: the committed plot is stale*--validation-plots*"])
+    result.stdout.fnmatch_lines(["*case: the committed plot case.svg is stale*--validation-plots*"])
 
 
 def test_a_different_stamp_alone_passes(case):
@@ -125,7 +140,7 @@ def test_a_pair_without_summary_passes_with_a_warning(case):
     light.write_text(text[:start] + text[end:])
     result = case.runpytest("test_case.py::test_case")
     result.assert_outcomes(passed=1, warnings=1)
-    result.stdout.fnmatch_lines(["*case: the committed plot carries no data summary*"])
+    result.stdout.fnmatch_lines(["*case: case.svg carries no data summary*"])
 
 
 def test_the_option_writes_and_does_not_compare(case):
@@ -134,3 +149,62 @@ def test_the_option_writes_and_does_not_compare(case):
     case.runpytest("test_changed.py::test_case", "--validation-plots").assert_outcomes(passed=1)
     case.runpytest("test_changed.py::test_case").assert_outcomes(passed=1)
     case.runpytest("test_case.py::test_case").assert_outcomes(failed=1)
+
+
+def test_a_test_that_catches_an_argument_error_passes(case):
+    case.runpytest("test_case.py::test_bad_name_is_caught").assert_outcomes(passed=1)
+
+
+def test_an_xpass_without_plot_is_reported_once(case):
+    case.runpytest("test_case.py::test_xpass_without_plot").assert_outcomes(xpassed=1)
+
+
+def test_a_missing_dark_file_fails(case):
+    make_pair(case)
+    (committed(case) / "case_dark.svg").unlink()
+    result = case.runpytest("test_case.py::test_case")
+    result.assert_outcomes(failed=1)
+    result.stdout.fnmatch_lines(["*no committed plot at */case_dark.svg*"])
+
+
+def test_a_stale_dark_file_fails(case):
+    make_pair(case)
+    case.makepyfile(test_changed=CASE.replace("Y = [1.0, 0.0, 1.0]", "Y = [1.0, 0.0, 1.5]"))
+    case.runpytest("test_changed.py::test_case", "--validation-plots=out").assert_outcomes(passed=1)
+    (committed(case) / "case_dark.svg").write_bytes((case.path / "out" / "case_dark.svg").read_bytes())
+    result = case.runpytest("test_case.py::test_case")
+    result.assert_outcomes(failed=1)
+    result.stdout.fnmatch_lines(["*case: the committed plot case_dark.svg is stale*"])
+
+
+def test_a_name_in_other_case_is_not_the_committed_plot(case):
+    make_pair(case)
+    result = case.runpytest("test_case.py::test_upper")
+    result.assert_outcomes(failed=1)
+    result.stdout.fnmatch_lines(["*Case: no committed plot at */Case.svg*"])
+
+
+def test_an_unreadable_summary_fails(case):
+    light = make_pair(case)
+    light.write_text(light.read_text().replace("summary: {", "summary: {x"))
+    result = case.runpytest("test_case.py::test_case")
+    result.assert_outcomes(failed=1)
+    result.stdout.fnmatch_lines(["*case.svg carries an unreadable data summary*--validation-plots*"])
+
+
+def test_a_summary_of_another_format_passes_with_a_warning(case):
+    light = make_pair(case)
+    light.write_text(light.read_text().replace('{&quot;v&quot;: 1', '{&quot;v&quot;: 0').replace('{"v": 1', '{"v": 0'))
+    result = case.runpytest("test_case.py::test_case")
+    result.assert_outcomes(passed=1, warnings=1)
+    result.stdout.fnmatch_lines(["*case.svg carries no data summary of this version*"])
+
+
+def test_the_pair_is_found_under_the_rootdir_from_a_subfolder(case):
+    case.makeini("[pytest]\n")
+    make_pair(case)
+    sub = case.mkdir("sub")
+    (sub / "test_sub.py").write_text(CASE)
+    with pytest.MonkeyPatch.context() as mp:
+        mp.chdir(sub)
+        case.runpytest("test_sub.py::test_case").assert_outcomes(passed=1)

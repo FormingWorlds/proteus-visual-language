@@ -77,8 +77,9 @@ def files(root):
 
 def test_without_option_writes_nothing(case):
     result = case.runpytest("-s")
+    result.assert_outcomes(failed=6)
     result.stdout.fnmatch_lines(["*test_bad_kind*kind must be 'line' or 'map'*"])
-    result.stdout.fnmatch_lines(["*case: no committed plot at docs/assets/validation/case.svg*"])
+    result.stdout.fnmatch_lines(["*case: no committed plot at */docs/assets/validation/case.svg*"])
     assert files(case.path) == []
 
 
